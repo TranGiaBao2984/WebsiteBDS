@@ -1,7 +1,5 @@
 @import "tailwindcss";
 
-/* Site chỉ có giao diện sáng (mọi component dùng màu cố định),
-   nên không có khối dark mode và khóa color-scheme để form/scrollbar không bị tối theo máy. */
 :root {
   --background: #f8f6f0;
   --foreground: #3c352d;
@@ -11,9 +9,6 @@
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-
-  /* --font-noto-sans / --font-lora do next/font tạo ra trong layout.tsx.
-     Phần sau là font dự phòng cho chữ Nhật khi Noto Sans/Lora không có glyph. */
   --font-sans: var(--font-noto-sans), 'Hiragino Sans', 'Yu Gothic', Meiryo, ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-lora), 'Hiragino Mincho ProN', 'Yu Mincho', ui-serif, Georgia, serif;
 }

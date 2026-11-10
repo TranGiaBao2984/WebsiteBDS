@@ -1,21 +1,29 @@
 export interface Property {
   id: string;
-  title: string;
-  price: number;
-  location: string;
+  title: string | Record<string, string>;
+  description?: string | Record<string, string>;
+  location: string | Record<string, string>;
+  price?: number;
+  price_yen?: number;
+  price_vnd?: number;
   building_size?: string;
   land_size?: string;
+  area_sqm?: number;
   layout?: string;
   structure?: string;
   year_built?: number;
   current_status?: string;
+  status?: string;
   parking?: string;
   land_rights?: string;
   zoning?: string;
   access?: string;
-  description?: string;
   images?: string[];
   floor_plan?: string;
+  floor_plan_url?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  property_type?: string;
   created_at?: string;
 }
 

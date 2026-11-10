@@ -74,6 +74,7 @@ export async function deleteProperty(id: string) {
 
 // --- Interface Đầy đủ tất cả trường BĐS ---
 export interface CreatePropertyInput {
+  id?: string;
   titleRaw: string;
   descriptionRaw: string;
   locationRaw: string;
@@ -153,4 +154,68 @@ export async function createPropertyAction(input: CreatePropertyInput) {
     console.error("Error creating property:", err);
     return { success: false, error: errorMessage };
   }
+}
+
+// --- Action Cập Nhật Bài Bất Động Sản ---
+export async function updatePropertyAction(id: string, input: CreatePropertyInput) {
+  try {
+    const supabase = await createClient();
+
+    const [title, description, location] = await Promise.all([
+      autoTranslateText(input.titleRaw, "vi"),
+      autoTranslateText(input.descriptionRaw, "vi"),
+      autoTranslateText(input.locationRaw, "vi")
+    ]);
+
+    const payload = {
+      title,
+      description,
+      location,
+      price: input.priceYen,
+      price_yen: input.priceYen,
+      price_vnd: input.priceVnd || Math.round(input.priceYen * 165),
+      area_sqm: input.areaSqm,
+      building_size: input.buildingSize || `${input.areaSqm} m²`,
+      land_size: input.landSize || null,
+      layout: input.layout || "2LDK",
+      structure: input.structure || "RC (Bê tông cốt thép)",
+      year_built: input.yearBuilt || new Date().getFullYear(),
+      parking: input.parking || "Có",
+      land_rights: input.landRights || "Sở hữu vĩnh viễn (Ownership)",
+      zoning: input.zoning || "Khu dân cư",
+      access: input.access || "Cách ga 5 phút đi bộ",
+      bedrooms: input.bedrooms,
+      bathrooms: input.bathrooms,
+      property_type: input.propertyType,
+      images: input.images,
+      floor_plan: input.floorPlanUrl || input.images[0] || null,
+      floor_plan_url: input.floorPlanUrl || input.images[0] || null,
+    };
+
+    const { data, error } = await supabase.from("properties").update(payload).eq("id", id).select().single();
+
+    if (error) {
+      throw new Error(`DB Update Error: ${error.message}`);
+    }
+
+    revalidatePath("/admin");
+    revalidatePath(`/properties/${id}`);
+    revalidatePath("/properties");
+    revalidatePath("/sanpham");
+    revalidatePath("/");
+
+    return { success: true, propertyId: data.id };
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Cập nhật bài thất bại";
+    console.error("Error updating property:", err);
+    return { success: false, error: errorMessage };
+  }
+}
+
+// --- Action Save Tổng Hợp (Tự động nhận diện Tạo mới hoặc Cập nhật) ---
+export async function saveProperty(input: CreatePropertyInput) {
+  if (input.id) {
+    return updatePropertyAction(input.id, input);
+  }
+  return createPropertyAction(input);
 }

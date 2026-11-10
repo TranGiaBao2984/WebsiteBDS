@@ -1,13 +1,7 @@
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-/**
- * Client Supabase chạy trên server, mang theo phiên đăng nhập của người dùng (qua cookie).
- * Khác với lib/supabase.ts (anon, dùng cho khách xem web), client này ghi dữ liệu theo
- * quyền của người đang đăng nhập nên các policy RLS sẽ được áp dụng.
- * Chỉ gọi trong request (Server Action, trang admin), không dùng bên trong 'use cache'.
- */
-export async function createSupabaseServer() {
+export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient(
@@ -18,11 +12,13 @@ export async function createSupabaseServer() {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(list) {
+        setAll(cookiesToSet) {
           try {
-            list.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
           } catch {
-            // Server Component không ghi được cookie. proxy.ts đã làm việc làm mới phiên này.
+            // Không xử lý nếu được gọi từ Server Component
           }
         },
       },

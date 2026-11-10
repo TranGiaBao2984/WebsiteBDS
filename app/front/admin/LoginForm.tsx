@@ -1,82 +1,67 @@
-'use client';
+"use client";
 
-import { useId, useState, useTransition, type FormEvent } from 'react';
-import { signIn } from '@/app/back/admin';
-
-const FIELD =
-  'w-full rounded-xl border border-[#e6dfd5] bg-[#f8f6f0] px-3.5 py-3 text-base text-[#2c2623] placeholder:text-[#b0a499] transition focus:border-[#8c6d53] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#8c6d53]/15 md:text-sm';
+import { useState } from "react";
+import { signIn } from "@/app/back/admin";
 
 export default function LoginForm() {
-  const uid = useId();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (pending) return;
-    setError(null);
+    setLoading(true);
+    setErrorMessage(null);
 
-    startTransition(async () => {
-      try {
-        // Đăng nhập thành công thì server tự chuyển sang /admin
-        const res = await signIn(email, password);
-        if (res?.error) setError(res.error);
-      } catch {
-        setError('Không kết nối được. Hãy kiểm tra mạng và thử lại.');
-      }
-    });
+    const formData = new FormData(e.currentTarget);
+    const res = await signIn(formData);
+
+    // Nếu có lỗi trả về thì mới tắt loading, còn thành công Server Action sẽ tự redirect
+    if (res?.error) {
+      setErrorMessage(res.error);
+      setLoading(false);
+    }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      aria-busy={pending}
-      className="space-y-5 rounded-3xl border border-[#e6dfd5] bg-white p-6 shadow-sm sm:p-8"
-    >
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label htmlFor={`${uid}-email`} className="mb-1.5 block text-xs font-semibold text-[#574d43]">
+        <label className="block text-xs font-semibold uppercase tracking-wider mb-1 text-[#3c352d]">
           Email
         </label>
         <input
-          id={`${uid}-email`}
           type="email"
+          name="email"
           required
-          autoComplete="username"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className={FIELD}
+          className="w-full px-4 py-2.5 bg-[#f8f6f0] border border-[#e6dfd5] rounded focus:outline-none focus:border-[#3c352d] text-sm text-[#3c352d]"
+          placeholder="...@gmail.com"
         />
       </div>
 
       <div>
-        <label htmlFor={`${uid}-password`} className="mb-1.5 block text-xs font-semibold text-[#574d43]">
+        <label className="block text-xs font-semibold uppercase tracking-wider mb-1 text-[#3c352d]">
           Mật khẩu
         </label>
         <input
-          id={`${uid}-password`}
           type="password"
+          name="password"
           required
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={FIELD}
+          className="w-full px-4 py-2.5 bg-[#f8f6f0] border border-[#e6dfd5] rounded focus:outline-none focus:border-[#3c352d] text-sm text-[#3c352d]"
+          placeholder="••••••••"
         />
       </div>
 
-      {error && (
-        <p role="alert" className="rounded-xl border border-[#e3c9bd] bg-[#fbf1ec] px-4 py-3 text-sm leading-relaxed text-[#8a3b1d]">
-          {error}
-        </p>
+      {errorMessage && (
+        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded">
+          {errorMessage}
+        </div>
       )}
 
       <button
         type="submit"
-        disabled={pending}
-        className="w-full rounded-xl bg-[#7a482b] px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-[#633a22] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#7a482b]/30 disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={loading}
+        className="w-full py-3 bg-[#633a22] text-white font-bold rounded hover:bg-[#4d2d1a] transition duration-200 disabled:opacity-50 text-sm uppercase tracking-wider"
       >
-        {pending ? 'Đang đăng nhập...' : 'Đăng nhập'}
+        {loading ? "Đang xử lý..." : "Đăng Nhập"}
       </button>
     </form>
   );

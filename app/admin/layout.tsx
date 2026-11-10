@@ -1,15 +1,8 @@
-import type { Metadata } from 'next';
-import { connection } from 'next/server';
+import { ReactNode } from 'react';
 
-export const metadata: Metadata = {
-  title: 'Quản trị • MII SHINTANI',
-  robots: { index: false, follow: false },
-};
+// Khai báo cho Next.js 16 cho phép render động (blocking route) cho toàn bộ khu vực /admin
+export const instant = false;
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  // Hàm này báo cho Next.js biết hãy bỏ qua việc tạo file tĩnh 
-  // và luôn render mới khi có request tới khu vực admin
-  await connection(); 
-  
+export default function AdminLayout({ children }: { children: ReactNode }) {
   return <div className="flex-1">{children}</div>;
 }

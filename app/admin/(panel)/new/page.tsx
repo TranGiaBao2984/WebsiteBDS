@@ -62,7 +62,7 @@ export default function AdminNewPropertyPage() {
     setLoading(false);
 
     if (res.success) {
-      alert("Đăng bài thành công! Đã lưu đầy đủ thông số BĐS Nhật Bản và tự dịch 3 ngôn ngữ.");
+      alert("Đăng bài thành công! Đã lưu đầy đủ thông số BĐS Nhật Bản.");
       router.push("/admin");
     } else {
       alert(`Đăng bài thất bại: ${res.error}`);
@@ -74,7 +74,7 @@ export default function AdminNewPropertyPage() {
       <div className="mb-8 border-b border-[#e6dfd5] pb-4">
         <h1 className="text-3xl font-serif font-bold">Đăng Bất Động Sản Nhật Bản (Đầy đủ trường)</h1>
         <p className="text-sm text-[#3c352d]/70 mt-1">
-          Nhập thông tin chi tiết tiêu chuẩn BĐS Nhật Bản. AI sẽ tự động dịch tiêu đề, địa chỉ và mô tả.
+          Nhập thông tin chi tiết tiêu chuẩn BĐS Nhật Bản.
         </p>
       </div>
 

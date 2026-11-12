@@ -1,221 +1,437 @@
-"use server";
+"use client";
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase-server";
-import { autoTranslateText } from "../../back/translate";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { saveProperty } from "@/app/back/admin";
+import type { Property } from "@/lib/types";
 
-// --- Action Đăng nhập Admin ---
-export async function signIn(prevStateOrFormData: unknown, formDataParam?: FormData) {
-  let email = "";
-  let password = "";
-
-  if (formDataParam instanceof FormData) {
-    email = (formDataParam.get("email") as string) || "";
-    password = (formDataParam.get("password") as string) || "";
-  } else if (prevStateOrFormData instanceof FormData) {
-    email = (prevStateOrFormData.get("email") as string) || "";
-    password = (prevStateOrFormData.get("password") as string) || "";
-  } else if (typeof prevStateOrFormData === "object" && prevStateOrFormData !== null) {
-    const record = prevStateOrFormData as Record<string, unknown>;
-    email = typeof record.email === "string" ? record.email : "";
-    password = typeof record.password === "string" ? record.password : "";
-  }
-
-  if (!email.trim() || !password.trim()) {
-    return { error: "Vui lòng nhập đầy đủ Email và Mật khẩu." };
-  }
-
-  const supabase = await createClient();
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email: email.trim(),
-    password: password.trim(),
-  });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  revalidatePath("/admin", "layout");
-  redirect("/admin");
+interface PropertyFormProps {
+  property?: Property;
 }
 
-// --- Action Đăng xuất Admin ---
-export async function signOut() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  revalidatePath("/admin", "layout");
-  redirect("/admin/login");
-}
+// Hàm giải mã đệ quy bóc sạch mọi tầng JSON lồng nhau để lấy ra văn bản thuần
+function getCleanText(val: unknown): string {
+  if (!val) return "";
+  let current: unknown = val;
 
-// --- Action Xoá Bài Bất Động Sản ---
-export async function deleteProperty(id: string) {
-  try {
-    const supabase = await createClient();
-    const { error } = await supabase.from("properties").delete().eq("id", id);
-
-    if (error) {
-      throw new Error(`DB Delete Error: ${error.message}`);
+  // Giải lồng tối đa 10 tầng nếu chuỗi bị JSON.stringify lặp lại nhiều lần
+  for (let i = 0; i < 10; i++) {
+    if (typeof current === "string") {
+      const trimmed = current.trim();
+      if (
+        (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+        (trimmed.startsWith("[") && trimmed.endsWith("]"))
+      ) {
+        try {
+          current = JSON.parse(trimmed);
+          continue;
+        } catch {
+          break;
+        }
+      } else {
+        break;
+      }
+    } else if (typeof current === "object" && current !== null) {
+      const record = current as Record<string, unknown>;
+      current = record.vi ?? record.en ?? record.ja ?? Object.values(record)[0] ?? "";
+    } else {
+      break;
     }
-
-    revalidatePath("/admin");
-    revalidatePath("/properties");
-    revalidatePath("/sanpham");
-    revalidatePath("/");
-
-    return { success: true };
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : "Xoá bài thất bại";
-    console.error("Error deleting property:", err);
-    return { success: false, error: errorMessage };
   }
+
+  return typeof current === "string" ? current : String(current || "");
 }
 
-// --- Interface Đầy đủ tất cả trường BĐS ---
-export interface CreatePropertyInput {
-  id?: string;
-  titleRaw: string;
-  descriptionRaw: string;
-  locationRaw: string;
-  priceYen: number;
-  priceVnd?: number;
-  areaSqm: number;
-  buildingSize?: string;
-  landSize?: string;
-  layout?: string;
-  structure?: string;
-  yearBuilt?: number;
-  parking?: string;
-  landRights?: string;
-  zoning?: string;
-  access?: string;
-  bedrooms: number;
-  bathrooms: number;
-  propertyType: string;
-  images: string[];
-  floorPlanUrl?: string;
+// Hàm bóc mảng danh sách ảnh an toàn từ Database
+function parseImages(val: unknown): string[] {
+  if (!val) return [];
+  let current: unknown = val;
+
+  for (let i = 0; i < 5; i++) {
+    if (typeof current === "string") {
+      const trimmed = current.trim();
+      if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+        try {
+          current = JSON.parse(trimmed);
+          continue;
+        } catch {
+          break;
+        }
+      } else if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+        const content = trimmed.slice(1, -1);
+        if (!content) return [];
+        return content
+          .split(",")
+          .map((s) => s.replace(/^"|"$/g, "").trim())
+          .filter(Boolean);
+      } else {
+        break;
+      }
+    } else {
+      break;
+    }
+  }
+
+  if (Array.isArray(current)) {
+    return current.map((item) => getCleanText(item)).filter(Boolean);
+  }
+
+  if (typeof current === "string" && current.trim()) {
+    return [current.trim()];
+  }
+
+  return [];
 }
 
-// --- Action Đăng Bài Bất Động Sản ---
-export async function createPropertyAction(input: CreatePropertyInput) {
-  try {
-    const supabase = await createClient();
+export default function PropertyForm({ property }: PropertyFormProps) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [images, setImages] = useState<string[]>(() => parseImages(property?.images));
+  const [uploading, setUploading] = useState(false);
 
-    // Dịch tự động các trường văn bản sang 3 ngôn ngữ (VI - EN - JA)
-    const [title, description, location] = await Promise.all([
-      autoTranslateText(input.titleRaw, "vi"),
-      autoTranslateText(input.descriptionRaw, "vi"),
-      autoTranslateText(input.locationRaw, "vi")
-    ]);
+  const isEdit = Boolean(property?.id);
 
-    const payload = {
-      title,
-      description,
-      location,
-      price: input.priceYen,
-      price_yen: input.priceYen,
-      price_vnd: input.priceVnd || Math.round(input.priceYen * 165),
-      area_sqm: input.areaSqm,
-      building_size: input.buildingSize || `${input.areaSqm} m²`,
-      land_size: input.landSize || null,
-      layout: input.layout || "2LDK",
-      structure: input.structure || "RC (Bê tông cốt thép)",
-      year_built: input.yearBuilt || new Date().getFullYear(),
-      parking: input.parking || "Có",
-      land_rights: input.landRights || "Sở hữu vĩnh viễn (Ownership)",
-      zoning: input.zoning || "Khu dân cư",
-      access: input.access || "Cách ga 5 phút đi bộ",
-      bedrooms: input.bedrooms,
-      bathrooms: input.bathrooms,
-      property_type: input.propertyType,
-      images: input.images,
-      floor_plan: input.floorPlanUrl || input.images[0] || null,
-      floor_plan_url: input.floorPlanUrl || input.images[0] || null,
-      status: "available",
-      current_status: "available",
-      created_at: new Date().toISOString()
+  // Xử lý chuyển đổi file ảnh vừa chọn thành Base64 để hiển thị ngay lập tức
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+
+    const readAsBase64 = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file);
+      });
     };
 
-    const { data, error } = await supabase.from("properties").insert([payload]).select().single();
+    try {
+      const base64List = await Promise.all(Array.from(files).map(readAsBase64));
+      setImages((prev) => [...prev, ...base64List]);
+    } catch {
+      alert("Lỗi khi đọc file ảnh!");
+    } finally {
+      setUploading(false);
+    }
+  };
 
-    if (error) {
-      throw new Error(`DB Insert Error: ${error.message}`);
+  const handleRemoveImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const oldImages = parseImages(property?.images);
+    const finalImages = images.length > 0 ? images : oldImages;
+
+    if (!isEdit && finalImages.length === 0) {
+      alert("Vui lòng tải lên ít nhất 1 hình ảnh BĐS.");
+      return;
     }
 
-    revalidatePath("/admin");
-    revalidatePath("/properties");
-    revalidatePath("/sanpham");
-    revalidatePath("/");
+    setLoading(true);
+    const formData = new FormData(e.currentTarget);
 
-    return { success: true, propertyId: data.id };
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : "Đăng bài thất bại";
-    console.error("Error creating property:", err);
-    return { success: false, error: errorMessage };
-  }
-}
-
-// --- Action Cập Nhật Bài Bất Động Sản ---
-export async function updatePropertyAction(id: string, input: CreatePropertyInput) {
-  try {
-    const supabase = await createClient();
-
-    const [title, description, location] = await Promise.all([
-      autoTranslateText(input.titleRaw, "vi"),
-      autoTranslateText(input.descriptionRaw, "vi"),
-      autoTranslateText(input.locationRaw, "vi")
-    ]);
-
-    const payload = {
-      title,
-      description,
-      location,
-      price: input.priceYen,
-      price_yen: input.priceYen,
-      price_vnd: input.priceVnd || Math.round(input.priceYen * 165),
-      area_sqm: input.areaSqm,
-      building_size: input.buildingSize || `${input.areaSqm} m²`,
-      land_size: input.landSize || null,
-      layout: input.layout || "2LDK",
-      structure: input.structure || "RC (Bê tông cốt thép)",
-      year_built: input.yearBuilt || new Date().getFullYear(),
-      parking: input.parking || "Có",
-      land_rights: input.landRights || "Sở hữu vĩnh viễn (Ownership)",
-      zoning: input.zoning || "Khu dân cư",
-      access: input.access || "Cách ga 5 phút đi bộ",
-      bedrooms: input.bedrooms,
-      bathrooms: input.bathrooms,
-      property_type: input.propertyType,
-      images: input.images,
-      floor_plan: input.floorPlanUrl || input.images[0] || null,
-      floor_plan_url: input.floorPlanUrl || input.images[0] || null,
+    const inputData = {
+      id: property?.id,
+      titleRaw: formData.get("title") as string,
+      descriptionRaw: formData.get("description") as string,
+      locationRaw: formData.get("address") as string,
+      priceYen: Number(formData.get("priceYen")),
+      areaSqm: Number(formData.get("areaSqm")),
+      buildingSize: formData.get("buildingSize") as string,
+      landSize: formData.get("landSize") as string,
+      layout: formData.get("layout") as string,
+      structure: formData.get("structure") as string,
+      yearBuilt: Number(formData.get("yearBuilt")),
+      parking: formData.get("parking") as string,
+      landRights: formData.get("landRights") as string,
+      zoning: formData.get("zoning") as string,
+      access: formData.get("access") as string,
+      bedrooms: Number(formData.get("bedrooms")),
+      bathrooms: Number(formData.get("bathrooms")),
+      propertyType: formData.get("propertyType") as string,
+      images: finalImages,
+      floorPlanUrl: finalImages[0] || property?.floor_plan || property?.floor_plan_url || ""
     };
 
-    const { data, error } = await supabase.from("properties").update(payload).eq("id", id).select().single();
+    const res = await saveProperty(inputData);
+    setLoading(false);
 
-    if (error) {
-      throw new Error(`DB Update Error: ${error.message}`);
+    if (res.success) {
+      alert(isEdit ? "Cập nhật bài thành công!" : "Đăng bài thành công!");
+      router.push("/admin");
+      router.refresh();
+    } else {
+      alert(`Thao tác thất bại: ${res.error}`);
     }
+  };
 
-    revalidatePath("/admin");
-    revalidatePath(`/properties/${id}`);
-    revalidatePath("/properties");
-    revalidatePath("/sanpham");
-    revalidatePath("/");
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 border border-[#e6dfd5] rounded-lg shadow-sm">
+      {/* 1. Thông tin cơ bản */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-serif font-bold border-b border-[#e6dfd5] pb-2 text-[#7a482b]">
+          1. Thông tin cơ bản
+        </h2>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Tên Bất động sản *</label>
+          <input
+            type="text"
+            name="title"
+            required
+            defaultValue={getCleanText(property?.title)}
+            placeholder="Căn hộ chung cư cao cấp Shinjuku 2LDK gần ga"
+            className="w-full px-4 py-2 border border-[#e6dfd5] rounded focus:outline-none focus:border-[#3c352d] text-sm"
+          />
+        </div>
 
-    return { success: true, propertyId: data.id };
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : "Cập nhật bài thất bại";
-    console.error("Error updating property:", err);
-    return { success: false, error: errorMessage };
-  }
-}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Giá bán (Yen - JPY) *</label>
+            <input
+              type="number"
+              name="priceYen"
+              required
+              defaultValue={property?.price_yen || property?.price || ""}
+              placeholder="45000000"
+              className="w-full px-4 py-2 border border-[#e6dfd5] rounded focus:outline-none focus:border-[#3c352d] text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Loại BĐS *</label>
+            <select
+              name="propertyType"
+              defaultValue={property?.property_type || "Apartment"}
+              className="w-full px-4 py-2 border border-[#e6dfd5] rounded focus:outline-none focus:border-[#3c352d] text-sm"
+            >
+              <option value="Apartment">Căn hộ (Apartment)</option>
+              <option value="House">Nhà riêng (House)</option>
+              <option value="Mansion">Mansion</option>
+              <option value="Land">Đất nền (Land)</option>
+            </select>
+          </div>
+        </div>
 
-// --- Action Save Tổng Hợp (Tự động nhận diện Tạo mới hoặc Cập nhật) ---
-export async function saveProperty(input: CreatePropertyInput) {
-  if (input.id) {
-    return updatePropertyAction(input.id, input);
-  }
-  return createPropertyAction(input);
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Địa chỉ / Vị trí *</label>
+          <input
+            type="text"
+            name="address"
+            required
+            defaultValue={getCleanText(property?.location)}
+            placeholder="Shinjuku-ku, Tokyo, Japan"
+            className="w-full px-4 py-2 border border-[#e6dfd5] rounded focus:outline-none focus:border-[#3c352d] text-sm"
+          />
+        </div>
+      </div>
+
+      {/* 2. Thông số kỹ thuật BĐS Nhật Bản */}
+      <div className="space-y-4 pt-4">
+        <h2 className="text-lg font-serif font-bold border-b border-[#e6dfd5] pb-2 text-[#7a482b]">
+          2. Thông số kỹ thuật BĐS Nhật Bản
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Diện tích sử dụng (m²) *</label>
+            <input
+              type="number"
+              step="0.1"
+              name="areaSqm"
+              required
+              defaultValue={property?.area_sqm || ""}
+              placeholder="65.5"
+              className="w-full px-4 py-2 border border-[#e6dfd5] rounded text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Diện tích sàn (Building Size)</label>
+            <input
+              type="text"
+              name="buildingSize"
+              defaultValue={property?.building_size || ""}
+              placeholder="65.5 m² / 19.8 tsubo"
+              className="w-full px-4 py-2 border border-[#e6dfd5] rounded text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Diện tích đất (Land Size)</label>
+            <input
+              type="text"
+              name="landSize"
+              defaultValue={property?.land_size || ""}
+              placeholder="80.0 m² / 24.2 tsubo"
+              className="w-full px-4 py-2 border border-[#e6dfd5] rounded text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Bố cục phòng (Layout)</label>
+            <input
+              type="text"
+              name="layout"
+              defaultValue={property?.layout || "2LDK"}
+              placeholder="2LDK / 3DK / 1K"
+              className="w-full px-4 py-2 border border-[#e6dfd5] rounded text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Kết cấu (Structure)</label>
+            <input
+              type="text"
+              name="structure"
+              defaultValue={property?.structure || "RC (Bê tông cốt thép)"}
+              placeholder="RC (Bê tông cốt thép) / Gỗ"
+              className="w-full px-4 py-2 border border-[#e6dfd5] rounded text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Năm xây dựng (Year Built)</label>
+            <input
+              type="number"
+              name="yearBuilt"
+              defaultValue={property?.year_built || new Date().getFullYear()}
+              placeholder="2020"
+              className="w-full px-4 py-2 border border-[#e6dfd5] rounded text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Quyền sở hữu (Land Rights)</label>
+            <input
+              type="text"
+              name="landRights"
+              defaultValue={property?.land_rights || "Sở hữu vĩnh viễn (Ownership)"}
+              placeholder="Sở hữu vĩnh viễn (Ownership)"
+              className="w-full px-4 py-2 border border-[#e6dfd5] rounded text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Vị trí ga / Giao thông (Access)</label>
+            <input
+              type="text"
+              name="access"
+              defaultValue={property?.access || ""}
+              placeholder="Đi bộ 5 phút ra ga Shinjuku"
+              className="w-full px-4 py-2 border border-[#e6dfd5] rounded text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Chỗ đậu xe (Parking)</label>
+            <input
+              type="text"
+              name="parking"
+              defaultValue={property?.parking || "Có"}
+              placeholder="Có (1 chỗ) / Không"
+              className="w-full px-4 py-2 border border-[#e6dfd5] rounded text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Quy hoạch đất (Zoning)</label>
+            <input
+              type="text"
+              name="zoning"
+              defaultValue={property?.zoning || "Khu dân cư"}
+              placeholder="Khu dân cư thương mại"
+              className="w-full px-4 py-2 border border-[#e6dfd5] rounded text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Số phòng ngủ</label>
+            <input
+              type="number"
+              name="bedrooms"
+              defaultValue={property?.bedrooms ?? 2}
+              className="w-full px-4 py-2 border border-[#e6dfd5] rounded text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Số phòng tắm</label>
+            <input
+              type="number"
+              name="bathrooms"
+              defaultValue={property?.bathrooms ?? 1}
+              className="w-full px-4 py-2 border border-[#e6dfd5] rounded text-sm"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Mô tả & Hình ảnh */}
+      <div className="space-y-4 pt-4">
+        <h2 className="text-lg font-serif font-bold border-b border-[#e6dfd5] pb-2 text-[#7a482b]">
+          3. Mô tả & Hình ảnh
+        </h2>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Mô tả chi tiết *</label>
+          <textarea
+            name="description"
+            rows={5}
+            required
+            defaultValue={getCleanText(property?.description)}
+            placeholder="Mô tả tiện ích xung quanh, tình trạng pháp lý, ban công..."
+            className="w-full px-4 py-2 border border-[#e6dfd5] rounded focus:outline-none focus:border-[#3c352d] text-sm"
+          ></textarea>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider mb-1">Hình ảnh BĐS</label>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="block w-full text-sm text-[#3c352d] file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-[#3c352d] file:text-[#f8f6f0] hover:file:opacity-90 cursor-pointer"
+          />
+          {uploading && <p className="text-xs text-amber-600 mt-1">Đang xử lý hình ảnh...</p>}
+
+          {images.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-3">
+              {images.map((url, idx) => (
+                <div key={idx} className="relative group w-24 h-24 rounded border border-[#e6dfd5] overflow-hidden bg-stone-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt={`Property image ${idx}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback hiển thị ảnh mỏng nhẹ nếu URL hỏng
+                      (e.target as HTMLImageElement).src =
+                        "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23eee'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23aaa' font-size='12'>Ảnh lỗi</text></svg>";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(idx)}
+                    className="absolute top-1 right-1 bg-red-600 text-white text-xs px-1.5 py-0.5 rounded shadow hover:bg-red-700"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading || uploading}
+        className="w-full py-3 bg-[#7a482b] text-white font-bold rounded hover:bg-[#633a22] transition duration-200 disabled:opacity-50 text-sm tracking-wider uppercase"
+      >
+        {loading ? "Đang lưu..." : isEdit ? "Cập Nhật BĐS" : "Lưu & Đăng BĐS Nhật Bản"}
+      </button>
+    </form>
+  );
 }

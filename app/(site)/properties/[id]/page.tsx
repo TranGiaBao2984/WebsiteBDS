@@ -1,6 +1,6 @@
-import { Suspense } from 'react';
+import { Suspense, type ComponentProps } from 'react';
 import { notFound } from 'next/navigation';
-import { getPropertyById, getSimilarProperties } from '@/app/back/properties';
+import { getPropertyById } from '@/app/back/properties';
 import ChiTietSection from '@/app/front/chitiet';
 
 export default function PropertyDetailPage({
@@ -19,14 +19,13 @@ export default function PropertyDetailPage({
 
 async function PropertyDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [property, similarProperties] = await Promise.all([
-    getPropertyById(id),
-    getSimilarProperties(id),
-  ]);
+  const property = await getPropertyById(id);
 
   if (!property) notFound();
 
-  return <ChiTietSection property={property} similarProperties={similarProperties} />;
+  type ChiTietProps = ComponentProps<typeof ChiTietSection>;
+
+  return <ChiTietSection property={property as unknown as ChiTietProps['property']} />;
 }
 
 function DetailSkeleton() {

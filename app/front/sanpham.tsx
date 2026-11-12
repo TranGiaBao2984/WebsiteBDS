@@ -8,8 +8,6 @@ import PropertyCard from './PropertyCard';
 
 type FilterKey = 'location' | 'layout' | 'price';
 
-// Khoảng giá tính bằng yên: min được tính, max không tính (p >= min && p < max).
-// Nhãn chỉ dùng ký hiệu nên dùng chung cho cả 3 ngôn ngữ. Muốn đổi mốc giá thì sửa ở đây.
 const PRICE_RANGES = [
   { id: 'lt3', label: '< ¥3M', min: 0, max: 3_000_000 },
   { id: '3-5', label: '¥3–5M', min: 3_000_000, max: 5_000_000 },
@@ -20,14 +18,29 @@ const PRICE_RANGES = [
 
 const LOCATIONS = ['ALL', 'Tokyo', 'Chiba', 'Kyoto', 'Osaka', 'Kanagawa', 'Nagano', 'Fukuoka', 'Hokkaido'];
 
+// Hàm chuyển đổi an toàn mọi kiểu dữ liệu (string, object, function) về chuỗi thuần
+function getString(val: unknown): string {
+  if (!val) return '';
+  if (typeof val === 'string') return val;
+  if (typeof val === 'function') return (val as () => string)();
+  if (typeof val === 'object' && val !== null) {
+    const record = val as Record<string, unknown>;
+    return getString(record.vi || record.en || record.ja || '');
+  }
+  return String(val);
+}
+
 function PropertyCatalogContent({ properties }: { properties: Property[] }) {
   const { t } = useLanguage();
+  const catalogObj = (t && typeof t === 'object' && 'catalog' in t)
+    ? (t as Record<string, Record<string, string>>).catalog
+    : undefined;
+
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // URL là nguồn sự thật duy nhất: link chia sẻ được, nút Back hoạt động, không cần đồng bộ state bằng effect.
-  const read = (key: FilterKey) => {
+  const read = (key: FilterKey): string => {
     const v = searchParams.get(key);
     return !v || v.toUpperCase() === 'ALL' ? 'ALL' : v;
   };
@@ -46,32 +59,28 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
   const clearFilters = () => router.replace(pathname, { scroll: false });
 
   const filterTabs = [
-    { id: 'ALL', label: t.catalog.allLayouts },
+    { id: 'ALL', label: getString(catalogObj?.allLayouts) || 'Tất cả' },
     { id: '1K-1LDK', label: '1K / 1LDK' },
     { id: '2LDK-3LDK', label: '2LDK / 3LDK' },
-    { id: 'Kominka', label: t.catalog.kominka },
+    { id: 'Kominka', label: getString(catalogObj?.kominka) || 'Kominka' },
   ];
 
-  // Giá trị price lạ trên URL (ví dụ ?price=abc) thì bỏ qua, không lọc
   const priceRange = PRICE_RANGES.find((r) => r.id === selectedPrice);
 
-  // Lọc kết hợp Khu vực, Khoảng giá và Mặt bằng
   const filteredProperties = properties.filter((item) => {
-    // 1. Khu vực
     if (selectedLocation !== 'ALL') {
-      const itemLoc = (item.location || '').toLowerCase();
-      if (!itemLoc.includes(selectedLocation.toLowerCase())) return false;
+      const itemLoc = getString(item.location).toLowerCase();
+      const targetLoc = selectedLocation.toLowerCase();
+      if (!itemLoc.includes(targetLoc)) return false;
     }
 
-    // 2. Khoảng giá
     if (priceRange) {
       const price = Number(item.price);
       if (!Number.isFinite(price) || price < priceRange.min || price >= priceRange.max) return false;
     }
 
-    // 3. Mặt bằng
     if (selectedLayout === 'ALL') return true;
-    const layout = (item.layout || '').toUpperCase();
+    const layout = getString(item.layout).toUpperCase();
     if (selectedLayout === '1K-1LDK') {
       return layout.includes('1K') || layout.includes('1LDK');
     }
@@ -79,7 +88,8 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
       return layout.includes('2LDK') || layout.includes('3LDK') || layout.includes('4LDK');
     }
     if (selectedLayout === 'Kominka') {
-      return layout.includes('KOMINKA') || (item.structure || '').toUpperCase().includes('TRADITIONAL');
+      const structure = getString(item.structure).toUpperCase();
+      return layout.includes('KOMINKA') || structure.includes('TRADITIONAL');
     }
 
     return true;
@@ -89,19 +99,16 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
 
   return (
     <section className="space-y-6 sm:space-y-8 w-full">
-      {/* Catalog Title */}
       <div className="text-center sm:text-left border-b border-[#e6dfd5] pb-4 sm:pb-6">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-bold text-[#2c2623] tracking-wide">
-          {t.catalog.title}
+          {getString(catalogObj?.title) || 'Danh sách bất động sản'}
         </h1>
       </div>
 
-      {/* FILTER BARS */}
       <div className="space-y-4 border-b border-[#e6dfd5] pb-6">
-        {/* Khu vực */}
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-[#8c827a] block mb-2">
-            {t.catalog.locationLabel}
+            {getString(catalogObj?.locationLabel) || 'Khu vực'}
           </span>
           <div className="flex flex-wrap items-center gap-2">
             {LOCATIONS.map((loc) => {
@@ -118,20 +125,19 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
                       : 'bg-white border-[#e6dfd5] text-[#574d43] hover:border-[#8c6d53]'
                   }`}
                 >
-                  {loc === 'ALL' ? t.catalog.allLocations : loc}
+                  {loc === 'ALL' ? getString(catalogObj?.allLocations) || 'Tất cả' : loc}
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Khoảng giá */}
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-[#8c827a] block mb-2">
-            {t.catalog.priceLabel}
+            {getString(catalogObj?.priceLabel) || 'Khoảng giá'}
           </span>
           <div className="flex flex-wrap items-center gap-2">
-            {[{ id: 'ALL', label: t.catalog.allPrices }, ...PRICE_RANGES].map((range) => {
+            {[{ id: 'ALL', label: getString(catalogObj?.allPrices) || 'Tất cả' }, ...PRICE_RANGES].map((range) => {
               const isActive = selectedPrice === range.id;
               return (
                 <button
@@ -152,10 +158,9 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
           </div>
         </div>
 
-        {/* Mặt bằng */}
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-[#8c827a] block mb-2">
-            {t.catalog.layoutLabel}
+            {getString(catalogObj?.layoutLabel) || 'Mặt bằng'}
           </span>
           <div className="flex flex-wrap items-center gap-2">
             {filterTabs.map((tab) => {
@@ -180,30 +185,32 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
         </div>
       </div>
 
-      {/* Đếm số lượng & nút xoá lọc */}
       <div className="flex items-center justify-between text-xs text-[#8c827a]">
         <div>
-          {t.catalog.showing} <span className="font-bold text-[#2c2623]">{filteredProperties.length}</span> {t.catalog.properties}
+          {getString(catalogObj?.showing) || 'Hiển thị'}{' '}
+          <span className="font-bold text-[#2c2623]">{filteredProperties.length}</span>{' '}
+          {getString(catalogObj?.properties) || 'bất động sản'}
           {selectedLocation !== 'ALL' && (
             <span className="ml-1">
-              {t.catalog.inLocation} <strong className="text-[#8c6d53]">{selectedLocation}</strong>
+              {getString(catalogObj?.inLocation) || 'tại'} <strong className="text-[#8c827a]">{selectedLocation}</strong>
             </span>
           )}
         </div>
         {hasFilters && (
           <button type="button" onClick={clearFilters} className="text-[#8c6d53] hover:underline font-medium">
-            {t.catalog.clearFilter}
+            {getString(catalogObj?.clearFilter) || 'Xóa bộ lọc'}
           </button>
         )}
       </div>
 
-      {/* PROPERTY GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 w-full">
         {filteredProperties.length > 0 ? (
           filteredProperties.map((item) => <PropertyCard key={item.id} property={item} />)
         ) : (
           <div className="col-span-full py-12 text-center bg-white rounded-2xl border border-[#e6dfd5] p-8 w-full">
-            <p className="text-stone-600 font-serif font-medium text-base">{t.catalog.noResults}</p>
+            <p className="text-stone-600 font-serif font-medium text-base">
+              {getString(catalogObj?.noResults) || 'Không tìm thấy kết quả phù hợp'}
+            </p>
           </div>
         )}
       </div>
@@ -213,9 +220,12 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
 
 export default function SanPhamSection({ properties }: { properties: Property[] }) {
   const { t } = useLanguage();
+  const catalogObj = (t && typeof t === 'object' && 'catalog' in t)
+    ? (t as Record<string, Record<string, string>>).catalog
+    : undefined;
 
   return (
-    <Suspense fallback={<div className="text-center py-8 text-xs text-[#8c827a]">{t.catalog.loading}</div>}>
+    <Suspense fallback={<div className="text-center py-8 text-xs text-[#8c827a]">{getString(catalogObj?.loading) || 'Đang tải...'}</div>}>
       <PropertyCatalogContent properties={properties} />
     </Suspense>
   );

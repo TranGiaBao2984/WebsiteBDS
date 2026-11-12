@@ -3,7 +3,38 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
-import { autoTranslateText } from "./translate";
+
+// Hàm làm sạch chuỗi trước khi lưu vào Database, tránh lồng JSON nhiều lần
+function cleanText(val: unknown): string {
+  if (!val) return "";
+  let current: unknown = val;
+
+  for (let i = 0; i < 10; i++) {
+    if (typeof current === "string") {
+      const trimmed = current.trim();
+      if (
+        (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+        (trimmed.startsWith("[") && trimmed.endsWith("]"))
+      ) {
+        try {
+          current = JSON.parse(trimmed);
+          continue;
+        } catch {
+          break;
+        }
+      } else {
+        break;
+      }
+    } else if (typeof current === "object" && current !== null) {
+      const record = current as Record<string, unknown>;
+      current = record.vi ?? record.en ?? record.ja ?? Object.values(record)[0] ?? "";
+    } else {
+      break;
+    }
+  }
+
+  return typeof current === "string" ? current : String(current || "");
+}
 
 // --- Action Đăng nhập Admin ---
 export async function signIn(prevStateOrFormData: unknown, formDataParam?: FormData) {
@@ -102,12 +133,13 @@ export async function createPropertyAction(input: CreatePropertyInput) {
   try {
     const supabase = await createClient();
 
-    // Dịch tự động các trường văn bản sang 3 ngôn ngữ (VI - EN - JA)
-    const [title, description, location] = await Promise.all([
-      autoTranslateText(input.titleRaw, "vi"),
-      autoTranslateText(input.descriptionRaw, "vi"),
-      autoTranslateText(input.locationRaw, "vi")
-    ]);
+    const cleanTitleStr = cleanText(input.titleRaw);
+    const cleanDescStr = cleanText(input.descriptionRaw);
+    const cleanLocStr = cleanText(input.locationRaw);
+
+    const title = { vi: cleanTitleStr, en: cleanTitleStr, ja: cleanTitleStr };
+    const description = { vi: cleanDescStr, en: cleanDescStr, ja: cleanDescStr };
+    const location = { vi: cleanLocStr, en: cleanLocStr, ja: cleanLocStr };
 
     const payload = {
       title,
@@ -161,11 +193,13 @@ export async function updatePropertyAction(id: string, input: CreatePropertyInpu
   try {
     const supabase = await createClient();
 
-    const [title, description, location] = await Promise.all([
-      autoTranslateText(input.titleRaw, "vi"),
-      autoTranslateText(input.descriptionRaw, "vi"),
-      autoTranslateText(input.locationRaw, "vi")
-    ]);
+    const cleanTitleStr = cleanText(input.titleRaw);
+    const cleanDescStr = cleanText(input.descriptionRaw);
+    const cleanLocStr = cleanText(input.locationRaw);
+
+    const title = { vi: cleanTitleStr, en: cleanTitleStr, ja: cleanTitleStr };
+    const description = { vi: cleanDescStr, en: cleanDescStr, ja: cleanDescStr };
+    const location = { vi: cleanLocStr, en: cleanLocStr, ja: cleanLocStr };
 
     const payload = {
       title,
@@ -212,7 +246,7 @@ export async function updatePropertyAction(id: string, input: CreatePropertyInpu
   }
 }
 
-// --- Action Save Tổng Hợp (Tự động nhận diện Tạo mới hoặc Cập nhật) ---
+// --- Action Save Tổng Hợp ---
 export async function saveProperty(input: CreatePropertyInput) {
   if (input.id) {
     return updatePropertyAction(input.id, input);

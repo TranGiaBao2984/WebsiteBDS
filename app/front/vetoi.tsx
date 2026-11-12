@@ -79,7 +79,7 @@ export default function VeToiSection() {
 
       {/* Form Đăng ký tư vấn */}
       <div className="pt-6 border-t border-[#e6dfd5]">
-        <InquiryForm />
+        <InquiryForm propertyId="" propertyTitle="" />
       </div>
     </section>
   );

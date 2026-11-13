@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLanguage } from '@/app/context/LanguageContext';
 import type { Property } from '@/lib/types';
 import PropertyCard from './PropertyCard';
@@ -10,6 +10,12 @@ import InquiryForm from './InquiryForm';
 interface ChiTietSectionProps {
   property: Property;
   similarProperties?: Property[];
+}
+
+interface LightboxState {
+  images: string[];
+  index: number;
+  title: string;
 }
 
 function unwrapJson(val: unknown): unknown {
@@ -90,7 +96,6 @@ function getFormattedPrice(property: Property, currentLang: 'vi' | 'en' | 'ja'):
     if (savedJa > 0) priceJa = savedJa;
   }
 
-  // Tỷ giá quy đổi dự phòng nếu bài đăng chưa nhập đủ cả 3 loại tiền trong Admin
   const JPY_TO_VND = 170;
   const JPY_TO_USD = 1 / 150;
   const USD_TO_VND = 25500;
@@ -279,6 +284,9 @@ const DETAIL_LABELS = {
     similarTitle: 'Bất động sản tương tự',
     prevImg: 'Ảnh trước',
     nextImg: 'Ảnh tiếp theo',
+    zoomHint: 'Bấm để phóng to',
+    closeModal: 'Đóng chế độ xem lớn',
+    consultCta: 'Đăng ký tư vấn',
   },
   en: {
     defaultType: 'APARTMENT',
@@ -305,6 +313,9 @@ const DETAIL_LABELS = {
     similarTitle: 'Similar Properties',
     prevImg: 'Previous image',
     nextImg: 'Next image',
+    zoomHint: 'Click to enlarge',
+    closeModal: 'Close fullscreen view',
+    consultCta: 'Inquire Now',
   },
   ja: {
     defaultType: 'マンション',
@@ -331,6 +342,9 @@ const DETAIL_LABELS = {
     similarTitle: '類似のおすすめ物件',
     prevImg: '前の画像',
     nextImg: '次の画像',
+    zoomHint: 'クリックして拡大',
+    closeModal: '拡大表示を閉じる',
+    consultCta: 'お問い合わせ',
   },
 };
 
@@ -338,6 +352,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
   const { currentLang } = useLanguage();
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeFloorPlanIndex, setActiveFloorPlanIndex] = useState(0);
+  const [lightbox, setLightbox] = useState<LightboxState | null>(null);
   const labels = DETAIL_LABELS[currentLang] || DETAIL_LABELS.en;
 
   const title = getCleanText(property.title, currentLang) || 'Property';
@@ -359,9 +374,40 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
   const images = parseImages(property.images);
   const floorPlanImages = parseFloorPlanImages(property);
 
-  const fallbackImage = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80';
+  const fallbackImage =
+    'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80';
   const mainImage = images[activeIndex] || images[0] || fallbackImage;
   const mainFloorPlanImage = floorPlanImages[activeFloorPlanIndex] || floorPlanImages[0] || '';
+
+  // Điều khiển Lightbox bằng bàn phím (Esc, mũi tên trái/phải)
+  useEffect(() => {
+    if (!lightbox) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLightbox(null);
+      } else if (e.key === 'ArrowLeft' && lightbox.images.length > 1) {
+        setLightbox((prev) =>
+          prev
+            ? {
+                ...prev,
+                index: prev.index === 0 ? prev.images.length - 1 : prev.index - 1,
+              }
+            : null
+        );
+      } else if (e.key === 'ArrowRight' && lightbox.images.length > 1) {
+        setLightbox((prev) =>
+          prev
+            ? {
+                ...prev,
+                index: prev.index === prev.images.length - 1 ? 0 : prev.index + 1,
+              }
+            : null
+        );
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightbox]);
 
   const handlePrevImage = () => {
     setActiveIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
@@ -379,19 +425,25 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
     setActiveFloorPlanIndex((prev) => (prev === floorPlanImages.length - 1 ? 0 : prev + 1));
   };
 
+  const scrollToContact = () => {
+    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 pb-20 lg:pb-0">
       {/* Header thông tin chính */}
       <div className="space-y-4 border-b border-[#e6dfd5] pb-6">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#8c6d53]">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#7a482b]">
           <span>{propertyType}</span>
           <span>•</span>
-          <span>{property.bedrooms || 1} {labels.bedrooms}</span>
+          <span>
+            {property.bedrooms || 1} {labels.bedrooms}
+          </span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#2c2623]">{title}</h1>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <p className="text-sm text-[#786e65]">📍 {location}</p>
-          <div className="text-right">
+          <p className="text-sm text-[#574d43]">📍 {location}</p>
+          <div className="sm:text-right">
             <div className="text-2xl sm:text-3xl font-serif font-bold text-[#7a482b]">
               {formattedPrice}
             </div>
@@ -403,16 +455,33 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Cột trái: Ảnh & Chi tiết */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Khung ảnh lớn hiển thị full ảnh kèm nút chuyển trái/phải */}
+          {/* Khung ảnh lớn hiển thị full ảnh kèm nút chuyển trái/phải và bấm phóng to */}
           <div className="relative aspect-16/10 rounded-2xl bg-[#f4efe8] overflow-hidden border border-[#e6dfd5] flex items-center justify-center group">
-            <img
-              src={mainImage}
-              alt={title}
-              className="w-full h-full object-contain transition-all duration-300 select-none"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = fallbackImage;
-              }}
-            />
+            <button
+              type="button"
+              onClick={() =>
+                setLightbox({
+                  images: images.length > 0 ? images : [fallbackImage],
+                  index: activeIndex,
+                  title,
+                })
+              }
+              aria-label={`${labels.zoomHint} - ${title}`}
+              className="w-full h-full flex items-center justify-center cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-[#7a482b]"
+            >
+              <img
+                src={mainImage}
+                alt={title}
+                className="w-full h-full object-contain transition-all duration-300 select-none"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = fallbackImage;
+                }}
+              />
+            </button>
+
+            <span className="pointer-events-none absolute top-3 right-3 bg-black/55 text-white text-[11px] font-medium px-2.5 py-1 rounded-lg backdrop-blur-xs opacity-90 group-hover:opacity-100 transition">
+              🔍 {labels.zoomHint}
+            </span>
 
             {images.length > 1 && (
               <>
@@ -420,7 +489,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                   type="button"
                   onClick={handlePrevImage}
                   aria-label={labels.prevImg}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/45 hover:bg-black/75 text-white flex items-center justify-center transition duration-200 shadow-md cursor-pointer backdrop-blur-xs"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/55 hover:bg-black/80 text-white flex items-center justify-center transition duration-200 shadow-md cursor-pointer backdrop-blur-xs focus:outline-none focus:ring-2 focus:ring-white"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -438,7 +507,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                   type="button"
                   onClick={handleNextImage}
                   aria-label={labels.nextImg}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/45 hover:bg-black/75 text-white flex items-center justify-center transition duration-200 shadow-md cursor-pointer backdrop-blur-xs"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/55 hover:bg-black/80 text-white flex items-center justify-center transition duration-200 shadow-md cursor-pointer backdrop-blur-xs focus:outline-none focus:ring-2 focus:ring-white"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -452,7 +521,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                   </svg>
                 </button>
 
-                <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full">
+                <div className="absolute bottom-3 right-3 bg-black/65 text-white text-xs px-2.5 py-1 rounded-full">
                   {activeIndex + 1} / {images.length}
                 </div>
               </>
@@ -470,10 +539,11 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                     type="button"
                     onClick={() => setActiveIndex(idx)}
                     aria-label={`Xem ảnh ${idx + 1}`}
-                    className={`aspect-4/3 rounded-lg overflow-hidden border-2 bg-[#f4efe8] flex items-center justify-center transition-all cursor-pointer ${
+                    aria-pressed={isSelected}
+                    className={`aspect-4/3 rounded-xl overflow-hidden border-2 bg-[#f4efe8] flex items-center justify-center transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7a482b] ${
                       isSelected
                         ? 'border-[#7a482b] ring-2 ring-[#7a482b]/30 opacity-100'
-                        : 'border-[#e6dfd5] opacity-75 hover:opacity-100 hover:border-[#8c6d53]'
+                        : 'border-[#e6dfd5] opacity-80 hover:opacity-100 hover:border-[#8c6d53]'
                     }`}
                   >
                     <img
@@ -490,82 +560,112 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             </div>
           )}
 
-          {/* Thông số kỹ thuật đầy đủ 12 trường */}
+          {/* Thông số kỹ thuật đầy đủ 12 trường (chống vỡ hàng trên mobile) */}
           <div className="bg-white p-6 rounded-2xl border border-[#e6dfd5] space-y-4">
             <h2 className="font-serif font-bold text-lg text-[#2c2623] border-b border-[#f0eae1] pb-3">
               {labels.specsTitle}
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-5 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 text-xs sm:text-sm">
               <div>
-                <span className="text-[#8c827a] block mb-0.5">{labels.area}</span>
+                <span className="text-[#574d43] block mb-0.5">{labels.area}</span>
                 <span className="font-bold text-[#2c2623]">
                   {property.area_sqm ? `${property.area_sqm} m²` : '--'}
                 </span>
               </div>
               <div>
-                <span className="text-[#8c827a] block mb-0.5">{labels.buildingSize}</span>
+                <span className="text-[#574d43] block mb-0.5">{labels.buildingSize}</span>
                 <span className="font-bold text-[#2c2623]">{property.building_size || '--'}</span>
               </div>
               <div>
-                <span className="text-[#8c827a] block mb-0.5">{labels.landSize}</span>
+                <span className="text-[#574d43] block mb-0.5">{labels.landSize}</span>
                 <span className="font-bold text-[#2c2623]">{property.land_size || '--'}</span>
               </div>
               <div>
-                <span className="text-[#8c827a] block mb-0.5">{labels.layout}</span>
+                <span className="text-[#574d43] block mb-0.5">{labels.layout}</span>
                 <span className="font-bold text-[#2c2623]">{property.layout || '--'}</span>
               </div>
               <div>
-                <span className="text-[#8c827a] block mb-0.5">{labels.structure}</span>
+                <span className="text-[#574d43] block mb-0.5">{labels.structure}</span>
                 <span className="font-bold text-[#2c2623]">{property.structure || '--'}</span>
               </div>
               <div>
-                <span className="text-[#8c827a] block mb-0.5">{labels.yearBuilt}</span>
+                <span className="text-[#574d43] block mb-0.5">{labels.yearBuilt}</span>
                 <span className="font-bold text-[#2c2623]">{property.year_built || '--'}</span>
               </div>
               <div>
-                <span className="text-[#8c827a] block mb-0.5">{labels.landRights}</span>
-                <span className="font-bold text-[#2c2623]">{property.land_rights || '--'}</span>
-              </div>
-              <div>
-                <span className="text-[#8c827a] block mb-0.5">{labels.access}</span>
-                <span className="font-bold text-[#2c2623]">{property.access || '--'}</span>
-              </div>
-              <div>
-                <span className="text-[#8c827a] block mb-0.5">{labels.parking}</span>
+                <span className="text-[#574d43] block mb-0.5">{labels.parking}</span>
                 <span className="font-bold text-[#2c2623]">{property.parking || '--'}</span>
               </div>
               <div>
-                <span className="text-[#8c827a] block mb-0.5">{labels.zoning}</span>
-                <span className="font-bold text-[#2c2623]">{property.zoning || '--'}</span>
-              </div>
-              <div>
-                <span className="text-[#8c827a] block mb-0.5">{labels.bedroomsCount}</span>
+                <span className="text-[#574d43] block mb-0.5">{labels.bedroomsCount}</span>
                 <span className="font-bold text-[#2c2623]">{property.bedrooms ?? '--'}</span>
               </div>
               <div>
-                <span className="text-[#8c827a] block mb-0.5">{labels.bathroomsCount}</span>
+                <span className="text-[#574d43] block mb-0.5">{labels.bathroomsCount}</span>
                 <span className="font-bold text-[#2c2623]">{property.bathrooms ?? '--'}</span>
+              </div>
+              <div className="sm:col-span-2 lg:col-span-3 pt-2 border-t border-[#f5f0e8]">
+                <span className="text-[#574d43] block mb-0.5">{labels.landRights}</span>
+                <span className="font-bold text-[#2c2623]">{property.land_rights || '--'}</span>
+              </div>
+              <div className="sm:col-span-2 lg:col-span-3">
+                <span className="text-[#574d43] block mb-0.5">{labels.access}</span>
+                <span className="font-bold text-[#2c2623]">{property.access || '--'}</span>
+              </div>
+              <div className="sm:col-span-2 lg:col-span-3">
+                <span className="text-[#574d43] block mb-0.5">{labels.zoning}</span>
+                <span className="font-bold text-[#2c2623]">{property.zoning || '--'}</span>
               </div>
             </div>
           </div>
 
-          {/* Khung Sơ đồ nhà ở (nằm giữa Thông số bất động sản và Mô tả chi tiết) */}
+          {/* Khung Sơ đồ nhà ở (Hỗ trợ bấm phóng to toàn màn hình) */}
           <div className="bg-white p-6 rounded-2xl border border-[#e6dfd5] space-y-4">
-            <h2 className="font-serif font-bold text-lg text-[#2c2623] border-b border-[#f0eae1] pb-3">
-              {labels.floorPlanTitle}
-            </h2>
+            <div className="flex items-center justify-between gap-2 border-b border-[#f0eae1] pb-3">
+              <h2 className="font-serif font-bold text-lg text-[#2c2623]">
+                {labels.floorPlanTitle}
+              </h2>
+              {floorPlanImages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLightbox({
+                      images: floorPlanImages,
+                      index: activeFloorPlanIndex,
+                      title: `${labels.floorPlanTitle} - ${title}`,
+                    })
+                  }
+                  className="text-xs font-semibold text-[#7a482b] hover:underline cursor-pointer"
+                >
+                  🔍 {labels.zoomHint}
+                </button>
+              )}
+            </div>
 
             {floorPlanImages.length > 0 ? (
               <div className="space-y-4">
-                <div className="relative aspect-16/10 rounded-xl bg-[#f4efe8] overflow-hidden border border-[#e6dfd5] flex items-center justify-center">
-                  <img
-                    src={mainFloorPlanImage}
-                    alt={`${labels.floorPlanTitle} - ${title}`}
-                    className="w-full h-full object-contain transition-all duration-300 select-none"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = fallbackImage;
-                    }}
-                  />
+                <div className="relative aspect-16/10 rounded-xl bg-[#f4efe8] overflow-hidden border border-[#e6dfd5] flex items-center justify-center group">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLightbox({
+                        images: floorPlanImages,
+                        index: activeFloorPlanIndex,
+                        title: `${labels.floorPlanTitle} - ${title}`,
+                      })
+                    }
+                    aria-label={`${labels.zoomHint} - ${labels.floorPlanTitle}`}
+                    className="w-full h-full flex items-center justify-center cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-[#7a482b]"
+                  >
+                    <img
+                      src={mainFloorPlanImage}
+                      alt={`${labels.floorPlanTitle} - ${title}`}
+                      className="w-full h-full object-contain transition-all duration-300 select-none"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = fallbackImage;
+                      }}
+                    />
+                  </button>
 
                   {floorPlanImages.length > 1 && (
                     <>
@@ -573,7 +673,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                         type="button"
                         onClick={handlePrevFloorPlan}
                         aria-label={labels.prevImg}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/45 hover:bg-black/75 text-white flex items-center justify-center transition duration-200 shadow-md cursor-pointer backdrop-blur-xs"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/55 hover:bg-black/80 text-white flex items-center justify-center transition duration-200 shadow-md cursor-pointer backdrop-blur-xs focus:outline-none focus:ring-2 focus:ring-white"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -591,7 +691,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                         type="button"
                         onClick={handleNextFloorPlan}
                         aria-label={labels.nextImg}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/45 hover:bg-black/75 text-white flex items-center justify-center transition duration-200 shadow-md cursor-pointer backdrop-blur-xs"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/55 hover:bg-black/80 text-white flex items-center justify-center transition duration-200 shadow-md cursor-pointer backdrop-blur-xs focus:outline-none focus:ring-2 focus:ring-white"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -605,7 +705,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                         </svg>
                       </button>
 
-                      <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full">
+                      <div className="absolute bottom-3 right-3 bg-black/65 text-white text-xs px-2.5 py-1 rounded-full">
                         {activeFloorPlanIndex + 1} / {floorPlanImages.length}
                       </div>
                     </>
@@ -622,10 +722,11 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                           type="button"
                           onClick={() => setActiveFloorPlanIndex(idx)}
                           aria-label={`${labels.floorPlanTitle} ${idx + 1}`}
-                          className={`aspect-4/3 rounded-lg overflow-hidden border-2 bg-[#f4efe8] flex items-center justify-center transition-all cursor-pointer ${
+                          aria-pressed={isSelected}
+                          className={`aspect-4/3 rounded-xl overflow-hidden border-2 bg-[#f4efe8] flex items-center justify-center transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7a482b] ${
                             isSelected
                               ? 'border-[#7a482b] ring-2 ring-[#7a482b]/30 opacity-100'
-                              : 'border-[#e6dfd5] opacity-75 hover:opacity-100 hover:border-[#8c6d53]'
+                              : 'border-[#e6dfd5] opacity-80 hover:opacity-100 hover:border-[#8c6d53]'
                           }`}
                         >
                           <img
@@ -643,7 +744,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                 )}
               </div>
             ) : (
-              <div className="py-8 text-center text-xs text-[#8c827a] bg-[#faf8f5] rounded-xl border border-dashed border-[#e6dfd5]">
+              <div className="py-8 text-center text-xs sm:text-sm text-[#574d43] bg-[#faf8f5] rounded-xl border border-dashed border-[#e6dfd5]">
                 {labels.noFloorPlan}
               </div>
             )}
@@ -654,10 +755,12 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             <h2 className="font-serif font-bold text-lg text-[#2c2623] border-b border-[#f0eae1] pb-3">
               {labels.descTitle}
             </h2>
-            <p className="text-sm text-[#574d43] leading-relaxed whitespace-pre-line">{description}</p>
+            <p className="text-[15px] sm:text-base text-[#3c352d] leading-7 max-w-prose whitespace-pre-line">
+              {description}
+            </p>
           </div>
 
-          {/* Khung Vị trí trên bản đồ (Google Maps) nằm dưới Mô tả chi tiết */}
+          {/* Khung Vị trí trên bản đồ (Google Maps) */}
           <div className="bg-white p-6 rounded-2xl border border-[#e6dfd5] space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#f0eae1] pb-3">
               <div>
@@ -665,7 +768,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                   {labels.mapTitle}
                 </h2>
                 {displayAddress && (
-                  <p className="text-xs text-[#786e65] mt-0.5">📍 {displayAddress}</p>
+                  <p className="text-xs sm:text-sm text-[#574d43] mt-0.5">📍 {displayAddress}</p>
                 )}
               </div>
 
@@ -673,7 +776,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                 href={externalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#f4efe8] hover:bg-[#3c352d] text-[#3c352d] hover:text-white text-xs font-bold rounded-lg transition duration-200 self-start sm:self-auto"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#f4efe8] hover:bg-[#7a482b] text-[#2c2623] hover:text-white text-xs font-bold rounded-xl transition duration-200 self-start sm:self-auto cursor-pointer"
               >
                 <span>{labels.openGoogleMaps}</span>
                 <svg
@@ -721,6 +824,103 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             {similarProperties.map((item) => (
               <PropertyCard key={item.id} property={item} />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Thanh CTA cố định đáy màn hình trên Mobile */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-[#e6dfd5] px-4 py-3 shadow-[0_-4px_16px_rgba(44,38,35,0.08)]">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium text-[#574d43] truncate">{title}</p>
+            <p className="text-base sm:text-lg font-serif font-bold text-[#7a482b] truncate">
+              {formattedPrice}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={scrollToContact}
+            className="shrink-0 px-5 py-2.5 bg-[#7a482b] hover:bg-[#633a22] text-white text-xs sm:text-sm font-bold rounded-xl transition shadow-xs cursor-pointer"
+          >
+            {labels.consultCta}
+          </button>
+        </div>
+      </div>
+
+      {/* Lightbox phóng to ảnh / sơ đồ nhà ở */}
+      {lightbox && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={lightbox.title}
+          className="fixed inset-0 z-50 bg-black/90 flex flex-col justify-between p-4 sm:p-6"
+          onClick={() => setLightbox(null)}
+        >
+          <div
+            className="flex items-center justify-between gap-4 text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-xs sm:text-sm font-medium truncate">
+              {lightbox.title} ({lightbox.index + 1}/{lightbox.images.length})
+            </p>
+            <button
+              type="button"
+              onClick={() => setLightbox(null)}
+              aria-label={labels.closeModal}
+              className="px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div
+            className="relative flex-1 flex items-center justify-center my-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={lightbox.images[lightbox.index] || fallbackImage}
+              alt={`${lightbox.title} ${lightbox.index + 1}`}
+              className="max-h-[82vh] max-w-full object-contain rounded-lg select-none"
+            />
+
+            {lightbox.images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLightbox((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            index: prev.index === 0 ? prev.images.length - 1 : prev.index - 1,
+                          }
+                        : null
+                    )
+                  }
+                  aria-label={labels.prevImg}
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition cursor-pointer"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLightbox((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            index: prev.index === prev.images.length - 1 ? 0 : prev.index + 1,
+                          }
+                        : null
+                    )
+                  }
+                  aria-label={labels.nextImg}
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition cursor-pointer"
+                >
+                  ›
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

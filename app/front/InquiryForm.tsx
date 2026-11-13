@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { submitInquiryAction } from "@/app/back/inquiries";
 import { useLanguage } from "@/app/context/LanguageContext";
 
@@ -41,7 +41,8 @@ const INQUIRY_LABELS = {
     messagePlaceholder: "I would like to schedule a viewing / request total closing cost details...",
     submit: "Contact Mii Shintani Now",
     submitting: "Sending information...",
-    successMsg: "Thank you! Mii Shintani (RE AGENT by Re iDea) has received your inquiry and will respond within 24 hours.",
+    successMsg:
+      "Thank you! Mii Shintani (RE AGENT by Re iDea) has received your inquiry and will respond within 24 hours.",
     errorMsg: "Failed to send request. Please try again.",
   },
   ja: {
@@ -66,6 +67,7 @@ const INQUIRY_LABELS = {
 export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormProps) {
   const { currentLang } = useLanguage();
   const labels = INQUIRY_LABELS[currentLang] || INQUIRY_LABELS.en;
+  const uid = useId();
 
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ success?: boolean; message?: string } | null>(null);
@@ -99,14 +101,20 @@ export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormPr
     }
   };
 
+  const inputClassName =
+    "w-full px-4 py-2.5 bg-white border border-[#e6dfd5] rounded-xl text-sm text-[#2c2623] placeholder:text-[#786e65] focus:outline-none focus:border-[#7a482b] focus:ring-2 focus:ring-[#7a482b]/20 transition";
+
   return (
-    <div id="contact" className="bg-[#f8f6f0] border border-[#e6dfd5] p-6 lg:p-8 rounded-lg shadow-sm text-[#3c352d] scroll-mt-24">
+    <div
+      id="contact"
+      className="bg-[#f8f6f0] border border-[#e6dfd5] p-6 lg:p-8 rounded-2xl shadow-sm text-[#2c2623] scroll-mt-24"
+    >
       <h3 className="text-xl font-serif font-bold mb-2">{labels.heading}</h3>
-      <p className="text-xs text-[#3c352d]/70 mb-6">
+      <p className="text-xs sm:text-sm text-[#574d43] mb-6 leading-relaxed">
         {propertyTitle ? (
           <>
             {labels.subPrefix}{" "}
-            <span className="font-semibold text-[#3c352d]">{propertyTitle}</span>
+            <span className="font-semibold text-[#2c2623]">{propertyTitle}</span>
           </>
         ) : (
           labels.generalSub
@@ -115,10 +123,11 @@ export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormPr
 
       {feedback && (
         <div
-          className={`p-4 mb-6 rounded text-sm ${
+          role="alert"
+          className={`p-4 mb-6 rounded-xl text-sm ${
             feedback.success
-              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-              : "bg-rose-50 text-rose-800 border border-rose-200"
+              ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
+              : "bg-rose-50 text-rose-900 border border-rose-200"
           }`}
         >
           {feedback.message}
@@ -127,53 +136,69 @@ export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormPr
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider mb-1">
+          <label
+            htmlFor={`${uid}-fullName`}
+            className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1.5"
+          >
             {labels.fullName}
           </label>
           <input
+            id={`${uid}-fullName`}
             type="text"
             name="fullName"
             required
-            className="w-full px-4 py-2.5 bg-white border border-[#e6dfd5] rounded focus:outline-none focus:border-[#3c352d] text-sm text-[#3c352d]"
+            className={inputClassName}
             placeholder={labels.fullNamePlaceholder}
           />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">
+            <label
+              htmlFor={`${uid}-email`}
+              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1.5"
+            >
               {labels.email}
             </label>
             <input
+              id={`${uid}-email`}
               type="email"
               name="email"
               required
-              className="w-full px-4 py-2.5 bg-white border border-[#e6dfd5] rounded focus:outline-none focus:border-[#3c352d] text-sm text-[#3c352d]"
+              className={inputClassName}
               placeholder={labels.emailPlaceholder}
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1">
+            <label
+              htmlFor={`${uid}-phone`}
+              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1.5"
+            >
               {labels.phone}
             </label>
             <input
+              id={`${uid}-phone`}
               type="tel"
               name="phone"
               required
-              className="w-full px-4 py-2.5 bg-white border border-[#e6dfd5] rounded focus:outline-none focus:border-[#3c352d] text-sm text-[#3c352d]"
+              className={inputClassName}
               placeholder={labels.phonePlaceholder}
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider mb-1">
+          <label
+            htmlFor={`${uid}-message`}
+            className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1.5"
+          >
             {labels.message}
           </label>
           <textarea
+            id={`${uid}-message`}
             name="message"
             rows={4}
-            className="w-full px-4 py-2.5 bg-white border border-[#e6dfd5] rounded focus:outline-none focus:border-[#3c352d] text-sm text-[#3c352d]"
+            className={inputClassName}
             placeholder={labels.messagePlaceholder}
           ></textarea>
         </div>
@@ -181,7 +206,7 @@ export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormPr
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 px-6 bg-[#3c352d] text-[#f8f6f0] font-medium rounded hover:bg-[#3c352d]/90 transition duration-200 disabled:opacity-50 text-sm tracking-wide cursor-pointer"
+          className="w-full py-3 px-6 bg-[#7a482b] hover:bg-[#633a22] text-white font-semibold rounded-xl transition duration-200 disabled:opacity-50 text-sm tracking-wide cursor-pointer shadow-xs"
         >
           {loading ? labels.submitting : labels.submit}
         </button>

@@ -44,6 +44,11 @@ export async function getFeaturedProperties(limit = 6): Promise<Property[]> {
 export async function getPropertyById(id: string): Promise<Property | null> {
   'use cache';
   cacheTag('properties'); // trang admin gọi updateTag('properties') để làm mới
+
+  if (!id || id === 'undefined') {
+    return null;
+  }
+
   const { data, error } = await supabase
     .from('properties')
     .select('*')

@@ -90,7 +90,7 @@ export async function deleteProperty(id: string) {
       throw new Error(`DB Delete Error: ${error.message}`);
     }
 
-    revalidatePath("/admin");
+    revalidatePath("/admin", "layout");
     revalidatePath("/properties");
     revalidatePath("/sanpham");
     revalidatePath("/");
@@ -103,14 +103,28 @@ export async function deleteProperty(id: string) {
   }
 }
 
-// --- Interface Đầy đủ tất cả trường BĐS ---
+// --- Interface Đầy đủ 3 ngôn ngữ & Bộ lọc ---
 export interface CreatePropertyInput {
   id?: string;
-  titleRaw: string;
-  descriptionRaw: string;
-  locationRaw: string;
-  priceYen: number;
-  priceVnd?: number;
+  titleVi: string;
+  titleEn: string;
+  titleJa: string;
+  descriptionVi: string;
+  descriptionEn: string;
+  descriptionJa: string;
+  locationVi: string;
+  locationEn: string;
+  locationJa: string;
+  mapAddress?: string;
+  filterLocation?: string;
+  filterPrice?: string;
+  filterLayout?: string;
+  propertyTypeVi: string;
+  propertyTypeEn: string;
+  propertyTypeJa: string;
+  priceVi: number;
+  priceEn: number;
+  priceJa: number;
   areaSqm: number;
   buildingSize?: string;
   landSize?: string;
@@ -123,9 +137,75 @@ export interface CreatePropertyInput {
   access?: string;
   bedrooms: number;
   bathrooms: number;
-  propertyType: string;
   images: string[];
-  floorPlanUrl?: string;
+  floorPlanImages?: string[];
+}
+
+function buildPropertyPayload(input: CreatePropertyInput) {
+  const cleanFloorPlans = Array.isArray(input.floorPlanImages)
+    ? input.floorPlanImages.filter(Boolean)
+    : [];
+
+  const title = {
+    vi: cleanText(input.titleVi),
+    en: cleanText(input.titleEn),
+    ja: cleanText(input.titleJa),
+  };
+
+  const description = {
+    vi: cleanText(input.descriptionVi),
+    en: cleanText(input.descriptionEn),
+    ja: cleanText(input.descriptionJa),
+    price_vi: Number(input.priceVi) || 0,
+    price_en: Number(input.priceEn) || 0,
+    price_ja: Number(input.priceJa) || 0,
+    floor_plans: cleanFloorPlans,
+    map_address: cleanText(input.mapAddress),
+    filter_location: cleanText(input.filterLocation),
+    filter_price: cleanText(input.filterPrice),
+    filter_layout: cleanText(input.filterLayout),
+  };
+
+  const location = {
+    vi: cleanText(input.locationVi),
+    en: cleanText(input.locationEn),
+    ja: cleanText(input.locationJa),
+  };
+
+  const propertyType = {
+    vi: cleanText(input.propertyTypeVi),
+    en: cleanText(input.propertyTypeEn),
+    ja: cleanText(input.propertyTypeJa),
+  };
+
+  const priceJa = Number(input.priceJa) || 0;
+  const priceVi = Number(input.priceVi) || 0;
+  const serializedFloorPlans = cleanFloorPlans.length > 0 ? JSON.stringify(cleanFloorPlans) : null;
+
+  return {
+    title,
+    description,
+    location,
+    property_type: propertyType,
+    price: priceJa,
+    price_yen: priceJa,
+    price_vnd: priceVi,
+    area_sqm: input.areaSqm,
+    building_size: input.buildingSize || `${input.areaSqm} m²`,
+    land_size: input.landSize || null,
+    layout: input.layout || input.filterLayout || "2LDK",
+    structure: input.structure || "RC (Bê tông cốt thép)",
+    year_built: input.yearBuilt || new Date().getFullYear(),
+    parking: input.parking || "Có",
+    land_rights: input.landRights || "Sở hữu vĩnh viễn (Ownership)",
+    zoning: input.zoning || "Khu dân cư",
+    access: input.access || "Cách ga 5 phút đi bộ",
+    bedrooms: input.bedrooms,
+    bathrooms: input.bathrooms,
+    images: input.images,
+    floor_plan: serializedFloorPlans,
+    floor_plan_url: serializedFloorPlans,
+  };
 }
 
 // --- Action Đăng Bài Bất Động Sản ---
@@ -133,40 +213,11 @@ export async function createPropertyAction(input: CreatePropertyInput) {
   try {
     const supabase = await createClient();
 
-    const cleanTitleStr = cleanText(input.titleRaw);
-    const cleanDescStr = cleanText(input.descriptionRaw);
-    const cleanLocStr = cleanText(input.locationRaw);
-
-    const title = { vi: cleanTitleStr, en: cleanTitleStr, ja: cleanTitleStr };
-    const description = { vi: cleanDescStr, en: cleanDescStr, ja: cleanDescStr };
-    const location = { vi: cleanLocStr, en: cleanLocStr, ja: cleanLocStr };
-
     const payload = {
-      title,
-      description,
-      location,
-      price: input.priceYen,
-      price_yen: input.priceYen,
-      price_vnd: input.priceVnd || Math.round(input.priceYen * 165),
-      area_sqm: input.areaSqm,
-      building_size: input.buildingSize || `${input.areaSqm} m²`,
-      land_size: input.landSize || null,
-      layout: input.layout || "2LDK",
-      structure: input.structure || "RC (Bê tông cốt thép)",
-      year_built: input.yearBuilt || new Date().getFullYear(),
-      parking: input.parking || "Có",
-      land_rights: input.landRights || "Sở hữu vĩnh viễn (Ownership)",
-      zoning: input.zoning || "Khu dân cư",
-      access: input.access || "Cách ga 5 phút đi bộ",
-      bedrooms: input.bedrooms,
-      bathrooms: input.bathrooms,
-      property_type: input.propertyType,
-      images: input.images,
-      floor_plan: input.floorPlanUrl || input.images[0] || null,
-      floor_plan_url: input.floorPlanUrl || input.images[0] || null,
+      ...buildPropertyPayload(input),
       status: "available",
       current_status: "available",
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
 
     const { data, error } = await supabase.from("properties").insert([payload]).select().single();
@@ -175,7 +226,7 @@ export async function createPropertyAction(input: CreatePropertyInput) {
       throw new Error(`DB Insert Error: ${error.message}`);
     }
 
-    revalidatePath("/admin");
+    revalidatePath("/admin", "layout");
     revalidatePath("/properties");
     revalidatePath("/sanpham");
     revalidatePath("/");
@@ -192,48 +243,22 @@ export async function createPropertyAction(input: CreatePropertyInput) {
 export async function updatePropertyAction(id: string, input: CreatePropertyInput) {
   try {
     const supabase = await createClient();
+    const payload = buildPropertyPayload(input);
 
-    const cleanTitleStr = cleanText(input.titleRaw);
-    const cleanDescStr = cleanText(input.descriptionRaw);
-    const cleanLocStr = cleanText(input.locationRaw);
-
-    const title = { vi: cleanTitleStr, en: cleanTitleStr, ja: cleanTitleStr };
-    const description = { vi: cleanDescStr, en: cleanDescStr, ja: cleanDescStr };
-    const location = { vi: cleanLocStr, en: cleanLocStr, ja: cleanLocStr };
-
-    const payload = {
-      title,
-      description,
-      location,
-      price: input.priceYen,
-      price_yen: input.priceYen,
-      price_vnd: input.priceVnd || Math.round(input.priceYen * 165),
-      area_sqm: input.areaSqm,
-      building_size: input.buildingSize || `${input.areaSqm} m²`,
-      land_size: input.landSize || null,
-      layout: input.layout || "2LDK",
-      structure: input.structure || "RC (Bê tông cốt thép)",
-      year_built: input.yearBuilt || new Date().getFullYear(),
-      parking: input.parking || "Có",
-      land_rights: input.landRights || "Sở hữu vĩnh viễn (Ownership)",
-      zoning: input.zoning || "Khu dân cư",
-      access: input.access || "Cách ga 5 phút đi bộ",
-      bedrooms: input.bedrooms,
-      bathrooms: input.bathrooms,
-      property_type: input.propertyType,
-      images: input.images,
-      floor_plan: input.floorPlanUrl || input.images[0] || null,
-      floor_plan_url: input.floorPlanUrl || input.images[0] || null,
-    };
-
-    const { data, error } = await supabase.from("properties").update(payload).eq("id", id).select().single();
+    const { data, error } = await supabase
+      .from("properties")
+      .update(payload)
+      .eq("id", id)
+      .select()
+      .single();
 
     if (error) {
       throw new Error(`DB Update Error: ${error.message}`);
     }
 
-    revalidatePath("/admin");
+    revalidatePath("/admin", "layout");
     revalidatePath(`/properties/${id}`);
+    revalidatePath(`/sanpham/${id}`);
     revalidatePath("/properties");
     revalidatePath("/sanpham");
     revalidatePath("/");

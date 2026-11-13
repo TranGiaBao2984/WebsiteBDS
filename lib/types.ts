@@ -1,7 +1,7 @@
 export interface Property {
   id: string;
   title: string | Record<string, string>;
-  description?: string | Record<string, string>;
+  description?: string | Record<string, unknown>;
   location: string | Record<string, string>;
   price?: number;
   price_yen?: number;
@@ -19,11 +19,11 @@ export interface Property {
   zoning?: string;
   access?: string;
   images?: string[];
-  floor_plan?: string;
-  floor_plan_url?: string;
+  floor_plan?: string | string[];
+  floor_plan_url?: string | string[];
   bedrooms?: number;
   bathrooms?: number;
-  property_type?: string;
+  property_type?: string | Record<string, string>;
   created_at?: string;
 }
 

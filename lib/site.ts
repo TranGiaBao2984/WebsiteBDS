@@ -1,26 +1,25 @@
-// Thông tin thương hiệu và liên hệ dùng chung cho Header, Footer và trang chi tiết.
-// TODO: thay các giá trị mẫu bên dưới bằng thông tin thật. Chỉ cần sửa ở file này.
-
-// Số điện thoại dạng quốc tế, không khoảng trắng. WhatsApp lấy từ số này.
-// Nếu số WhatsApp khác số hotline, hãy gán thẳng vào whatsappHref bên dưới.
-const PHONE_E164 = '+819000000000';
-
 export const SITE = {
-  name: 'MII SHINTANI',
-  tagline: 'Real Estate Agent • Japan Nationwide',
-  intro: 'Japan Real Estate Advisory & Brokerage Services',
-  hours: '8:00 AM – 9:00 PM, Mon – Sun',
-  email: 'contact@example.com',
-  hotline: '+81 90 0000 0000',
-  hotlineHref: `tel:${PHONE_E164}`,
-  whatsappHref: `https://wa.me/${PHONE_E164.replace(/\D/g, '')}`,
-  facebookHref: 'https://facebook.com/',
+  name: 'Mii Shintani — RE AGENT by Re iDea',
+  brand: 'RE AGENT',
+  subBrand: 'by Re iDea',
+  slogan: 'People. Homes. A Brighter Tomorrow.',
+  company: '株式会社 Re iDea',
+  advisorName: 'Mii Shintani (新谷 美依)',
+  role: 'Global Property Advisor',
+  intro: 'RE AGENT by Re iDea — Helping Overseas Clients Find Homes in Japan',
+  hours: 'Rental / Sales / Relocation Support',
+  hotline: '070-9017-1920',
+  hotlineHref: 'tel:+817090171920',
+  tel: '042-656-8521',
+  telHref: 'tel:+81426568521',
+  fax: '042-656-8520',
+  email: 'japanrealtormii@re-idea.com',
+  whatsappHref: 'https://wa.me/817090171920',
+  instagramHandle: '@MIISHINTANI_AGENT',
+  instagramHref: 'https://www.instagram.com/miishintani_agent/',
+  websiteHref: 'https://www.re-idea.com/',
+  postalCode: '〒192-0031',
+  addressJa: '東京都八王子市小宮町1076-5 ジュネス石川102号室',
+  addressEn: 'Jeunesse Ishikawa 102, 1076-5 Komiyamachi, Hachioji-shi, Tokyo 192-0031, Japan',
   ctaHref: '/vetoi#contact',
 } as const;
-
-/** Link WhatsApp, có thể kèm sẵn nội dung tin nhắn. */
-export function whatsappLink(text?: string): string {
-  return text
-    ? `${SITE.whatsappHref}?text=${encodeURIComponent(text)}`
-    : SITE.whatsappHref;
-}

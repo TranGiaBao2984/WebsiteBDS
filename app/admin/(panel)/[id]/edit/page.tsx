@@ -1,54 +1,69 @@
-import { Suspense } from 'react';
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { requireAdmin } from '@/lib/admin-auth';
-import type { Property } from '@/lib/types';
-import PropertyForm from '@/app/front/admin/PropertyForm';
+import { Suspense } from "react";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase-server";
+import PropertyForm from "@/app/front/admin/PropertyForm";
+import type { Property } from "@/lib/types";
 
-// Tắt hoàn toàn việc prerender cho trang chỉnh sửa này
-export const instant = false;
+interface EditPropertyPageProps {
+  params: Promise<{ id: string }>;
+}
 
-export default function EditPropertyPage({ 
-  params 
-}: { 
-  params: Promise<{ id: string }> 
-}) {
+async function EditPropertyLoader({ params }: EditPropertyPageProps) {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const { data: property, error } = await supabase
+    .from("properties")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !property) {
+    return (
+      <div className="bg-white border border-[#e3c9bd] rounded-xl p-8 text-center space-y-3">
+        <p className="text-sm font-semibold text-[#8a3b1d]">
+          Không tìm thấy dữ liệu bất động sản này.
+        </p>
+        {error?.message && (
+          <p className="text-xs text-[#8c827a]">{error.message}</p>
+        )}
+        <Link
+          href="/admin"
+          className="inline-block px-4 py-2 bg-[#3c352d] text-white text-xs font-bold rounded-lg"
+        >
+          Quay về trang quản lý
+        </Link>
+      </div>
+    );
+  }
+
+  return <PropertyForm property={property as Property} />;
+}
+
+export default function EditPropertyPage({ params }: EditPropertyPageProps) {
   return (
-    <div className="space-y-6">
-      <div>
-        <Link href="/admin" className="text-xs font-medium text-[#8c6d53] transition hover:underline">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <div className="space-y-2">
+        <Link
+          href="/admin"
+          className="inline-flex items-center text-xs font-semibold text-[#7a482b] hover:underline"
+        >
           ← Quay lại danh sách
         </Link>
-        <h1 className="mt-2 font-serif text-2xl font-bold text-[#2c2623] sm:text-3xl">
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#2c2623]">
           Sửa bất động sản
         </h1>
       </div>
-      
-      {/* Giao diện tải hiển thị ngay lập tức trong khi chờ EditLoader xử lý */}
-      <Suspense fallback={<div className="h-150 w-full animate-pulse rounded-3xl bg-[#eae4dc]/50" />}>
-        <EditLoader params={params} />
+
+      <Suspense
+        fallback={
+          <div className="bg-white border border-[#e6dfd5] rounded-xl p-8 text-center text-xs text-[#8c827a]">
+            Đang tải dữ liệu bất động sản...
+          </div>
+        }
+      >
+        <EditPropertyLoader params={params} />
       </Suspense>
     </div>
   );
-}
-
-async function EditLoader({ 
-  params 
-}: { 
-  params: Promise<{ id: string }> 
-}) {
-  // Toàn bộ các thao tác động (đọc URL param, kiểm tra Cookie Admin, gọi Database)
-  // được gom gọn và xử lý an toàn tại đây
-  const { id } = await params;
-  const { supabase } = await requireAdmin();
-
-  const { data } = await supabase
-    .from('properties')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle();
-
-  if (!data) notFound();
-
-  return <PropertyForm property={data as Property} />;
 }

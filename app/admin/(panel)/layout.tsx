@@ -21,7 +21,7 @@ async function UserBox() {
       <form action={signOut}>
         <button
           type="submit"
-          className="px-3 py-1.5 bg-[#e6dfd5] hover:bg-[#d8cebe] text-[#3c352d] text-xs font-semibold rounded transition"
+          className="px-3 py-1.5 bg-[#e6dfd5] hover:bg-[#d8cebe] text-[#3c352d] text-xs font-semibold rounded transition cursor-pointer"
         >
           Đăng xuất
         </button>
@@ -39,12 +39,15 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
             <Link href="/admin" className="font-serif text-xl font-bold text-[#3c352d]">
               MII SHINTANI <span className="text-xs font-sans text-amber-800 uppercase tracking-widest ml-1">Admin</span>
             </Link>
-            <nav className="hidden md:flex items-center gap-4 text-sm font-medium text-[#3c352d]/80">
+            <nav className="hidden md:flex items-center gap-5 text-sm font-medium text-[#3c352d]/80">
               <Link href="/admin" className="hover:text-[#3c352d] transition">
                 Bất động sản
               </Link>
               <Link href="/admin/new" className="hover:text-[#3c352d] transition">
                 + Đăng BĐS
+              </Link>
+              <Link href="/admin/inquiries" className="hover:text-[#3c352d] transition">
+                Khách hàng
               </Link>
               <Link href="/" target="_blank" className="hover:text-[#3c352d] transition">
                 Xem Website ↗
@@ -56,6 +59,22 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
             <UserBox />
           </Suspense>
         </div>
+
+        {/* Thanh điều hướng nhanh trên điện thoại */}
+        <nav className="flex md:hidden items-center gap-4 px-4 py-2.5 border-t border-[#f0eae1] bg-[#faf8f5] text-xs font-semibold text-[#3c352d]/85 overflow-x-auto whitespace-nowrap">
+          <Link href="/admin" className="hover:text-[#3c352d]">
+            Bất động sản
+          </Link>
+          <Link href="/admin/new" className="hover:text-[#3c352d]">
+            + Đăng BĐS
+          </Link>
+          <Link href="/admin/inquiries" className="hover:text-[#3c352d]">
+            Khách hàng
+          </Link>
+          <Link href="/" target="_blank" className="hover:text-[#3c352d]">
+            Xem Website ↗
+          </Link>
+        </nav>
       </header>
 
       <main className="py-6">{children}</main>

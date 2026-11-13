@@ -6,11 +6,27 @@ import { usePathname } from 'next/navigation';
 import { useLanguage, type Language } from '@/app/context/LanguageContext';
 import { SITE } from '@/lib/site';
 import Image from 'next/image';
+
 const LANGUAGES: { code: Language; label: string }[] = [
   { code: 'en', label: 'English' },
   { code: 'ja', label: '日本語' },
   { code: 'vi', label: 'Tiếng Việt' },
 ];
+
+const TOPBAR_LABELS: Record<Language, { intro: string; services: string }> = {
+  vi: {
+    intro: 'RE AGENT by Re iDea — Hỗ trợ khách hàng quốc tế tìm nhà tại Nhật Bản',
+    services: 'Cho thuê / Mua bán / Hỗ trợ định cư',
+  },
+  en: {
+    intro: 'RE AGENT by Re iDea — Helping Overseas Clients Find Homes in Japan',
+    services: 'Rental / Sales / Relocation Support',
+  },
+  ja: {
+    intro: 'RE AGENT by Re iDea — 海外のお客様の日本での住まい探しをサポート',
+    services: '賃貸 / 売買 / リロケーション支援',
+  },
+};
 
 const CONTAINER = 'w-full px-6 sm:px-10 lg:px-16 2xl:px-24';
 
@@ -42,6 +58,7 @@ export default function Header() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const { currentLang, setLanguage, t } = useLanguage();
+  const topBar = TOPBAR_LABELS[currentLang] || TOPBAR_LABELS.en;
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -71,7 +88,6 @@ export default function Header() {
     }
   };
 
-  // Nhãn menu lấy từ dictionary, không giữ bản sao riêng
   const links = [
     { name: t.header.home, href: '/' },
     { name: t.header.properties, href: '/sanpham' },
@@ -80,17 +96,23 @@ export default function Header() {
 
   return (
     <>
-      {/* Top Bar */}
+      {/* Top Bar — Tự động đổi ngôn ngữ theo currentLang */}
       <div className="hidden bg-[#2c2623] text-[#e6dfd5] lg:block">
-        <div className={`${CONTAINER} flex h-9 items-center justify-between gap-6 whitespace-nowrap text-base`}>
-          <p>{SITE.intro}</p>
-          <span>{SITE.hours}</span>
+        <div className={`${CONTAINER} flex h-9 items-center justify-between gap-6 whitespace-nowrap text-sm`}>
+          <p>{topBar.intro}</p>
+          <span>{topBar.services}</span>
           <a href={`mailto:${SITE.email}`} className="transition hover:text-white">
             {SITE.email}
           </a>
-          <a href={SITE.whatsappHref} target="_blank" rel="noreferrer" className="transition hover:text-white">
-            WhatsApp
-          </a>
+          <div className="flex items-center gap-4">
+            <a href={SITE.whatsappHref} target="_blank" rel="noreferrer" className="transition hover:text-white">
+              WhatsApp
+            </a>
+            <span>•</span>
+            <a href={SITE.instagramHref} target="_blank" rel="noreferrer" className="transition hover:text-white">
+              Instagram ({SITE.instagramHandle})
+            </a>
+          </div>
         </div>
       </div>
 
@@ -100,9 +122,9 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="group shrink-0 flex items-center">
             <Image
-              src="/logo_mii.png" 
+              src="/logo_mii.png"
               alt={SITE.name}
-              width={600} 
+              width={600}
               height={150}
               priority
               className="h-20 w-auto object-contain mix-blend-multiply transition-opacity group-hover:opacity-80 lg:h-25"
@@ -134,7 +156,7 @@ export default function Header() {
                 key={lang.code}
                 type="button"
                 onClick={() => setLanguage(lang.code)}
-                className={`transition-colors ${
+                className={`cursor-pointer transition-colors ${
                   currentLang === lang.code
                     ? 'font-bold text-[#8c6d53] underline underline-offset-4'
                     : 'text-[#574d43] hover:text-[#2c2623]'
@@ -178,7 +200,7 @@ export default function Header() {
       {/* Mobile Drawer */}
       {menuOpen && (
         <div className="fixed inset-0 z-60 bg-[#2c2623]/50 backdrop-blur-sm lg:hidden">
-          <div className="absolute right-0 top-0 flex h-full w-[80%] max-w-sm flex-col justify-between bg-[#f8f6f0] p-6 shadow-2xl">
+          <div className="absolute right-0 top-0 flex h-full w-[80%] max-w-sm flex-col justify-between bg-[#f8f6f0] p-6 shadow-2xl overflow-y-auto">
             <div className="space-y-6">
               <div className="flex items-center justify-between border-b border-[#e6dfd5] pb-4">
                 <Image
@@ -226,9 +248,29 @@ export default function Header() {
                   ))}
                 </div>
               </div>
+
+              {/* Liên hệ nhanh Mobile */}
+              <div className="border-t border-[#e6dfd5] pt-4 space-y-2 text-xs text-[#574d43]">
+                <p className="font-bold text-[#2c2623]">{SITE.company}</p>
+                <p className="text-[#786e65]">{topBar.services}</p>
+                <a href={SITE.hotlineHref} className="block font-semibold text-[#7a482b]">
+                  Mobile: {SITE.hotline}
+                </a>
+                <a href={`mailto:${SITE.email}`} className="block break-all">
+                  {SITE.email}
+                </a>
+                <div className="flex gap-4 pt-1 font-semibold text-[#2c2623]">
+                  <a href={SITE.whatsappHref} target="_blank" rel="noreferrer" className="underline">
+                    WhatsApp
+                  </a>
+                  <a href={SITE.instagramHref} target="_blank" rel="noreferrer" className="underline">
+                    Instagram
+                  </a>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-3 border-t border-[#e6dfd5] pt-6">
+            <div className="space-y-3 border-t border-[#e6dfd5] pt-6 mt-6">
               <Link
                 href={SITE.ctaHref}
                 onClick={(e) => {

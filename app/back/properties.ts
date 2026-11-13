@@ -2,10 +2,9 @@ import { supabase } from '@/lib/supabase';
 import { cacheTag } from 'next/cache';
 import type { Property } from '@/lib/types';
 
-// Danh sách và thẻ chỉ cần các cột này. Trang chi tiết mới cần đủ bộ (select '*').
-// Nếu thêm cột mới vào bảng và muốn hiện trên thẻ, nhớ thêm vào đây.
+// Đã bổ sung description, price_yen, price_vnd để trang danh sách nhận diện được bộ lọc động từ Admin
 const CARD_COLUMNS =
-  'id, title, price, location, layout, building_size, year_built, structure, current_status, images, created_at';
+  'id, title, price, location, layout, building_size, year_built, structure, current_status, images, created_at, description, price_yen, price_vnd';
 
 /** Toàn bộ danh sách cho trang /sanpham (lọc phía client). */
 export async function getProperties(): Promise<Property[]> {

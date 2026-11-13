@@ -1,41 +1,311 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import nodemailer from "nodemailer";
 import { createClient } from "@/lib/supabase-server";
 
+export type InquiryStatus = "pending" | "consulting" | "paid" | "cancelled";
+
 export interface SubmitInquiryInput {
-  propertyId: string;
+  propertyId?: string | null;
+  fullName: string;
+  email: string;
+  phone: string;
+  message?: string;
+}
+
+interface PropertySummary {
+  titleText: string;
+  priceText: string;
+  url: string;
+}
+
+function extractLocalizedTitle(rawTitle: unknown): string {
+  if (!rawTitle) return "";
+  let parsed: unknown = rawTitle;
+
+  if (typeof parsed === "string") {
+    const trimmed = parsed.trim();
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+      try {
+        parsed = JSON.parse(trimmed);
+      } catch {
+        return trimmed;
+      }
+    } else {
+      return trimmed;
+    }
+  }
+
+  if (typeof parsed === "object" && parsed !== null) {
+    const rec = parsed as Record<string, unknown>;
+    const parts = [rec.vi, rec.en, rec.ja]
+      .filter((v): v is string => typeof v === "string" && v.trim() !== "")
+      .map((v) => v.trim());
+    return Array.from(new Set(parts)).join(" / ");
+  }
+
+  return String(parsed);
+}
+
+async function getPropertySummary(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  propertyId: string
+): Promise<PropertySummary | null> {
+  try {
+    const { data, error } = await supabase
+      .from("properties")
+      .select("id, title, price, price_yen")
+      .eq("id", propertyId)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    const titleText = extractLocalizedTitle(data.title) || `BĐS #${propertyId}`;
+    const yen = Number(data.price_yen || data.price || 0);
+    const priceText = yen > 0 ? `¥${yen.toLocaleString("en-US")}` : "";
+
+    const baseUrl = (
+      process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+    ).replace(/\/$/, "");
+
+    return {
+      titleText,
+      priceText,
+      url: `${baseUrl}/properties/${propertyId}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function sendGmailNotification(data: {
+  propertyId: string | null;
+  propertySummary: PropertySummary | null;
   fullName: string;
   email: string;
   phone: string;
   message: string;
+}) {
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+  const notifyTo = process.env.AGENT_NOTIFY_EMAIL || gmailUser;
+
+  if (!gmailUser || !gmailPass || !notifyTo) {
+    console.warn("Thiếu cấu hình GMAIL_USER hoặc GMAIL_APP_PASSWORD trong .env.local.");
+    return;
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: gmailUser,
+      pass: gmailPass.replace(/\s+/g, ""),
+    },
+  });
+
+  const subject = data.propertySummary
+    ? `[RE AGENT] Khách ${data.fullName} hỏi về: ${data.propertySummary.titleText}`
+    : `[RE AGENT] Yêu cầu tư vấn BĐS mới từ ${data.fullName}`;
+
+  const propertySectionHtml = data.propertySummary
+    ? `
+      <tr>
+        <td style="padding: 6px 0; color: #786e65; vertical-align: top;"><strong>BĐS quan tâm:</strong></td>
+        <td style="padding: 6px 0; color: #2c2623;">
+          <div style="font-weight: bold; color: #7a482b;">${data.propertySummary.titleText}</div>
+          ${
+            data.propertySummary.priceText
+              ? `<div style="font-size: 13px; color: #574d43; margin-top: 2px;">Giá niêm yết: <strong>${data.propertySummary.priceText}</strong></div>`
+              : ""
+          }
+          <div style="margin-top: 6px;">
+            <a href="${data.propertySummary.url}" target="_blank" style="display: inline-block; padding: 6px 12px; background-color: #2c2623; color: #f8f6f0; text-decoration: none; border-radius: 6px; font-size: 12px; font-weight: bold;">
+              Xem chi tiết căn nhà trên Website →
+            </a>
+          </div>
+          <div style="font-size: 11px; color: #9e9389; margin-top: 4px;">ID: ${data.propertyId}</div>
+        </td>
+      </tr>
+    `
+    : data.propertyId
+    ? `
+      <tr>
+        <td style="padding: 6px 0; color: #786e65;"><strong>Mã BĐS:</strong></td>
+        <td style="padding: 6px 0; color: #2c2623;">${data.propertyId}</td>
+      </tr>
+    `
+    : "";
+
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #2c2623; max-width: 600px; border: 1px solid #e6dfd5; border-radius: 12px; padding: 24px;">
+      <p style="font-size: 11px; font-weight: bold; letter-spacing: 1.5px; color: #8c6d53; text-transform: uppercase; margin: 0 0 6px 0;">
+        RE AGENT by Re iDea • Global Property Advisor
+      </p>
+      <h2 style="color: #2c2623; border-bottom: 1px solid #e6dfd5; padding-bottom: 12px; margin-top: 0;">
+        Yêu Cầu Tư Vấn Bất Động Sản Mới
+      </h2>
+
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 16px;">
+        <tr>
+          <td style="padding: 6px 0; color: #786e65; width: 150px;"><strong>Khách hàng:</strong></td>
+          <td style="padding: 6px 0; color: #2c2623;">${data.fullName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #786e65;"><strong>Email liên hệ:</strong></td>
+          <td style="padding: 6px 0;"><a href="mailto:${data.email}" style="color: #7a482b;">${data.email}</a></td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #786e65;"><strong>Điện thoại:</strong></td>
+          <td style="padding: 6px 0; color: #2c2623;">${data.phone}</td>
+        </tr>
+        ${propertySectionHtml}
+      </table>
+
+      <p style="font-size: 14px; font-weight: bold; color: #2c2623; margin-bottom: 6px;">Lời nhắn tư vấn:</p>
+      <div style="background: #f8f6f0; padding: 14px 16px; border-radius: 8px; border: 1px solid #e6dfd5; font-size: 14px; color: #3c352d;">
+        ${data.message ? data.message.replace(/\n/g, "<br/>") : "<em>(Khách không để lại lời nhắn thêm)</em>"}
+      </div>
+
+      <p style="font-size: 12px; color: #8c827a; margin-top: 20px; border-top: 1px solid #f0eae1; padding-top: 12px;">
+        Bạn có thể bấm trực tiếp nút <strong>Trả lời (Reply)</strong> trên email này để phản hồi cho khách hàng (${data.email}).
+      </p>
+    </div>
+  `;
+
+  await transporter.sendMail({
+    from: `"RE AGENT by Re iDea" <${gmailUser}>`,
+    to: notifyTo,
+    replyTo: data.email,
+    subject,
+    html: htmlContent,
+  });
 }
 
 export async function submitInquiryAction(input: SubmitInquiryInput) {
-  if (!input.fullName || !input.email || !input.phone) {
-    return { success: false, error: "Vui lòng nhập đầy đủ Họ tên, Email và Số điện thoại." };
+  const fullName = input.fullName?.trim() || "";
+  const email = input.email?.trim() || "";
+  const phone = input.phone?.trim() || "";
+  const message = input.message?.trim() || "";
+  const cleanPropertyId =
+    input.propertyId && input.propertyId.trim() !== ""
+      ? input.propertyId.trim()
+      : null;
+
+  if (!fullName || !email || !phone) {
+    return {
+      success: false,
+      error: "Vui lòng nhập đầy đủ Họ tên, Email và Số điện thoại.",
+    };
   }
 
   try {
     const supabase = await createClient();
 
-    const { error } = await supabase.from("inquiries").insert([
-      {
-        property_id: input.propertyId,
-        full_name: input.fullName,
-        email: input.email,
-        phone: input.phone,
-        message: input.message,
-        status: "pending",
-        created_at: new Date().toISOString()
-      }
-    ]);
+    const basePayload = {
+      property_id: cleanPropertyId,
+      full_name: fullName,
+      email,
+      phone,
+      message,
+      created_at: new Date().toISOString(),
+    };
 
-    if (error) throw error;
+    const { error } = await supabase
+      .from("inquiries")
+      .insert([{ ...basePayload, status: "pending" }]);
 
+    if (error && error.code === "PGRST204") {
+      const { error: retryError } = await supabase
+        .from("inquiries")
+        .insert([basePayload]);
+
+      if (retryError) throw retryError;
+    } else if (error) {
+      throw error;
+    }
+
+    const propertySummary = cleanPropertyId
+      ? await getPropertySummary(supabase, cleanPropertyId)
+      : null;
+
+    try {
+      await sendGmailNotification({
+        propertyId: cleanPropertyId,
+        propertySummary,
+        fullName,
+        email,
+        phone,
+        message,
+      });
+    } catch (mailErr) {
+      console.error("Đã lưu DB nhưng gửi Gmail thất bại:", mailErr);
+    }
+
+    revalidatePath("/admin/inquiries");
     return { success: true };
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : "Không thể gửi tư vấn. Vui lòng thử lại sau.";
+    const errorMessage =
+      err && typeof err === "object" && "message" in err
+        ? String((err as { message: unknown }).message)
+        : "Không thể gửi tư vấn. Vui lòng thử lại sau.";
     console.error("Error submitting inquiry:", err);
     return { success: false, error: errorMessage };
+  }
+}
+
+export async function updateInquiryProgressAction(
+  id: string,
+  status: InquiryStatus,
+  adminNote?: string
+) {
+  try {
+    const supabase = await createClient();
+
+    const updateData: Record<string, unknown> = { status };
+    if (typeof adminNote === "string") {
+      updateData.admin_note = adminNote;
+    }
+
+    const { error } = await supabase
+      .from("inquiries")
+      .update(updateData)
+      .eq("id", id);
+
+    if (error && error.code === "PGRST204") {
+      const { error: retryErr } = await supabase
+        .from("inquiries")
+        .update({ status })
+        .eq("id", id);
+      if (retryErr) throw retryErr;
+    } else if (error) {
+      throw error;
+    }
+
+    revalidatePath("/admin/inquiries");
+    return { success: true };
+  } catch (err: unknown) {
+    const msg =
+      err && typeof err === "object" && "message" in err
+        ? String((err as { message: unknown }).message)
+        : "Không thể cập nhật trạng thái khách hàng.";
+    return { success: false, error: msg };
+  }
+}
+
+export async function deleteInquiryAction(id: string) {
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.from("inquiries").delete().eq("id", id);
+    if (error) throw error;
+
+    revalidatePath("/admin/inquiries");
+    return { success: true };
+  } catch (err: unknown) {
+    const msg =
+      err && typeof err === "object" && "message" in err
+        ? String((err as { message: unknown }).message)
+        : "Không thể xóa dữ liệu khách hàng.";
+    return { success: false, error: msg };
   }
 }

@@ -87,7 +87,6 @@ function getFormattedPrice(property: Property, currentLang: 'vi' | 'en' | 'ja'):
     if (savedJa > 0) priceJa = savedJa;
   }
 
-  // Tỷ giá quy đổi dự phòng nếu bài đăng chưa nhập đủ cả 3 loại tiền trong Admin
   const JPY_TO_VND = 170;
   const JPY_TO_USD = 1 / 150;
   const USD_TO_VND = 25500;
@@ -183,10 +182,45 @@ function parseImages(val: unknown): string[] {
 }
 
 const CARD_LABELS = {
-  vi: { price: 'Giá bán', details: 'Chi tiết →', defaultTitle: 'Bất động sản', defaultLoc: 'Nhật Bản' },
-  en: { price: 'Price', details: 'Details →', defaultTitle: 'Property', defaultLoc: 'Japan' },
-  ja: { price: '販売価格', details: '詳細 →', defaultTitle: '物件情報', defaultLoc: '日本' },
+  vi: {
+    price: 'Giá bán',
+    details: 'Chi tiết →',
+    defaultTitle: 'Bất động sản',
+    defaultLoc: 'Nhật Bản',
+    statusAvailable: 'Còn trống',
+    statusSold: 'Đã bán',
+    statusReserved: 'Đang giao dịch',
+  },
+  en: {
+    price: 'Price',
+    details: 'Details →',
+    defaultTitle: 'Property',
+    defaultLoc: 'Japan',
+    statusAvailable: 'Available',
+    statusSold: 'Sold',
+    statusReserved: 'Reserved',
+  },
+  ja: {
+    price: '販売価格',
+    details: '詳細 →',
+    defaultTitle: '物件情報',
+    defaultLoc: '日本',
+    statusAvailable: '募集中',
+    statusSold: '成約済',
+    statusReserved: '商談中',
+  },
 };
+
+function getLocalizedStatus(
+  rawStatus: string | undefined,
+  labels: (typeof CARD_LABELS)['en']
+): string {
+  const normalized = (rawStatus || 'AVAILABLE').trim().toUpperCase();
+  if (normalized === 'SOLD' || normalized === 'CLOSED') return labels.statusSold;
+  if (normalized === 'RESERVED' || normalized === 'PENDING') return labels.statusReserved;
+  if (normalized === 'AVAILABLE') return labels.statusAvailable;
+  return rawStatus || labels.statusAvailable;
+}
 
 export default function PropertyCard({ property }: PropertyCardProps) {
   const { currentLang } = useLanguage();
@@ -196,10 +230,12 @@ export default function PropertyCard({ property }: PropertyCardProps) {
   const location = getCleanText(property.location, currentLang) || labels.defaultLoc;
   const formattedPrice = getFormattedPrice(property, currentLang);
   const images = parseImages(property.images);
+  const statusLabel = getLocalizedStatus(property.status, labels);
 
-  const mainImage = images.length > 0 && images[0]
-    ? images[0]
-    : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80';
+  const mainImage =
+    images.length > 0 && images[0]
+      ? images[0]
+      : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80';
 
   return (
     <Link
@@ -217,15 +253,15 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80';
           }}
         />
-        <div className="absolute top-3 left-3 bg-[#3c352d]/90 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded">
-          {property.status || 'AVAILABLE'}
+        <div className="absolute top-3 left-3 bg-[#2c2623]/90 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg">
+          {statusLabel}
         </div>
       </div>
 
       {/* Nội dung */}
       <div className="p-5 flex flex-col justify-between grow space-y-4">
         <div>
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8c6d53] block mb-1">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#7a482b] block mb-1">
             📍 {location}
           </span>
           <h3 className="font-serif font-bold text-base text-[#2c2623] group-hover:text-[#7a482b] transition-colors line-clamp-2 leading-snug">
@@ -233,13 +269,13 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           </h3>
         </div>
 
-        <div className="pt-3 border-t border-[#f0eae1] flex items-center justify-between">
+        <div className="pt-3 border-t border-[#f0eae1] flex items-center justify-between gap-3">
           <div>
-            <span className="text-xs text-[#8c827a] block">{labels.price}</span>
+            <span className="text-xs text-[#574d43] block">{labels.price}</span>
             <span className="font-bold text-lg text-[#7a482b]">{formattedPrice}</span>
           </div>
 
-          <span className="px-4 py-2 bg-[#f4efe8] text-[#3c352d] text-xs font-bold rounded-lg group-hover:bg-[#3c352d] group-hover:text-white transition duration-200">
+          <span className="px-4 py-2 bg-[#f4efe8] text-[#2c2623] text-xs font-bold rounded-xl group-hover:bg-[#7a482b] group-hover:text-white transition duration-200 shrink-0">
             {labels.details}
           </span>
         </div>

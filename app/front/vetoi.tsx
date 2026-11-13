@@ -109,54 +109,54 @@ export default function VeToiSection() {
           <div className="absolute bottom-3 left-3 right-3 bg-[#2c2623]/90 backdrop-blur-xs text-white px-3.5 py-2.5 rounded-xl">
             <p className="text-[11px] font-bold tracking-widest uppercase">
               {AGENT_INFO.brand}{' '}
-              <span className="font-normal text-[#d8c7b8]">{AGENT_INFO.subBrand}</span>
+              <span className="font-normal text-[#e6dfd5]">{AGENT_INFO.subBrand}</span>
             </p>
-            <p className="text-[10px] text-white/80 mt-0.5">{AGENT_INFO.slogan}</p>
+            <p className="text-[10px] text-white/85 mt-0.5">{AGENT_INFO.slogan}</p>
           </div>
         </div>
 
         <div className="md:col-span-7 space-y-4">
-          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8c6d53] block">
+          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a482b] block">
             {content.badge}
           </span>
           <div>
             <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#2c2623]">
               {content.name}
             </h1>
-            <p className="text-xs font-semibold text-[#7a482b] mt-1">
+            <p className="text-xs sm:text-sm font-semibold text-[#7a482b] mt-1">
               {content.tagline}
             </p>
           </div>
 
-          <p className="text-sm text-[#665c54] leading-relaxed">
+          <p className="text-sm sm:text-[15px] text-[#3c352d] leading-relaxed">
             {content.bio}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-[#f0eae1] text-xs">
             <div>
               <span className="block font-bold text-[#2c2623]">{content.companyLabel}</span>
-              <span className="text-[#8c827a]">{content.companyValue}</span>
+              <span className="text-[#574d43]">{content.companyValue}</span>
             </div>
             <div>
               <span className="block font-bold text-[#2c2623]">{content.specialtyLabel}</span>
-              <span className="text-[#8c827a]">{content.specialtyValue}</span>
+              <span className="text-[#574d43]">{content.specialtyValue}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Services & Support (Rental / Sales / Relocation Support) */}
+      {/* Services & Support */}
       <div className="space-y-6">
         <div className="text-center sm:text-left">
           <h2 className="text-2xl font-serif font-bold text-[#2c2623]">{content.servicesTitle}</h2>
-          <p className="text-xs text-[#786e65] mt-1">{content.servicesSubtitle}</p>
+          <p className="text-xs sm:text-sm text-[#574d43] mt-1">{content.servicesSubtitle}</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white p-6 rounded-2xl border border-[#e6dfd5] space-y-2">
             <span className="text-xl">🔑</span>
             <h3 className="font-serif font-bold text-sm text-[#2c2623]">{content.service1Title}</h3>
-            <p className="text-xs text-[#665c54] leading-relaxed">
+            <p className="text-xs sm:text-[13px] text-[#574d43] leading-relaxed">
               {content.service1Desc}
             </p>
           </div>
@@ -164,7 +164,7 @@ export default function VeToiSection() {
           <div className="bg-white p-6 rounded-2xl border border-[#e6dfd5] space-y-2">
             <span className="text-xl">🏡</span>
             <h3 className="font-serif font-bold text-sm text-[#2c2623]">{content.service2Title}</h3>
-            <p className="text-xs text-[#665c54] leading-relaxed">
+            <p className="text-xs sm:text-[13px] text-[#574d43] leading-relaxed">
               {content.service2Desc}
             </p>
           </div>
@@ -172,33 +172,33 @@ export default function VeToiSection() {
           <div className="bg-white p-6 rounded-2xl border border-[#e6dfd5] space-y-2">
             <span className="text-xl">🌏</span>
             <h3 className="font-serif font-bold text-sm text-[#2c2623]">{content.service3Title}</h3>
-            <p className="text-xs text-[#665c54] leading-relaxed">
+            <p className="text-xs sm:text-[13px] text-[#574d43] leading-relaxed">
               {content.service3Desc}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Direct Contact Card (Thông tin danh thiếp đầy đủ, không mã QR) */}
+      {/* Direct Contact Card */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#e6dfd5] shadow-sm space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#f0eae1] pb-5">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#8c6d53] block">
+            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#7a482b] block">
               {AGENT_INFO.brand} {AGENT_INFO.subBrand}
             </span>
             <h2 className="text-2xl font-serif font-bold text-[#2c2623] mt-0.5">
               {content.connectTitle}
             </h2>
-            <p className="text-xs text-[#786e65] mt-1">{content.connectSubtitle}</p>
+            <p className="text-xs text-[#574d43] mt-1">{content.connectSubtitle}</p>
           </div>
 
-          {/* Nút liên hệ nhanh WhatsApp & Instagram */}
+          {/* Nút phụ đồng bộ hệ thống thiết kế, nhường điểm nhấn chính cho nút Form */}
           <div className="flex flex-wrap gap-2.5">
             <a
               href={AGENT_INFO.whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1f7a4c] hover:bg-[#18633d] text-white text-xs font-bold transition shadow-xs"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#faf8f5] hover:bg-[#f4efe8] border border-[#d8cebe] hover:border-[#7a482b] text-[#2c2623] text-xs font-bold transition cursor-pointer"
             >
               <span>💬</span>
               <span>{content.whatsappBtn}</span>
@@ -208,7 +208,7 @@ export default function VeToiSection() {
               href={AGENT_INFO.instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2c2623] hover:bg-[#463d38] text-white text-xs font-bold transition shadow-xs"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#faf8f5] hover:bg-[#f4efe8] border border-[#d8cebe] hover:border-[#7a482b] text-[#2c2623] text-xs font-bold transition cursor-pointer"
             >
               <span>📷</span>
               <span>{content.instagramBtn}</span>
@@ -219,7 +219,7 @@ export default function VeToiSection() {
         {/* Chi tiết thông tin liên hệ & văn phòng */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 text-xs">
           <div className="p-4 rounded-xl bg-[#faf8f5] border border-[#f0eae1]">
-            <span className="text-[#8c827a] block mb-1">{content.mobileLabel}</span>
+            <span className="text-[#574d43] block mb-1">{content.mobileLabel}</span>
             <a
               href={`tel:${AGENT_INFO.mobileIntl.replace(/\s+/g, '')}`}
               className="font-bold text-sm text-[#2c2623] hover:text-[#7a482b] transition"
@@ -229,7 +229,7 @@ export default function VeToiSection() {
           </div>
 
           <div className="p-4 rounded-xl bg-[#faf8f5] border border-[#f0eae1]">
-            <span className="text-[#8c827a] block mb-1">{content.telLabel}</span>
+            <span className="text-[#574d43] block mb-1">{content.telLabel}</span>
             <a
               href={`tel:${AGENT_INFO.telIntl.replace(/\s+/g, '')}`}
               className="font-bold text-sm text-[#2c2623] hover:text-[#7a482b] transition"
@@ -239,12 +239,12 @@ export default function VeToiSection() {
           </div>
 
           <div className="p-4 rounded-xl bg-[#faf8f5] border border-[#f0eae1]">
-            <span className="text-[#8c827a] block mb-1">{content.faxLabel}</span>
+            <span className="text-[#574d43] block mb-1">{content.faxLabel}</span>
             <span className="font-bold text-sm text-[#2c2623]">📠 {AGENT_INFO.fax}</span>
           </div>
 
           <div className="p-4 rounded-xl bg-[#faf8f5] border border-[#f0eae1]">
-            <span className="text-[#8c827a] block mb-1">{content.emailLabel}</span>
+            <span className="text-[#574d43] block mb-1">{content.emailLabel}</span>
             <a
               href={`mailto:${AGENT_INFO.email}`}
               className="font-bold text-sm text-[#7a482b] hover:underline break-all"
@@ -254,7 +254,7 @@ export default function VeToiSection() {
           </div>
 
           <div className="p-4 rounded-xl bg-[#faf8f5] border border-[#f0eae1]">
-            <span className="text-[#8c827a] block mb-1">{content.websiteLabel}</span>
+            <span className="text-[#574d43] block mb-1">{content.websiteLabel}</span>
             <a
               href={AGENT_INFO.website}
               target="_blank"
@@ -266,16 +266,16 @@ export default function VeToiSection() {
           </div>
 
           <div className="p-4 rounded-xl bg-[#faf8f5] border border-[#f0eae1]">
-            <span className="text-[#8c827a] block mb-1">{content.companyLabel}</span>
+            <span className="text-[#574d43] block mb-1">{content.companyLabel}</span>
             <span className="font-bold text-sm text-[#2c2623]">🏢 {AGENT_INFO.companyJa}</span>
           </div>
 
           <div className="sm:col-span-2 lg:col-span-3 p-4 rounded-xl bg-[#faf8f5] border border-[#f0eae1]">
-            <span className="text-[#8c827a] block mb-1">{content.addressLabel}</span>
+            <span className="text-[#574d43] block mb-1">{content.addressLabel}</span>
             <p className="font-bold text-sm text-[#2c2623]">
               📍 {AGENT_INFO.postalCode} {AGENT_INFO.addressJa}
             </p>
-            <p className="text-[11px] text-[#786e65] mt-1">{AGENT_INFO.addressEn}</p>
+            <p className="text-xs text-[#574d43] mt-1">{AGENT_INFO.addressEn}</p>
           </div>
         </div>
       </div>

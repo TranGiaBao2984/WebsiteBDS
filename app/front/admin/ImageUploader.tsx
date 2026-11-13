@@ -5,10 +5,9 @@ import { useId, useState } from 'react';
 import { createSupabaseBrowser } from '@/lib/supabase-browser';
 import { IMAGE_BUCKET } from '@/lib/storage';
 
-const MAX_SIDE = 1600; // cạnh dài tối đa (px) sau khi nén
+const MAX_SIDE = 1600;
 const JPEG_QUALITY = 0.85;
 
-/** Thu nhỏ + đổi sang JPEG ngay trên máy, ảnh điện thoại vài MB còn khoảng 300 đến 600 KB. */
 async function compressToJpeg(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
@@ -21,13 +20,17 @@ async function compressToJpeg(file: File): Promise<Blob> {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Trình duyệt không hỗ trợ xử lý ảnh.');
 
-  ctx.fillStyle = '#ffffff'; // ảnh PNG trong suốt (ví dụ bản vẽ mặt bằng) sẽ có nền trắng
+  ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, w, h);
   ctx.drawImage(bitmap, 0, 0, w, h);
   bitmap.close();
 
   return new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Không nén được ảnh.'))), 'image/jpeg', JPEG_QUALITY)
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error('Không nén được ảnh.'))),
+      'image/jpeg',
+      JPEG_QUALITY
+    )
   );
 }
 
@@ -55,7 +58,7 @@ function isHttpUrl(s: string) {
 }
 
 const SMALL_BTN =
-  'flex h-7 w-7 items-center justify-center rounded-md bg-[#2c2623]/75 text-xs text-white backdrop-blur transition hover:bg-[#2c2623] disabled:cursor-not-allowed disabled:opacity-40';
+  'flex h-9 w-9 items-center justify-center rounded-lg bg-[#2c2623]/80 text-xs font-bold text-white backdrop-blur transition hover:bg-[#2c2623] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40';
 
 export default function ImageUploader({
   label,
@@ -95,7 +98,6 @@ export default function ImageUploader({
     setProblems([]);
     setBusyBoth(true);
 
-    // Các nút sửa/xoá bị khoá trong lúc tải nên danh sách không bị đổi giữa chừng
     let next = value;
     for (let i = 0; i < files.length; i++) {
       setProgress(`Đang tải ${i + 1}/${files.length}...`);
@@ -142,40 +144,65 @@ export default function ImageUploader({
     <div className="space-y-3">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold text-[#574d43]">{label}</p>
-          {hint && <p className="mt-0.5 text-[11px] text-[#8c827a]">{hint}</p>}
+          <p className="text-xs font-bold uppercase tracking-wider text-[#2c2623]">{label}</p>
+          {hint && <p className="mt-0.5 text-xs text-[#574d43]">{hint}</p>}
         </div>
-        <span className="text-[11px] text-[#8c827a]">
+        <span className="text-xs font-medium text-[#574d43]">
           {value.length}/{max}
         </span>
       </div>
 
       {value.length > 0 && (
-        <ul className={`grid gap-3 ${max === 1 ? 'grid-cols-1 sm:max-w-xs' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'}`}>
+        <ul
+          className={`grid gap-3 ${
+            max === 1 ? 'grid-cols-1 sm:max-w-xs' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+          }`}
+        >
           {value.map((url, i) => (
-            <li key={`${url}-${i}`} className="relative overflow-hidden rounded-xl border border-[#e6dfd5] bg-[#eae4dc]">
+            <li
+              key={`${url}-${i}`}
+              className="relative overflow-hidden rounded-xl border border-[#e6dfd5] bg-[#eae4dc]"
+            >
               <img src={url} alt={`${label} ${i + 1}`} className="aspect-4/3 w-full object-cover" />
 
               {max > 1 && i === 0 && (
-                <span className="absolute left-2 top-2 rounded-full bg-[#7a482b] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                <span className="absolute left-2 top-2 rounded-lg bg-[#7a482b] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
                   Ảnh bìa
                 </span>
               )}
 
-              <div className="absolute inset-x-2 bottom-2 flex items-center justify-between">
+              <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-1.5">
                 {max > 1 ? (
-                  <div className="flex gap-1">
-                    <button type="button" aria-label="Chuyển sang trái" disabled={busy || i === 0} onClick={() => move(i, i - 1)} className={SMALL_BTN}>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      aria-label="Chuyển sang trái"
+                      disabled={busy || i === 0}
+                      onClick={() => move(i, i - 1)}
+                      className={SMALL_BTN}
+                    >
                       ←
                     </button>
-                    <button type="button" aria-label="Chuyển sang phải" disabled={busy || i === value.length - 1} onClick={() => move(i, i + 1)} className={SMALL_BTN}>
+                    <button
+                      type="button"
+                      aria-label="Chuyển sang phải"
+                      disabled={busy || i === value.length - 1}
+                      onClick={() => move(i, i + 1)}
+                      className={SMALL_BTN}
+                    >
                       →
                     </button>
                   </div>
                 ) : (
                   <span />
                 )}
-                <button type="button" aria-label="Xoá ảnh" disabled={busy} onClick={() => remove(i)} className={SMALL_BTN}>
+                <button
+                  type="button"
+                  aria-label="Xoá ảnh"
+                  disabled={busy}
+                  onClick={() => remove(i)}
+                  className={SMALL_BTN}
+                >
                   ✕
                 </button>
               </div>
@@ -187,11 +214,17 @@ export default function ImageUploader({
       <div className="flex flex-wrap items-center gap-3">
         <label
           htmlFor={`${uid}-file`}
-          className={`inline-flex cursor-pointer items-center rounded-xl border border-dashed border-[#c8b8a6] bg-white px-4 py-2.5 text-xs font-semibold text-[#574d43] transition hover:border-[#8c6d53] hover:bg-[#f3eee7] ${
+          className={`inline-flex cursor-pointer items-center rounded-xl border border-dashed border-[#8c6d53] bg-white px-4 py-2.5 text-xs font-semibold text-[#3c352d] transition hover:border-[#7a482b] hover:bg-[#f3eee7] ${
             busy || full ? 'pointer-events-none opacity-50' : ''
           }`}
         >
-          {busy ? progress || 'Đang tải...' : full ? 'Đã đủ số ảnh' : max === 1 ? '+ Chọn ảnh' : '+ Chọn ảnh (chọn được nhiều ảnh)'}
+          {busy
+            ? progress || 'Đang tải...'
+            : full
+            ? 'Đã đủ số ảnh'
+            : max === 1
+            ? '+ Chọn ảnh'
+            : '+ Chọn ảnh (chọn được nhiều ảnh)'}
         </label>
         <input
           id={`${uid}-file`}
@@ -202,7 +235,7 @@ export default function ImageUploader({
           className="sr-only"
           onChange={(e) => {
             void handleFiles(e.target.files);
-            e.target.value = ''; // cho phép chọn lại đúng file đó lần sau
+            e.target.value = '';
           }}
         />
       </div>
@@ -222,20 +255,23 @@ export default function ImageUploader({
           }}
           placeholder="Hoặc dán link ảnh (https://...)"
           aria-label={`${label}: dán link ảnh`}
-          className="min-w-0 flex-1 rounded-xl border border-[#e6dfd5] bg-[#f8f6f0] px-3.5 py-2.5 text-base text-[#2c2623] placeholder:text-[#b0a499] focus:border-[#8c6d53] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#8c6d53]/15 disabled:opacity-50 md:text-sm"
+          className="min-w-0 flex-1 rounded-xl border border-[#e6dfd5] bg-white px-3.5 py-2.5 text-sm text-[#2c2623] placeholder:text-[#786e65] focus:border-[#7a482b] focus:outline-none focus:ring-2 focus:ring-[#7a482b]/20 disabled:opacity-50"
         />
         <button
           type="button"
           onClick={addUrl}
           disabled={busy || full || !urlText.trim()}
-          className="rounded-xl border border-[#d8cebe] bg-white px-4 text-xs font-semibold text-[#2c2623] transition hover:bg-[#f3eee7] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-[#d8cebe] bg-white px-4 text-xs font-semibold text-[#2c2623] transition hover:bg-[#f3eee7] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
         >
           Thêm
         </button>
       </div>
 
       {(error || problems.length > 0) && (
-        <div role="alert" className="space-y-1 rounded-xl border border-[#e3c9bd] bg-[#fbf1ec] px-4 py-3 text-xs leading-relaxed text-[#8a3b1d]">
+        <div
+          role="alert"
+          className="space-y-1 rounded-xl border border-[#e3c9bd] bg-[#fbf1ec] px-4 py-3 text-xs leading-relaxed text-[#8a3b1d]"
+        >
           {error && <p>{error}</p>}
           {problems.map((p) => (
             <p key={p}>{p}</p>

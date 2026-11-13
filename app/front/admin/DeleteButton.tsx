@@ -17,7 +17,6 @@ export default function DeleteButton({ id, title }: { id: string; title: string 
           setError(res.error);
           setConfirming(false);
         }
-        // Thành công: server đã làm mới danh sách, dòng này tự biến mất
       } catch {
         setError('Không kết nối được. Hãy thử lại.');
         setConfirming(false);
@@ -31,7 +30,7 @@ export default function DeleteButton({ id, title }: { id: string; title: string 
         <button
           type="button"
           onClick={() => setConfirming(true)}
-          className="rounded-lg border border-[#e3c9bd] bg-white px-3 py-1.5 text-xs font-semibold text-[#8a3b1d] transition hover:bg-[#fbf1ec]"
+          className="rounded-xl border border-[#e3c9bd] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#8a3b1d] transition hover:bg-[#fbf1ec] cursor-pointer"
         >
           Xoá
         </button>
@@ -45,13 +44,13 @@ export default function DeleteButton({ id, title }: { id: string; title: string 
   }
 
   return (
-    <span role="group" aria-label={`Xác nhận xoá ${title}`} className="flex items-center gap-2">
-      <span className="text-xs text-[#8a3b1d]">Xoá hẳn căn này?</span>
+    <span role="group" aria-label={`Xác nhận xoá ${title}`} className="flex flex-wrap items-center justify-end gap-2">
+      <span className="text-xs font-medium text-[#8a3b1d]">Xoá hẳn căn này?</span>
       <button
         type="button"
         onClick={handleDelete}
         disabled={pending}
-        className="rounded-lg bg-[#8a3b1d] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#6f2f17] disabled:opacity-60"
+        className="rounded-xl bg-[#8a3b1d] px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[#6f2f17] cursor-pointer disabled:opacity-60"
       >
         {pending ? 'Đang xoá...' : 'Xoá luôn'}
       </button>
@@ -59,7 +58,7 @@ export default function DeleteButton({ id, title }: { id: string; title: string 
         type="button"
         onClick={() => setConfirming(false)}
         disabled={pending}
-        className="rounded-lg border border-[#d8cebe] bg-white px-3 py-1.5 text-xs font-semibold text-[#2c2623] transition hover:bg-[#f3eee7] disabled:opacity-60"
+        className="rounded-xl border border-[#d8cebe] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#2c2623] transition hover:bg-[#f3eee7] cursor-pointer disabled:opacity-60"
       >
         Huỷ
       </button>

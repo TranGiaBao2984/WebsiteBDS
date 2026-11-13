@@ -1,4 +1,4 @@
-import VeToiSection from '@/app/front/about';
+import VeToiSection from '@/app/front/vetoi';
 
 export default function VeToiPage() {
   return (

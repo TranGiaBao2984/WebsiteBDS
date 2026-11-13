@@ -3,18 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveProperty } from "@/app/back/admin";
+import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import type { Property } from "@/lib/types";
 
 interface PropertyFormProps {
   property?: Property;
 }
 
-// Hàm giải mã đệ quy bóc sạch mọi tầng JSON lồng nhau để lấy ra văn bản thuần
+// Bóc tách văn bản thuần từ các chuỗi JSON lồng nhau
 function getCleanText(val: unknown): string {
   if (!val) return "";
   let current: unknown = val;
 
-  // Giải lồng tối đa 10 tầng nếu chuỗi bị JSON.stringify lặp lại nhiều lần
   for (let i = 0; i < 10; i++) {
     if (typeof current === "string") {
       const trimmed = current.trim();
@@ -42,7 +42,7 @@ function getCleanText(val: unknown): string {
   return typeof current === "string" ? current : String(current || "");
 }
 
-// Hàm bóc mảng danh sách ảnh an toàn từ Database
+// Giải mã danh sách URL ảnh từ Database
 function parseImages(val: unknown): string[] {
   if (!val) return [];
   let current: unknown = val;
@@ -91,29 +91,61 @@ export default function PropertyForm({ property }: PropertyFormProps) {
 
   const isEdit = Boolean(property?.id);
 
-  // Xử lý chuyển đổi file ảnh vừa chọn thành Base64 để hiển thị ngay lập tức
+  // Tải ảnh trực tiếp từ trình duyệt lên Supabase Storage để lấy URL nhẹ
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     setUploading(true);
-
-    const readAsBase64 = (file: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (err) => reject(err);
-        reader.readAsDataURL(file);
-      });
-    };
+    const supabase = createSupabaseBrowser();
 
     try {
-      const base64List = await Promise.all(Array.from(files).map(readAsBase64));
-      setImages((prev) => [...prev, ...base64List]);
-    } catch {
-      alert("Lỗi khi đọc file ảnh!");
+      const uploadedUrls: string[] = [];
+
+      for (const file of Array.from(files)) {
+        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const filePath = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+        let bucketName = "properties";
+        let { error: uploadError } = await supabase.storage
+          .from(bucketName)
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        // Dự phòng nếu bucket tên là 'property-images'
+        if (uploadError && uploadError.message.toLowerCase().includes("bucket not found")) {
+          bucketName = "property-images";
+          const retry = await supabase.storage
+            .from(bucketName)
+            .upload(filePath, file, {
+              cacheControl: "3600",
+              upsert: false,
+            });
+          uploadError = retry.error;
+        }
+
+        if (uploadError) {
+          throw new Error(`Tải ảnh "${file.name}" thất bại: ${uploadError.message}`);
+        }
+
+        const { data: publicData } = supabase.storage
+          .from(bucketName)
+          .getPublicUrl(filePath);
+
+        if (publicData?.publicUrl) {
+          uploadedUrls.push(publicData.publicUrl);
+        }
+      }
+
+      setImages((prev) => [...prev, ...uploadedUrls]);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Lỗi khi tải ảnh lên Supabase Storage.";
+      alert(msg);
     } finally {
       setUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -155,7 +187,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
       bathrooms: Number(formData.get("bathrooms")),
       propertyType: formData.get("propertyType") as string,
       images: finalImages,
-      floorPlanUrl: finalImages[0] || property?.floor_plan || property?.floor_plan_url || ""
+      floorPlanUrl: finalImages[0] || property?.floor_plan || property?.floor_plan_url || "",
     };
 
     const res = await saveProperty(inputData);
@@ -394,7 +426,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
             onChange={handleImageUpload}
             className="block w-full text-sm text-[#3c352d] file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-[#3c352d] file:text-[#f8f6f0] hover:file:opacity-90 cursor-pointer"
           />
-          {uploading && <p className="text-xs text-amber-600 mt-1">Đang xử lý hình ảnh...</p>}
+          {uploading && <p className="text-xs text-amber-600 mt-1">Đang tải ảnh lên Storage...</p>}
 
           {images.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-3">
@@ -406,7 +438,6 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                     alt={`Property image ${idx}`}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      // Fallback hiển thị ảnh mỏng nhẹ nếu URL hỏng
                       (e.target as HTMLImageElement).src =
                         "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23eee'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23aaa' font-size='12'>Ảnh lỗi</text></svg>";
                     }}

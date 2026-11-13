@@ -18,7 +18,26 @@ const nextConfig: NextConfig = {
         hostname: "jclbxsnsorfotwndpxle.supabase.co",
       },
     ],
-  }
+  },
+  async redirects() {
+    return [
+      {
+        source: "/sanpham",
+        destination: "/properties",
+        permanent: true,
+      },
+      {
+        source: "/sanpham/:id",
+        destination: "/properties/:id",
+        permanent: true,
+      },
+      {
+        source: "/vetoi",
+        destination: "/about",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

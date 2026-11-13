@@ -30,7 +30,7 @@ Mii manages listings and incoming inquiries in a Vietnamese admin. Inquiry state
 
 ## Capabilities and Constraints
 
-Public routes: home (`/`), catalog (`/sanpham`), property detail (`/properties/[id]`), and about (`/vetoi`). The public site is English, Japanese, and Vietnamese, with English as the default. Services are rental, sales (homes, condominiums, traditional kominka, and investment property), and relocation support.
+Public routes: home (`/`), catalog (`/properties`), property detail (`/properties/[id]`), and about (`/about`). The public site is English, Japanese, and Vietnamese, with English as the default. Services are rental, sales (homes, condominiums, traditional kominka, and investment property), and relocation support.
 
 Admin (`/admin`) is an internal Vietnamese tool for signed-in use: create and edit listings, and read inquiries. It is not part of the public product.
 
@@ -51,7 +51,7 @@ Future work must not present the site as a complete Japan-wide portal, and must 
 
 ## Evidence on Hand
 
-Published identity and contact facts live in `lib/site.ts` and `lib/agent-info.ts`. About-page copy in English, Japanese, and Vietnamese lives in `app/front/vetoi.tsx`. The advisor portrait is `public/face.jpg`.
+Published identity and contact facts live in `lib/site.ts` and `lib/agent-info.ts`. About-page copy in English, Japanese, and Vietnamese lives in `app/front/about.tsx`. The advisor portrait is `public/face.jpg`.
 
 There are no testimonials, license numbers, awards, press mentions, or client counts in the project. Future work must not fabricate them.
 

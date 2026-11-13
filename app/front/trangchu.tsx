@@ -26,7 +26,7 @@ export default function TrangChuSection({ properties }: { properties: Property[]
         </div>
 
         <Link
-          href="/sanpham"
+          href="/properties"
           className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#7a482b] hover:bg-[#633a22] text-white text-xs font-semibold uppercase tracking-wider rounded-xl transition shadow-sm whitespace-nowrap self-start sm:self-auto"
         >
           {t.home.viewAll}
@@ -47,7 +47,7 @@ export default function TrangChuSection({ properties }: { properties: Property[]
       {/* Footer CTA Banner ở Trang Chủ */}
       <div className="pt-4 text-center">
         <Link
-          href="/sanpham"
+          href="/properties"
           className="inline-block text-xs font-semibold text-[#7a482b] hover:text-[#2c2623] underline underline-offset-4 tracking-wider uppercase transition"
         >
           {t.home.exploreMore}

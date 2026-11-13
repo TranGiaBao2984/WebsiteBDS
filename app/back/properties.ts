@@ -6,7 +6,7 @@ import type { Property } from '@/lib/types';
 const CARD_COLUMNS =
   'id, title, price, location, layout, building_size, year_built, structure, current_status, images, created_at, description, price_yen, price_vnd';
 
-/** Toàn bộ danh sách cho trang /sanpham (lọc phía client). */
+/** Toàn bộ danh sách cho trang /properties (lọc phía client). */
 export async function getProperties(): Promise<Property[]> {
   'use cache';
   cacheTag('properties'); // trang admin gọi updateTag('properties') để làm mới

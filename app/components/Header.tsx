@@ -77,9 +77,9 @@ export default function Header() {
   const closeMenu = () => setMenuOpen(false);
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
 
-  // Tự động cuộn xuống phần form liên hệ nếu đã đứng ở trang /vetoi
+  // Tự động cuộn xuống phần form liên hệ nếu đã đứng ở trang /about
   const handleCtaClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (pathname === '/vetoi') {
+    if (pathname === '/about') {
       e.preventDefault();
       const element = document.getElementById('contact');
       if (element) {
@@ -90,8 +90,8 @@ export default function Header() {
 
   const links = [
     { name: t.header.home, href: '/' },
-    { name: t.header.properties, href: '/sanpham' },
-    { name: t.header.aboutMe, href: '/vetoi' },
+    { name: t.header.properties, href: '/properties' },
+    { name: t.header.aboutMe, href: '/about' },
   ];
 
   return (

@@ -92,7 +92,7 @@ export async function deleteProperty(id: string) {
 
     revalidatePath("/admin", "layout");
     revalidatePath("/properties");
-    revalidatePath("/sanpham");
+    revalidatePath("/properties");
     revalidatePath("/");
 
     return { success: true };
@@ -228,7 +228,7 @@ export async function createPropertyAction(input: CreatePropertyInput) {
 
     revalidatePath("/admin", "layout");
     revalidatePath("/properties");
-    revalidatePath("/sanpham");
+    revalidatePath("/properties");
     revalidatePath("/");
 
     return { success: true, propertyId: data.id };
@@ -258,9 +258,9 @@ export async function updatePropertyAction(id: string, input: CreatePropertyInpu
 
     revalidatePath("/admin", "layout");
     revalidatePath(`/properties/${id}`);
-    revalidatePath(`/sanpham/${id}`);
+    revalidatePath(`/properties/${id}`);
     revalidatePath("/properties");
-    revalidatePath("/sanpham");
+    revalidatePath("/properties");
     revalidatePath("/");
 
     return { success: true, propertyId: data.id };

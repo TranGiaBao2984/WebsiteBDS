@@ -67,7 +67,7 @@ export async function saveFilterOptions(options: FilterOptionsData) {
 
     revalidatePath("/admin");
     revalidatePath("/properties");
-    revalidatePath("/sanpham");
+    revalidatePath("/properties");
     revalidatePath("/");
 
     return { success: true, data: cleanOptions };

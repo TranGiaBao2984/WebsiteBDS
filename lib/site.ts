@@ -21,5 +21,5 @@ export const SITE = {
   postalCode: '〒192-0031',
   addressJa: '東京都八王子市小宮町1076-5 ジュネス石川102号室',
   addressEn: 'Jeunesse Ishikawa 102, 1076-5 Komiyamachi, Hachioji-shi, Tokyo 192-0031, Japan',
-  ctaHref: '/vetoi#contact',
+  ctaHref: '/about#contact',
 } as const;

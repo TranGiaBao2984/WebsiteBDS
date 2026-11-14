@@ -8,7 +8,7 @@ import {
   DEFAULT_FILTER_OPTIONS,
   type FilterOptionsData,
 } from "@/lib/filter-constants";
-import type { Property } from "@/lib/types";
+import type { NearbyCategory, NearbyItem, Property } from "@/lib/types";
 import ImageUploader from "./ImageUploader";
 
 interface PropertyFormProps {
@@ -16,6 +16,86 @@ interface PropertyFormProps {
 }
 
 type FilterGroupKey = "locations" | "prices" | "layouts";
+
+interface NearbyDraftItem {
+  id: string;
+  category: NearbyCategory;
+  isMultilingual: boolean;
+  nameVi: string;
+  nameEn: string;
+  nameJa: string;
+  distanceVi: string;
+  distanceEn: string;
+  distanceJa: string;
+}
+
+const NEARBY_CATEGORY_OPTIONS: {
+  value: NearbyCategory;
+  label: string;
+  sampleName: string;
+  sampleDistance: string;
+}[] = [
+  {
+    value: "station",
+    label: "Ga tàu / Trạm giao thông",
+    sampleName: "JR Awa-Kamogawa Station",
+    sampleDistance: "15 min by car",
+  },
+  {
+    value: "beach",
+    label: "Biển / Thiên nhiên",
+    sampleName: "Beaches",
+    sampleDistance: "10–15 min by car",
+  },
+  {
+    value: "supermarket",
+    label: "Siêu thị / TTTM",
+    sampleName: "Supermarket",
+    sampleDistance: "8 min by car",
+  },
+  {
+    value: "restaurant",
+    label: "Nhà hàng / Cửa hàng",
+    sampleName: "Local shops & restaurants",
+    sampleDistance: "10 min by car",
+  },
+  {
+    value: "convenience",
+    label: "Cửa hàng tiện lợi (Konbini)",
+    sampleName: "7-Eleven / Lawson",
+    sampleDistance: "3 min walk",
+  },
+  {
+    value: "school",
+    label: "Trường học",
+    sampleName: "Elementary School",
+    sampleDistance: "12 min walk",
+  },
+  {
+    value: "hospital",
+    label: "Bệnh viện / Phòng khám",
+    sampleName: "General Hospital",
+    sampleDistance: "10 min by car",
+  },
+  {
+    value: "park",
+    label: "Công viên",
+    sampleName: "Central Park",
+    sampleDistance: "5 min walk",
+  },
+  {
+    value: "airport",
+    label: "Sân bay",
+    sampleName: "Haneda / Narita Airport",
+    sampleDistance: "45 min by train",
+  },
+  {
+    value: "other",
+    label: "Địa điểm lân cận khác",
+    sampleName: "",
+    sampleDistance: "",
+  },
+];
 
 function detectPriceBucket(yenAmount: number, priceOptions: string[]): string {
   if (!yenAmount || yenAmount <= 0) return "";
@@ -74,6 +154,95 @@ function getLangText(val: unknown, lang: "vi" | "en" | "ja"): string {
   }
 
   return "";
+}
+
+function parseSavedNearby(property?: Property): NearbyDraftItem[] {
+  if (!property) return [];
+  let rawList: unknown = property.nearby;
+
+  if (!Array.isArray(rawList)) {
+    const descObj = unwrapJson(property.description);
+    if (typeof descObj === "object" && descObj !== null && !Array.isArray(descObj)) {
+      rawList = (descObj as Record<string, unknown>).nearby;
+    }
+  }
+
+  const unwrappedList = unwrapJson(rawList);
+  if (!Array.isArray(unwrappedList)) return [];
+
+  return unwrappedList
+    .map((entry, index): NearbyDraftItem | null => {
+      if (!entry || typeof entry !== "object") return null;
+      const rec = entry as Record<string, unknown>;
+      const rawCat = String(rec.category || "other") as NearbyCategory;
+      const validCat = NEARBY_CATEGORY_OPTIONS.some((o) => o.value === rawCat)
+        ? rawCat
+        : "other";
+
+      const nameVal = unwrapJson(rec.name);
+      const distVal = unwrapJson(rec.distance);
+
+      let nameVi = "";
+      let nameEn = "";
+      let nameJa = "";
+      let hasMultiName = false;
+
+      if (typeof nameVal === "object" && nameVal !== null && !Array.isArray(nameVal)) {
+        const nRec = nameVal as Record<string, unknown>;
+        nameVi = typeof nRec.vi === "string" ? nRec.vi : "";
+        nameEn = typeof nRec.en === "string" ? nRec.en : "";
+        nameJa = typeof nRec.ja === "string" ? nRec.ja : "";
+        const nonEmpty = [nameVi, nameEn, nameJa].filter(Boolean);
+        hasMultiName = new Set(nonEmpty).size > 1;
+        if (!hasMultiName && nonEmpty.length > 0) {
+          const shared = nonEmpty[0];
+          nameVi = shared;
+          nameEn = shared;
+          nameJa = shared;
+        }
+      } else if (typeof nameVal === "string") {
+        nameVi = nameVal;
+        nameEn = nameVal;
+        nameJa = nameVal;
+      }
+
+      let distanceVi = "";
+      let distanceEn = "";
+      let distanceJa = "";
+      let hasMultiDist = false;
+
+      if (typeof distVal === "object" && distVal !== null && !Array.isArray(distVal)) {
+        const dRec = distVal as Record<string, unknown>;
+        distanceVi = typeof dRec.vi === "string" ? dRec.vi : "";
+        distanceEn = typeof dRec.en === "string" ? dRec.en : "";
+        distanceJa = typeof dRec.ja === "string" ? dRec.ja : "";
+        const nonEmpty = [distanceVi, distanceEn, distanceJa].filter(Boolean);
+        hasMultiDist = new Set(nonEmpty).size > 1;
+        if (!hasMultiDist && nonEmpty.length > 0) {
+          const shared = nonEmpty[0];
+          distanceVi = shared;
+          distanceEn = shared;
+          distanceJa = shared;
+        }
+      } else if (typeof distVal === "string") {
+        distanceVi = distVal;
+        distanceEn = distVal;
+        distanceJa = distVal;
+      }
+
+      return {
+        id: typeof rec.id === "string" && rec.id ? rec.id : `nearby-init-${index}`,
+        category: validCat,
+        isMultilingual: hasMultiName || hasMultiDist,
+        nameVi,
+        nameEn,
+        nameJa,
+        distanceVi,
+        distanceEn,
+        distanceJa,
+      };
+    })
+    .filter((item): item is NearbyDraftItem => item !== null);
 }
 
 function getSavedPrice(property: Property | undefined, lang: "vi" | "en" | "ja"): number | "" {
@@ -287,6 +456,44 @@ function PlusIcon({ className }: { className?: string }) {
   );
 }
 
+function TrashIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M3 6h18" />
+      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+    </svg>
+  );
+}
+
+function GlobeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+      <path d="M2 12h20" />
+    </svg>
+  );
+}
+
 function SaveIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -347,6 +554,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
   const router = useRouter();
   const uid = useId();
   const bannerRef = useRef<HTMLDivElement>(null);
+  const nearbySeqRef = useRef(0);
 
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<string[]>(() => parseImages(property?.images));
@@ -357,6 +565,10 @@ export default function PropertyForm({ property }: PropertyFormProps) {
     parseFloorPlanImages(property)
   );
   const [uploadingFloorPlan, setUploadingFloorPlan] = useState(false);
+
+  const [nearbyItems, setNearbyItems] = useState<NearbyDraftItem[]>(() =>
+    parseSavedNearby(property)
+  );
 
   const [statusBanner, setStatusBanner] = useState<{
     type: "error" | "success";
@@ -405,6 +617,38 @@ export default function PropertyForm({ property }: PropertyFormProps) {
     requestAnimationFrame(() => {
       bannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
+  };
+
+  const handleAddNearbyItem = (category: NearbyCategory = "station") => {
+    nearbySeqRef.current += 1;
+    const preset = NEARBY_CATEGORY_OPTIONS.find((item) => item.value === category);
+    setNearbyItems((prev) => [
+      ...prev,
+      {
+        id: `nearby-${uid}-${nearbySeqRef.current}`,
+        category,
+        isMultilingual: false,
+        nameVi: preset?.sampleName || "",
+        nameEn: preset?.sampleName || "",
+        nameJa: preset?.sampleName || "",
+        distanceVi: preset?.sampleDistance || "",
+        distanceEn: preset?.sampleDistance || "",
+        distanceJa: preset?.sampleDistance || "",
+      },
+    ]);
+  };
+
+  const handleUpdateNearbyField = (
+    id: string,
+    patch: Partial<NearbyDraftItem>
+  ) => {
+    setNearbyItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...patch } : item))
+    );
+  };
+
+  const handleRemoveNearbyItem = (id: string) => {
+    setNearbyItems((prev) => prev.filter((item) => item.id !== id));
   };
 
   const persistFilterOptions = async (updated: FilterOptionsData) => {
@@ -539,6 +783,30 @@ export default function PropertyForm({ property }: PropertyFormProps) {
     const resolvedPriceFilter =
       filterPrice || detectPriceBucket(priceJa, filterOptions.prices);
 
+    const serializedNearby: NearbyItem[] = nearbyItems
+      .map((item): NearbyItem | null => {
+        const nVi = item.nameVi.trim();
+        const nEn = item.nameEn.trim();
+        const nJa = item.nameJa.trim();
+        const dVi = item.distanceVi.trim();
+        const dEn = item.distanceEn.trim();
+        const dJa = item.distanceJa.trim();
+
+        if (!nVi && !nEn && !nJa && !dVi && !dEn && !dJa) return null;
+
+        return {
+          id: item.id,
+          category: item.category,
+          name: item.isMultilingual
+            ? { vi: nVi || nEn || nJa, en: nEn || nVi || nJa, ja: nJa || nEn || nVi }
+            : nVi || nEn || nJa,
+          distance: item.isMultilingual
+            ? { vi: dVi || dEn || dJa, en: dEn || dVi || dJa, ja: dJa || dEn || dVi }
+            : dVi || dEn || dJa,
+        };
+      })
+      .filter((item): item is NearbyItem => item !== null);
+
     const inputData = {
       id: property?.id,
       titleVi,
@@ -574,6 +842,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
       bathrooms: Number(formData.get("bathrooms")),
       images: finalImages,
       floorPlanImages,
+      nearby: serializedNearby,
     };
 
     const res = await saveProperty(inputData);
@@ -775,7 +1044,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="relative overflow-hidden space-y-8 rounded-2xl border border-[#99F6E4] bg-white/85 p-6 shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md sm:p-8"
+      className="relative space-y-8 overflow-hidden rounded-2xl border border-[#99F6E4] bg-white/85 p-6 shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md sm:p-8"
     >
       {/* Điểm sáng chiều sâu cho hiệu ứng Glassmorphism */}
       <div
@@ -1326,14 +1595,14 @@ export default function PropertyForm({ property }: PropertyFormProps) {
         </div>
       </div>
 
-      {/* 3. Mô tả 3 ngôn ngữ & Hình ảnh (Tích hợp ImageUploader nén ảnh & sắp xếp ảnh bìa) */}
+      {/* 3. Mô tả 3 ngôn ngữ, Tiện ích xung quanh (Nearby) & Hình ảnh */}
       <div className="relative space-y-5 pt-2">
         <div className="flex items-center gap-3 border-b border-[#E8F0F3] pb-3">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#0F766E] text-xs font-bold text-white">
             3
           </span>
           <h2 className="font-serif text-lg font-bold text-[#134E4A] sm:text-xl">
-            Mô tả chi tiết (3 ngôn ngữ) & Hình ảnh
+            Mô tả chi tiết, Tiện ích xung quanh & Hình ảnh
           </h2>
         </div>
 
@@ -1388,6 +1657,248 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           </div>
         </div>
 
+        {/* Tiện ích xung quanh (Nearby) */}
+        <div className="space-y-4 rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
+          <div className="flex flex-col justify-between gap-2.5 border-b border-[#99F6E4]/70 pb-3 sm:flex-row sm:items-center">
+            <div>
+              <span className="block text-xs font-bold uppercase tracking-wider text-[#134E4A]">
+                Tiện ích xung quanh (Nearby)
+              </span>
+              <span className="mt-0.5 block text-xs text-[#475569]">
+                Hiển thị giữa phần Mô tả chi tiết và Bản đồ trên trang chi tiết BĐS.
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleAddNearbyItem("station")}
+              className="inline-flex cursor-pointer items-center gap-1.5 self-start rounded-lg bg-[#0F766E] px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition-all duration-200 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] sm:self-auto"
+            >
+              <PlusIcon className="h-3.5 w-3.5" />
+              <span>Thêm tiện ích</span>
+            </button>
+          </div>
+
+          {/* Nút thêm nhanh các loại tiện ích phổ biến */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="mr-1 text-[11px] font-semibold text-[#475569]">
+              Thêm nhanh:
+            </span>
+            {(
+              [
+                { cat: "station", label: "+ Ga tàu" },
+                { cat: "beach", label: "+ Biển" },
+                { cat: "supermarket", label: "+ Siêu thị" },
+                { cat: "restaurant", label: "+ Nhà hàng / Cửa hàng" },
+              ] as { cat: NearbyCategory; label: string }[]
+            ).map((quick) => (
+              <button
+                key={quick.cat}
+                type="button"
+                onClick={() => handleAddNearbyItem(quick.cat)}
+                className="cursor-pointer rounded-md border border-[#99F6E4] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#0F766E] transition-colors hover:border-[#0F766E] hover:bg-[#F0FDFA]"
+              >
+                {quick.label}
+              </button>
+            ))}
+          </div>
+
+          {nearbyItems.length > 0 ? (
+            <div className="space-y-3">
+              {nearbyItems.map((item, idx) => (
+                <div
+                  key={item.id}
+                  className="space-y-3 rounded-xl border border-[#99F6E4] bg-white/95 p-3.5 shadow-2xs"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0F766E]">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#F0FDFA] text-[11px] ring-1 ring-[#99F6E4]">
+                        {idx + 1}
+                      </span>
+                      <span>Địa điểm lân cận</span>
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleUpdateNearbyField(item.id, {
+                            isMultilingual: !item.isMultilingual,
+                          })
+                        }
+                        className={`inline-flex cursor-pointer items-center gap-1 rounded-md border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                          item.isMultilingual
+                            ? "border-[#0369A1] bg-[#0369A1] text-white"
+                            : "border-[#E2E8F0] bg-[#F8FAFC] text-[#475569] hover:border-[#0F766E] hover:text-[#0F766E]"
+                        }`}
+                      >
+                        <GlobeIcon className="h-3 w-3" />
+                        <span>
+                          {item.isMultilingual ? "Đang nhập 3 ngôn ngữ" : "Dịch 3 ngôn ngữ"}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveNearbyItem(item.id)}
+                        aria-label={`Xóa tiện ích ${idx + 1}`}
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-700 transition-colors hover:bg-rose-100"
+                      >
+                        <TrashIcon className="h-3 w-3" />
+                        <span>Xóa</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
+                    <div className="md:col-span-4">
+                      <label className="mb-1 block text-[11px] font-bold text-[#475569]">
+                        Biểu tượng / Loại
+                      </label>
+                      <select
+                        aria-label={`Loại tiện ích ${idx + 1}`}
+                        value={item.category}
+                        onChange={(e) =>
+                          handleUpdateNearbyField(item.id, {
+                            category: e.target.value as NearbyCategory,
+                          })
+                        }
+                        className={inputClassName}
+                      >
+                        {NEARBY_CATEGORY_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {!item.isMultilingual ? (
+                      <>
+                        <div className="md:col-span-5">
+                          <label className="mb-1 block text-[11px] font-bold text-[#475569]">
+                            Tên địa điểm (VD: JR Awa-Kamogawa Station)
+                          </label>
+                          <input
+                            type="text"
+                            value={item.nameEn || item.nameVi}
+                            onChange={(e) =>
+                              handleUpdateNearbyField(item.id, {
+                                nameVi: e.target.value,
+                                nameEn: e.target.value,
+                                nameJa: e.target.value,
+                              })
+                            }
+                            placeholder="JR Awa-Kamogawa Station"
+                            className={inputClassName}
+                          />
+                        </div>
+
+                        <div className="md:col-span-3">
+                          <label className="mb-1 block text-[11px] font-bold text-[#475569]">
+                            Khoảng cách / Thời gian
+                          </label>
+                          <input
+                            type="text"
+                            value={item.distanceEn || item.distanceVi}
+                            onChange={(e) =>
+                              handleUpdateNearbyField(item.id, {
+                                distanceVi: e.target.value,
+                                distanceEn: e.target.value,
+                                distanceJa: e.target.value,
+                              })
+                            }
+                            placeholder="15 min by car"
+                            className={inputClassName}
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-2.5 md:col-span-8 sm:grid-cols-3">
+                        <div className="space-y-1.5 rounded-lg border border-[#E8F0F3] bg-[#F8FAFC] p-2.5">
+                          <span className="block text-[10px] font-bold uppercase text-[#0F766E]">
+                            Tiếng Việt (VI)
+                          </span>
+                          <input
+                            type="text"
+                            value={item.nameVi}
+                            onChange={(e) =>
+                              handleUpdateNearbyField(item.id, { nameVi: e.target.value })
+                            }
+                            placeholder="Ga JR Awa-Kamogawa"
+                            className={inputClassName}
+                          />
+                          <input
+                            type="text"
+                            value={item.distanceVi}
+                            onChange={(e) =>
+                              handleUpdateNearbyField(item.id, { distanceVi: e.target.value })
+                            }
+                            placeholder="15 phút đi ô tô"
+                            className={inputClassName}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5 rounded-lg border border-[#E8F0F3] bg-[#F8FAFC] p-2.5">
+                          <span className="block text-[10px] font-bold uppercase text-[#0F766E]">
+                            English (EN)
+                          </span>
+                          <input
+                            type="text"
+                            value={item.nameEn}
+                            onChange={(e) =>
+                              handleUpdateNearbyField(item.id, { nameEn: e.target.value })
+                            }
+                            placeholder="JR Awa-Kamogawa Station"
+                            className={inputClassName}
+                          />
+                          <input
+                            type="text"
+                            value={item.distanceEn}
+                            onChange={(e) =>
+                              handleUpdateNearbyField(item.id, { distanceEn: e.target.value })
+                            }
+                            placeholder="15 min by car"
+                            className={inputClassName}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5 rounded-lg border border-[#E8F0F3] bg-[#F8FAFC] p-2.5">
+                          <span className="block text-[10px] font-bold uppercase text-[#0F766E]">
+                            日本語 (JA)
+                          </span>
+                          <input
+                            type="text"
+                            value={item.nameJa}
+                            onChange={(e) =>
+                              handleUpdateNearbyField(item.id, { nameJa: e.target.value })
+                            }
+                            placeholder="JR安房鴨川駅"
+                            className={inputClassName}
+                          />
+                          <input
+                            type="text"
+                            value={item.distanceJa}
+                            onChange={(e) =>
+                              handleUpdateNearbyField(item.id, { distanceJa: e.target.value })
+                            }
+                            placeholder="車で15分"
+                            className={inputClassName}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-[#99F6E4] bg-white/70 py-6 text-center text-xs text-[#475569]">
+              Chưa có tiện ích xung quanh nào. Bấm <strong>+ Thêm tiện ích</strong> hoặc chọn nút thêm nhanh ở trên.
+            </div>
+          )}
+        </div>
+
         {/* Hình ảnh BĐS chính */}
         <div className="rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
           <ImageUploader
@@ -1417,7 +1928,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
         </div>
       </div>
 
-      {/* Khung thông báo trạng thái inline (thay thế alert trình duyệt) */}
+      {/* Khung thông báo trạng thái inline */}
       {statusBanner && (
         <div
           ref={bannerRef}
@@ -1448,11 +1959,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               aria-hidden="true"
               className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
             />
-            <span>
-              {loading
-                ? "Đang lưu..."
-                : "Đang tải ảnh lên..."}
-            </span>
+            <span>{loading ? "Đang lưu..." : "Đang tải ảnh lên..."}</span>
           </>
         ) : (
           <>

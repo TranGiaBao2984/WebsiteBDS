@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '@/app/context/LanguageContext';
-import type { Property } from '@/lib/types';
+import type { NearbyCategory, Property } from '@/lib/types';
 import PropertyCard from './PropertyCard';
 import InquiryForm from './InquiryForm';
 
@@ -17,6 +17,13 @@ interface LightboxState {
   images: string[];
   index: number;
   title: string;
+}
+
+interface ResolvedNearbyItem {
+  id: string;
+  category: NearbyCategory;
+  name: string;
+  distance: string;
 }
 
 function MapPinIcon({ className }: { className?: string }) {
@@ -35,6 +42,215 @@ function MapPinIcon({ className }: { className?: string }) {
       <circle cx="12" cy="10" r="3" />
     </svg>
   );
+}
+
+function TrainIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <rect width="16" height="16" x="4" y="3" rx="2" />
+      <path d="M4 11h16" />
+      <path d="M12 3v8" />
+      <path d="m8 19-2 3" />
+      <path d="m18 22-2-3" />
+      <path d="M8 15h.01" />
+      <path d="M16 15h.01" />
+    </svg>
+  );
+}
+
+function BeachIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+      <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+      <path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+    </svg>
+  );
+}
+
+function ShoppingCartIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <circle cx="8" cy="21" r="1" />
+      <circle cx="19" cy="21" r="1" />
+      <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+    </svg>
+  );
+}
+
+function UtensilsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+      <path d="M7 2v20" />
+      <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+    </svg>
+  );
+}
+
+function StoreIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" />
+      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+      <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" />
+      <path d="M2 7h20" />
+    </svg>
+  );
+}
+
+function SchoolIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
+      <path d="M22 10v6" />
+      <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
+    </svg>
+  );
+}
+
+function HospitalIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M12 6v4" />
+      <path d="M14 14h-4" />
+      <path d="M14 18h-4" />
+      <path d="M14 8h-4" />
+      <path d="M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2" />
+      <path d="M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18" />
+    </svg>
+  );
+}
+
+function ParkIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z" />
+      <path d="M7 16v6" />
+      <path d="M13 19v3" />
+      <path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5" />
+    </svg>
+  );
+}
+
+function AirportIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
+    </svg>
+  );
+}
+
+function NearbyCategoryIcon({
+  category,
+  className,
+}: {
+  category: NearbyCategory;
+  className?: string;
+}) {
+  switch (category) {
+    case "station":
+      return <TrainIcon className={className} />;
+    case "beach":
+      return <BeachIcon className={className} />;
+    case "supermarket":
+      return <ShoppingCartIcon className={className} />;
+    case "restaurant":
+      return <UtensilsIcon className={className} />;
+    case "convenience":
+      return <StoreIcon className={className} />;
+    case "school":
+      return <SchoolIcon className={className} />;
+    case "hospital":
+      return <HospitalIcon className={className} />;
+    case "park":
+      return <ParkIcon className={className} />;
+    case "airport":
+      return <AirportIcon className={className} />;
+    default:
+      return <MapPinIcon className={className} />;
+  }
 }
 
 function ZoomInIcon({ className }: { className?: string }) {
@@ -182,6 +398,39 @@ function getCleanText(val: unknown, currentLang: string = 'en'): string {
   }
 
   return typeof current === 'string' ? current : String(current || '');
+}
+
+function parseNearbyItems(property: Property, currentLang: string): ResolvedNearbyItem[] {
+  let rawList: unknown = property.nearby;
+
+  if (!Array.isArray(rawList)) {
+    const descObj = unwrapJson(property.description);
+    if (typeof descObj === 'object' && descObj !== null && !Array.isArray(descObj)) {
+      rawList = (descObj as Record<string, unknown>).nearby;
+    }
+  }
+
+  const unwrapped = unwrapJson(rawList);
+  if (!Array.isArray(unwrapped)) return [];
+
+  return unwrapped
+    .map((entry, idx): ResolvedNearbyItem | null => {
+      if (!entry || typeof entry !== 'object') return null;
+      const rec = entry as Record<string, unknown>;
+      const category = (rec.category as NearbyCategory) || 'other';
+      const name = getCleanText(rec.name, currentLang).trim();
+      const distance = getCleanText(rec.distance, currentLang).trim();
+
+      if (!name && !distance) return null;
+
+      return {
+        id: typeof rec.id === 'string' && rec.id ? rec.id : `nearby-${idx}`,
+        category,
+        name,
+        distance,
+      };
+    })
+    .filter((item): item is ResolvedNearbyItem => item !== null);
 }
 
 function toPositiveNumber(val: unknown): number {
@@ -389,6 +638,7 @@ const DETAIL_LABELS = {
     noFloorPlan: 'Chưa có hình ảnh sơ đồ nhà ở.',
     descTitle: 'Mô tả chi tiết',
     noDesc: 'Chưa có mô tả chi tiết.',
+    nearbyTitle: 'Tiện ích xung quanh',
     mapTitle: 'Vị trí trên bản đồ',
     openGoogleMaps: 'Mở trên Google Maps',
     similarTitle: 'Bất động sản tương tự',
@@ -418,6 +668,7 @@ const DETAIL_LABELS = {
     noFloorPlan: 'No floor plan images available.',
     descTitle: 'Detailed Description',
     noDesc: 'No detailed description available.',
+    nearbyTitle: 'Nearby',
     mapTitle: 'Location on Map',
     openGoogleMaps: 'Open in Google Maps',
     similarTitle: 'Similar Properties',
@@ -447,6 +698,7 @@ const DETAIL_LABELS = {
     noFloorPlan: '間取り図の画像はまだ登録されていません。',
     descTitle: '物件詳細説明',
     noDesc: '詳細説明はまだ登録されていません。',
+    nearbyTitle: '周辺施設・アクセス',
     mapTitle: '地図・周辺マップ',
     openGoogleMaps: 'Googleマップで開く',
     similarTitle: '類似のおすすめ物件',
@@ -481,6 +733,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
 
   const propertyType = getCleanText(property.property_type, currentLang) || labels.defaultType;
   const description = getCleanText(property.description, currentLang) || labels.noDesc;
+  const nearbyItems = parseNearbyItems(property, currentLang);
   const formattedPrice = getFormattedPrice(property, currentLang);
   const images = parseImages(property.images);
   const floorPlanImages = parseFloorPlanImages(property);
@@ -490,7 +743,6 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
   const mainImage = images[activeIndex] || images[0] || fallbackImage;
   const mainFloorPlanImage = floorPlanImages[activeFloorPlanIndex] || floorPlanImages[0] || '';
 
-  // Đo chiều cao Header, khóa cuộn nền và lắng nghe phím tắt Esc / mũi tên khi mở Lightbox
   useEffect(() => {
     if (!lightbox) return;
 
@@ -601,7 +853,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         {/* Cột trái: Ảnh & Chi tiết */}
         <div className="space-y-6 lg:col-span-8">
-          {/* Khung ảnh lớn hiển thị full ảnh kèm nút chuyển trái/phải và bấm phóng to */}
+          {/* Khung ảnh lớn */}
           <div className="group relative flex aspect-16/10 items-center justify-center overflow-hidden rounded-2xl border border-[#99F6E4] bg-[#E8F0F3]/65 shadow-[0_4px_6px_rgba(0,0,0,0.1)]">
             <button
               type="button"
@@ -748,7 +1000,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             </div>
           </div>
 
-          {/* Khung Sơ đồ nhà ở (Hỗ trợ bấm phóng to) */}
+          {/* Khung Sơ đồ nhà ở */}
           <div className="space-y-4 rounded-xl border border-[#99F6E4] bg-white/85 p-6 shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md">
             <div className="flex items-center justify-between gap-2 border-b border-[#E8F0F3] pb-3">
               <h2 className="font-serif text-lg font-bold text-[#134E4A]">
@@ -872,6 +1124,39 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             </p>
           </div>
 
+          {/* Tiện ích xung quanh (Nearby) — nằm giữa Mô tả chi tiết và Vị trí trên bản đồ */}
+          {nearbyItems.length > 0 && (
+            <div className="space-y-4 rounded-xl border border-[#99F6E4] bg-white/85 p-6 shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md">
+              <h2 className="font-serif border-b border-[#E8F0F3] pb-3 text-lg font-bold text-[#134E4A]">
+                {labels.nearbyTitle}
+              </h2>
+
+              <ul className="divide-y divide-[#E8F0F3]">
+                {nearbyItems.map((item) => (
+                  <li
+                    key={item.id}
+                    className="flex items-center justify-between gap-4 py-3 first:pt-1 last:pb-1"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#99F6E4] bg-[#F0FDFA] text-[#0F766E]">
+                        <NearbyCategoryIcon category={item.category} className="h-4 w-4" />
+                      </span>
+                      <span className="truncate text-sm font-medium text-[#134E4A]">
+                        {item.name}
+                      </span>
+                    </div>
+
+                    {item.distance && (
+                      <span className="shrink-0 text-right text-xs font-semibold text-[#475569] sm:text-sm">
+                        {item.distance}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Khung Vị trí trên bản đồ (Google Maps) */}
           <div className="space-y-4 rounded-xl border border-[#99F6E4] bg-white/85 p-6 shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md">
             <div className="flex flex-col justify-between gap-3 border-b border-[#E8F0F3] pb-3 sm:flex-row sm:items-center">
@@ -910,7 +1195,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
           </div>
         </div>
 
-        {/* Cột phải: Form tư vấn (cách top-28 để không bị sticky Header che khuất) */}
+        {/* Cột phải: Form tư vấn */}
         <div className="lg:col-span-4">
           <div className="sticky top-28">
             <InquiryForm propertyId={property.id} propertyTitle={title} />
@@ -949,7 +1234,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
         </div>
       </div>
 
-      {/* Lightbox phóng to ảnh / sơ đồ nhà ở — đặt ngay bên dưới Header */}
+      {/* Lightbox phóng to ảnh / sơ đồ nhà ở */}
       {lightbox &&
         typeof document !== 'undefined' &&
         createPortal(

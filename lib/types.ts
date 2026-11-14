@@ -1,3 +1,22 @@
+export type NearbyCategory =
+  | 'station'
+  | 'beach'
+  | 'supermarket'
+  | 'restaurant'
+  | 'convenience'
+  | 'school'
+  | 'hospital'
+  | 'park'
+  | 'airport'
+  | 'other';
+
+export interface NearbyItem {
+  id?: string;
+  category: NearbyCategory;
+  name: string | Record<string, string>;
+  distance: string | Record<string, string>;
+}
+
 export interface Property {
   id: string;
   title: string | Record<string, string>;
@@ -24,6 +43,7 @@ export interface Property {
   bedrooms?: number;
   bathrooms?: number;
   property_type?: string | Record<string, string>;
+  nearby?: NearbyItem[];
   created_at?: string;
 }
 

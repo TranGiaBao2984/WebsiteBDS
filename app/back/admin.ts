@@ -3,6 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
+import type { NearbyCategory, NearbyItem } from "@/lib/types";
+
+const VALID_NEARBY_CATEGORIES: NearbyCategory[] = [
+  "station",
+  "beach",
+  "supermarket",
+  "restaurant",
+  "convenience",
+  "school",
+  "hospital",
+  "park",
+  "airport",
+  "other",
+];
 
 // Hàm làm sạch chuỗi trước khi lưu vào Database, tránh lồng JSON nhiều lần
 function cleanText(val: unknown): string {
@@ -34,6 +48,52 @@ function cleanText(val: unknown): string {
   }
 
   return typeof current === "string" ? current : String(current || "");
+}
+
+function cleanLocalizedField(val: unknown): string | Record<string, string> {
+  if (!val) return "";
+  if (typeof val === "string") {
+    return val.trim();
+  }
+  if (typeof val === "object" && val !== null && !Array.isArray(val)) {
+    const rec = val as Record<string, unknown>;
+    const vi = typeof rec.vi === "string" ? rec.vi.trim() : "";
+    const en = typeof rec.en === "string" ? rec.en.trim() : "";
+    const ja = typeof rec.ja === "string" ? rec.ja.trim() : "";
+    if (!vi && !en && !ja) return "";
+    return { vi, en, ja };
+  }
+  return cleanText(val);
+}
+
+function hasFieldContent(val: string | Record<string, string>): boolean {
+  if (typeof val === "string") return val.trim().length > 0;
+  return Boolean(val.vi?.trim() || val.en?.trim() || val.ja?.trim());
+}
+
+function sanitizeNearbyList(items?: NearbyItem[]): NearbyItem[] {
+  if (!Array.isArray(items)) return [];
+  const result: NearbyItem[] = [];
+
+  for (const item of items) {
+    if (!item || typeof item !== "object") continue;
+    const category: NearbyCategory = VALID_NEARBY_CATEGORIES.includes(item.category)
+      ? item.category
+      : "other";
+    const name = cleanLocalizedField(item.name);
+    const distance = cleanLocalizedField(item.distance);
+
+    if (!hasFieldContent(name) && !hasFieldContent(distance)) continue;
+
+    result.push({
+      id: typeof item.id === "string" && item.id.trim() ? item.id.trim() : undefined,
+      category,
+      name,
+      distance,
+    });
+  }
+
+  return result;
 }
 
 // --- Action Đăng nhập Admin ---
@@ -92,7 +152,6 @@ export async function deleteProperty(id: string) {
 
     revalidatePath("/admin", "layout");
     revalidatePath("/properties");
-    revalidatePath("/properties");
     revalidatePath("/");
 
     return { success: true };
@@ -139,12 +198,14 @@ export interface CreatePropertyInput {
   bathrooms: number;
   images: string[];
   floorPlanImages?: string[];
+  nearby?: NearbyItem[];
 }
 
 function buildPropertyPayload(input: CreatePropertyInput) {
   const cleanFloorPlans = Array.isArray(input.floorPlanImages)
     ? input.floorPlanImages.filter(Boolean)
     : [];
+  const cleanNearby = sanitizeNearbyList(input.nearby);
 
   const title = {
     vi: cleanText(input.titleVi),
@@ -164,6 +225,7 @@ function buildPropertyPayload(input: CreatePropertyInput) {
     filter_location: cleanText(input.filterLocation),
     filter_price: cleanText(input.filterPrice),
     filter_layout: cleanText(input.filterLayout),
+    nearby: cleanNearby,
   };
 
   const location = {
@@ -195,7 +257,7 @@ function buildPropertyPayload(input: CreatePropertyInput) {
     land_size: input.landSize || null,
     layout: input.layout || input.filterLayout || "2LDK",
     structure: input.structure || "RC (Bê tông cốt thép)",
-    year_built: input.yearBuilt || new Date().getFullYear(),
+    year_built: input.yearBuilt || 2026,
     parking: input.parking || "Có",
     land_rights: input.landRights || "Sở hữu vĩnh viễn (Ownership)",
     zoning: input.zoning || "Khu dân cư",
@@ -228,7 +290,6 @@ export async function createPropertyAction(input: CreatePropertyInput) {
 
     revalidatePath("/admin", "layout");
     revalidatePath("/properties");
-    revalidatePath("/properties");
     revalidatePath("/");
 
     return { success: true, propertyId: data.id };
@@ -258,8 +319,6 @@ export async function updatePropertyAction(id: string, input: CreatePropertyInpu
 
     revalidatePath("/admin", "layout");
     revalidatePath(`/properties/${id}`);
-    revalidatePath(`/properties/${id}`);
-    revalidatePath("/properties");
     revalidatePath("/properties");
     revalidatePath("/");
 

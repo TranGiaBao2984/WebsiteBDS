@@ -48,6 +48,25 @@ function extractLocalizedTitle(rawTitle: unknown): string {
   return String(parsed);
 }
 
+function getSiteBaseUrl(): string {
+  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (configuredUrl) {
+    return configuredUrl.replace(/\/$/, "");
+  }
+
+  const vercelProdUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  if (vercelProdUrl) {
+    return `https://${vercelProdUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")}`;
+  }
+
+  const vercelPreviewUrl = process.env.VERCEL_URL?.trim();
+  if (vercelPreviewUrl) {
+    return `https://${vercelPreviewUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")}`;
+  }
+
+  return "http://localhost:3000";
+}
+
 async function getPropertySummary(
   supabase: Awaited<ReturnType<typeof createClient>>,
   propertyId: string
@@ -64,10 +83,7 @@ async function getPropertySummary(
     const titleText = extractLocalizedTitle(data.title) || `BĐS #${propertyId}`;
     const yen = Number(data.price_yen || data.price || 0);
     const priceText = yen > 0 ? `¥${yen.toLocaleString("en-US")}` : "";
-
-    const baseUrl = (
-      process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-    ).replace(/\/$/, "");
+    const baseUrl = getSiteBaseUrl();
 
     return {
       titleText,
@@ -111,63 +127,63 @@ async function sendGmailNotification(data: {
   const propertySectionHtml = data.propertySummary
     ? `
       <tr>
-        <td style="padding: 6px 0; color: #786e65; vertical-align: top;"><strong>BĐS quan tâm:</strong></td>
-        <td style="padding: 6px 0; color: #2c2623;">
-          <div style="font-weight: bold; color: #7a482b;">${data.propertySummary.titleText}</div>
+        <td style="padding: 8px 0; color: #475569; vertical-align: top;"><strong>BĐS quan tâm:</strong></td>
+        <td style="padding: 8px 0; color: #134E4A;">
+          <div style="font-weight: bold; color: #0F766E;">${data.propertySummary.titleText}</div>
           ${
             data.propertySummary.priceText
-              ? `<div style="font-size: 13px; color: #574d43; margin-top: 2px;">Giá niêm yết: <strong>${data.propertySummary.priceText}</strong></div>`
+              ? `<div style="font-size: 13px; color: #475569; margin-top: 2px;">Giá niêm yết: <strong style="color: #134E4A;">${data.propertySummary.priceText}</strong></div>`
               : ""
           }
-          <div style="margin-top: 6px;">
-            <a href="${data.propertySummary.url}" target="_blank" style="display: inline-block; padding: 6px 12px; background-color: #2c2623; color: #f8f6f0; text-decoration: none; border-radius: 6px; font-size: 12px; font-weight: bold;">
+          <div style="margin-top: 8px;">
+            <a href="${data.propertySummary.url}" target="_blank" style="display: inline-block; padding: 8px 14px; background-color: #0369A1; color: #ffffff; text-decoration: none; border-radius: 8px; font-size: 12px; font-weight: bold;">
               Xem chi tiết căn nhà trên Website →
             </a>
           </div>
-          <div style="font-size: 11px; color: #9e9389; margin-top: 4px;">ID: ${data.propertyId}</div>
+          <div style="font-size: 11px; color: #64748B; margin-top: 5px;">ID: ${data.propertyId}</div>
         </td>
       </tr>
     `
     : data.propertyId
     ? `
       <tr>
-        <td style="padding: 6px 0; color: #786e65;"><strong>Mã BĐS:</strong></td>
-        <td style="padding: 6px 0; color: #2c2623;">${data.propertyId}</td>
+        <td style="padding: 8px 0; color: #475569;"><strong>Mã BĐS:</strong></td>
+        <td style="padding: 8px 0; color: #134E4A;">${data.propertyId}</td>
       </tr>
     `
     : "";
 
   const htmlContent = `
-    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #2c2623; max-width: 600px; border: 1px solid #e6dfd5; border-radius: 12px; padding: 24px;">
-      <p style="font-size: 11px; font-weight: bold; letter-spacing: 1.5px; color: #8c6d53; text-transform: uppercase; margin: 0 0 6px 0;">
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #134E4A; max-width: 600px; border: 1px solid #99F6E4; border-radius: 14px; padding: 24px; background-color: #ffffff;">
+      <p style="font-size: 11px; font-weight: bold; letter-spacing: 1.5px; color: #0F766E; text-transform: uppercase; margin: 0 0 6px 0;">
         RE AGENT by Re iDea • Global Property Advisor
       </p>
-      <h2 style="color: #2c2623; border-bottom: 1px solid #e6dfd5; padding-bottom: 12px; margin-top: 0;">
+      <h2 style="color: #134E4A; border-bottom: 1px solid #99F6E4; padding-bottom: 12px; margin-top: 0;">
         Yêu Cầu Tư Vấn Bất Động Sản Mới
       </h2>
 
       <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 16px;">
         <tr>
-          <td style="padding: 6px 0; color: #786e65; width: 150px;"><strong>Khách hàng:</strong></td>
-          <td style="padding: 6px 0; color: #2c2623;">${data.fullName}</td>
+          <td style="padding: 8px 0; color: #475569; width: 150px;"><strong>Khách hàng:</strong></td>
+          <td style="padding: 8px 0; color: #134E4A;">${data.fullName}</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #786e65;"><strong>Email liên hệ:</strong></td>
-          <td style="padding: 6px 0;"><a href="mailto:${data.email}" style="color: #7a482b;">${data.email}</a></td>
+          <td style="padding: 8px 0; color: #475569;"><strong>Email liên hệ:</strong></td>
+          <td style="padding: 8px 0;"><a href="mailto:${data.email}" style="color: #0369A1; font-weight: 600;">${data.email}</a></td>
         </tr>
         <tr>
-          <td style="padding: 6px 0; color: #786e65;"><strong>Điện thoại:</strong></td>
-          <td style="padding: 6px 0; color: #2c2623;">${data.phone}</td>
+          <td style="padding: 8px 0; color: #475569;"><strong>Điện thoại:</strong></td>
+          <td style="padding: 8px 0; color: #134E4A;">${data.phone}</td>
         </tr>
         ${propertySectionHtml}
       </table>
 
-      <p style="font-size: 14px; font-weight: bold; color: #2c2623; margin-bottom: 6px;">Lời nhắn tư vấn:</p>
-      <div style="background: #f8f6f0; padding: 14px 16px; border-radius: 8px; border: 1px solid #e6dfd5; font-size: 14px; color: #3c352d;">
+      <p style="font-size: 14px; font-weight: bold; color: #134E4A; margin-bottom: 6px;">Lời nhắn tư vấn:</p>
+      <div style="background: #F0FDFA; padding: 14px 16px; border-radius: 10px; border: 1px solid #99F6E4; font-size: 14px; color: #134E4A;">
         ${data.message ? data.message.replace(/\n/g, "<br/>") : "<em>(Khách không để lại lời nhắn thêm)</em>"}
       </div>
 
-      <p style="font-size: 12px; color: #8c827a; margin-top: 20px; border-top: 1px solid #f0eae1; padding-top: 12px;">
+      <p style="font-size: 12px; color: #64748B; margin-top: 20px; border-top: 1px solid #E2E8F0; padding-top: 12px;">
         Bạn có thể bấm trực tiếp nút <strong>Trả lời (Reply)</strong> trên email này để phản hồi cho khách hàng (${data.email}).
       </p>
     </div>

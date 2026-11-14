@@ -37,11 +37,17 @@ export default function PropertyDetailPage({
   params: Promise<{ id: string }>;
 }) {
   return (
-    <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-8 sm:py-12">
+    <main className="mx-auto w-full max-w-7xl px-4 py-8 text-[#134E4A] sm:px-6 sm:py-12 lg:px-10">
       <Suspense
         fallback={
-          <div className="py-16 text-center text-sm text-[#574d43]">
-            Đang tải thông tin bất động sản...
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-[#99F6E4] bg-white/80 p-16 text-center shadow-[0_4px_6px_rgba(0,0,0,0.06)] backdrop-blur-md">
+            <span
+              aria-hidden="true"
+              className="h-7 w-7 animate-spin rounded-full border-2 border-[#0F766E]/25 border-t-[#0F766E]"
+            />
+            <span className="text-sm font-medium text-[#475569]">
+              Đang tải thông tin bất động sản...
+            </span>
           </div>
         }
       >

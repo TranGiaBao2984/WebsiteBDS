@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { Suspense } from 'react';
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { requireAdmin } from '@/lib/admin-auth';
 import DeleteButton from '@/app/front/admin/DeleteButton';
 import type { Property } from '@/lib/types';
@@ -76,15 +77,130 @@ function parseImages(val: unknown): string[] {
   return [];
 }
 
+function PlusIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M5 12h14" />
+      <path d="M12 5v14" />
+    </svg>
+  );
+}
+
+function MapPinIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
+
+function EyeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function PencilIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
+    </svg>
+  );
+}
+
+function BuildingIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <rect width="16" height="20" x="4" y="2" rx="2" ry="2" />
+      <path d="M9 22v-4h6v4" />
+      <path d="M8 6h.01" />
+      <path d="M16 6h.01" />
+      <path d="M12 6h.01" />
+      <path d="M12 10h.01" />
+      <path d="M12 14h.01" />
+      <path d="M16 10h.01" />
+      <path d="M16 14h.01" />
+      <path d="M8 10h.01" />
+      <path d="M8 14h.01" />
+    </svg>
+  );
+}
+
 export default function AdminDashboardPage() {
   return (
-    <Suspense fallback={<div className="py-12 text-center text-xs text-[#8c827a]">Đang tải dữ liệu quản trị...</div>}>
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-350 px-4 py-8 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-[#99F6E4] bg-white/80 p-12 text-center shadow-[0_4px_6px_rgba(0,0,0,0.06)] backdrop-blur-md">
+            <span
+              aria-hidden="true"
+              className="h-6 w-6 animate-spin rounded-full border-2 border-[#0F766E]/25 border-t-[#0F766E]"
+            />
+            <span className="text-xs font-medium text-[#475569]">
+              Đang tải dữ liệu quản trị...
+            </span>
+          </div>
+        </div>
+      }
+    >
       <AdminDashboardContent />
     </Suspense>
   );
 }
 
 async function AdminDashboardContent() {
+  // Khai báo cho Next.js 16 Cache Components render component này ở Request Time
+  await connection();
+
   const { supabase } = await requireAdmin();
 
   const { data: properties } = await supabase
@@ -95,80 +211,111 @@ async function AdminDashboardContent() {
   const propertyList = (properties || []) as Property[];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#e6dfd5] pb-6">
+    <div className="mx-auto max-w-350 space-y-6 px-4 py-2 sm:px-6 lg:px-8">
+      <div className="flex flex-col justify-between gap-4 border-b border-[#99F6E4]/80 pb-6 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-[#2c2623]">Quản lý Bất động sản</h1>
-          <p className="text-sm text-[#8c827a] mt-1">Thêm, sửa hoặc xoá các căn đang hiển thị trên website.</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#0F766E]">
+            Bảng điều khiển
+          </p>
+          <h1 className="mt-0.5 font-serif text-2xl font-bold text-[#134E4A] sm:text-3xl">
+            Quản lý Bất động sản
+          </h1>
+          <p className="mt-1 text-xs text-[#475569] sm:text-sm">
+            Thêm, sửa hoặc xoá các căn đang hiển thị trên website.
+          </p>
         </div>
         <Link
           href="/admin/new"
-          className="px-5 py-2.5 bg-[#7a482b] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#633a22] transition shadow-sm text-center"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0369A1] px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-[0_4px_6px_rgba(0,0,0,0.1)] transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2 motion-reduce:transform-none"
         >
-          + Thêm mới BĐS
+          <PlusIcon className="h-4 w-4" />
+          <span>Thêm mới BĐS</span>
         </Link>
       </div>
 
-      <div className="text-xs text-[#8c827a] font-medium">
-        Tổng cộng <strong className="text-[#2c2623]">{propertyList.length}</strong> bất động sản
+      <div className="flex items-center justify-between">
+        <div className="inline-flex items-center gap-2 rounded-full border border-[#99F6E4] bg-white/80 px-3.5 py-1.5 text-xs font-medium text-[#475569] shadow-2xs backdrop-blur-sm">
+          <BuildingIcon className="h-3.5 w-3.5 text-[#0F766E]" />
+          <span>
+            Tổng cộng <strong className="font-bold text-[#0F766E]">{propertyList.length}</strong> bất động sản
+          </span>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        {propertyList.map((item) => {
-          const title = getCleanText(item.title) || 'Bất động sản';
-          const location = getCleanText(item.location) || 'Nhật Bản';
-          const images = parseImages(item.images);
-          const mainImage = images[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80';
-          const priceYen = item.price_yen || item.price || 0;
+      {propertyList.length === 0 ? (
+        <div className="space-y-3 rounded-2xl border border-[#99F6E4] bg-white/80 p-12 text-center shadow-[0_4px_6px_rgba(0,0,0,0.06)] backdrop-blur-md">
+          <p className="text-sm font-semibold text-[#134E4A]">
+            Chưa có bất động sản nào được đăng tải.
+          </p>
+          <p className="text-xs text-[#475569]">
+            Bấm nút “Thêm mới BĐS” ở góc trên để tạo bài đăng đầu tiên.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {propertyList.map((item) => {
+            const title = getCleanText(item.title) || 'Bất động sản';
+            const location = getCleanText(item.location) || 'Nhật Bản';
+            const images = parseImages(item.images);
+            const mainImage =
+              images[0] ||
+              'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80';
+            const priceYen = item.price_yen || item.price || 0;
 
-          return (
-            <div
-              key={item.id}
-              className="bg-white p-4 sm:p-5 rounded-2xl border border-[#e6dfd5] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm"
-            >
-              <div className="flex items-center gap-4 w-full sm:w-auto">
-                <div className="w-24 h-20 sm:w-32 sm:h-24 rounded-xl bg-stone-100 overflow-hidden shrink-0 relative">
-                  <img
-                    src={mainImage}
-                    alt={title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8c827a] block">
-                    📍 {location}
-                  </span>
-                  <h2 className="font-serif font-bold text-base text-[#2c2623] line-clamp-1">{title}</h2>
-                  <div className="flex items-center gap-2 pt-1">
-                    <span className="font-bold text-sm text-[#7a482b]">
-                      ¥{priceYen.toLocaleString('ja-JP')}
+            return (
+              <div
+                key={item.id}
+                className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-[#99F6E4] bg-white/85 p-4 shadow-[0_4px_6px_rgba(0,0,0,0.06)] backdrop-blur-md transition-all duration-200 hover:border-[#14B8A6] hover:bg-white sm:flex-row sm:items-center sm:p-5"
+              >
+                <div className="flex w-full items-center gap-4 sm:w-auto">
+                  <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA] sm:h-24 sm:w-32">
+                    <img
+                      src={mainImage}
+                      alt={title}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 space-y-1.5">
+                    <span className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-[#475569]">
+                      <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-[#0F766E]" />
+                      <span className="truncate">{location}</span>
                     </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-[#f4efe8] text-[#3c352d] rounded">
-                      {item.status || 'AVAILABLE'}
-                    </span>
+                    <h2 className="line-clamp-1 font-serif text-base font-bold text-[#134E4A] sm:text-lg">
+                      {title}
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
+                      <span className="text-sm font-bold text-[#0F766E] sm:text-base">
+                        ¥{priceYen.toLocaleString('ja-JP')}
+                      </span>
+                      <span className="rounded-full border border-[#99F6E4] bg-[#F0FDFA] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#0F766E]">
+                        {item.status || 'AVAILABLE'}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-[#f0eae1]">
-                <Link
-                  href={`/properties/${item.id}`}
-                  className="px-3 py-1.5 border border-[#e6dfd5] text-xs font-semibold text-[#574d43] rounded-lg hover:bg-[#f4efe8]"
-                >
-                  Xem
-                </Link>
-                <Link
-                  href={`/admin/${item.id}/edit`}
-                  className="px-3 py-1.5 bg-[#2c2623] text-white text-xs font-semibold rounded-lg hover:bg-[#3c352d]"
-                >
-                  Sửa
-                </Link>
-                <DeleteButton id={item.id} title={title} />
+                <div className="flex w-full items-center justify-end gap-2 border-t border-[#E8F0F3] pt-3 sm:w-auto sm:border-t-0 sm:pt-0">
+                  <Link
+                    href={`/properties/${item.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#99F6E4] bg-white px-3 py-1.5 text-xs font-semibold text-[#134E4A] transition-all duration-200 hover:border-[#0F766E] hover:bg-[#F0FDFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
+                  >
+                    <EyeIcon className="h-3.5 w-3.5 text-[#0F766E]" />
+                    <span>Xem</span>
+                  </Link>
+                  <Link
+                    href={`/admin/${item.id}/edit`}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#0F766E] px-3 py-1.5 text-xs font-semibold text-white shadow-2xs transition-all duration-200 hover:bg-[#115E59] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-1"
+                  >
+                    <PencilIcon className="h-3.5 w-3.5" />
+                    <span>Sửa</span>
+                  </Link>
+                  <DeleteButton id={item.id} title={title} />
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

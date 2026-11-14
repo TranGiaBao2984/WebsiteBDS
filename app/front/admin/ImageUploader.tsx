@@ -57,8 +57,100 @@ function isHttpUrl(s: string) {
   }
 }
 
+function ChevronLeftIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
+function ImagePlusIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M16 5h6" />
+      <path d="M19 2v6" />
+      <path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5" />
+      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+      <circle cx="9" cy="9" r="2" />
+    </svg>
+  );
+}
+
+function AlertCircleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" x2="12" y1="8" y2="12" />
+      <line x1="12" x2="12.01" y1="16" y2="16" />
+    </svg>
+  );
+}
+
 const SMALL_BTN =
-  'flex h-9 w-9 items-center justify-center rounded-lg bg-[#2c2623]/80 text-xs font-bold text-white backdrop-blur transition hover:bg-[#2c2623] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40';
+  'flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-white/20 bg-[#134E4A]/85 text-white backdrop-blur-md transition-all duration-200 hover:bg-[#0F766E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-40';
 
 export default function ImageUploader({
   label,
@@ -141,32 +233,32 @@ export default function ImageUploader({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3.5">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-[#2c2623]">{label}</p>
-          {hint && <p className="mt-0.5 text-xs text-[#574d43]">{hint}</p>}
+          <p className="text-xs font-bold uppercase tracking-wider text-[#134E4A]">{label}</p>
+          {hint && <p className="mt-0.5 text-xs text-[#475569]">{hint}</p>}
         </div>
-        <span className="text-xs font-medium text-[#574d43]">
+        <span className="rounded-full border border-[#99F6E4] bg-white px-2.5 py-0.5 text-xs font-bold text-[#0F766E]">
           {value.length}/{max}
         </span>
       </div>
 
       {value.length > 0 && (
         <ul
-          className={`grid gap-3 ${
+          className={`grid gap-3.5 ${
             max === 1 ? 'grid-cols-1 sm:max-w-xs' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
           }`}
         >
           {value.map((url, i) => (
             <li
               key={`${url}-${i}`}
-              className="relative overflow-hidden rounded-xl border border-[#e6dfd5] bg-[#eae4dc]"
+              className="group relative overflow-hidden rounded-xl border border-[#99F6E4] bg-[#E8F0F3]/60 shadow-xs"
             >
               <img src={url} alt={`${label} ${i + 1}`} className="aspect-4/3 w-full object-cover" />
 
               {max > 1 && i === 0 && (
-                <span className="absolute left-2 top-2 rounded-lg bg-[#7a482b] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
+                <span className="absolute top-2 left-2 rounded-md border border-white/20 bg-[#0F766E] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
                   Ảnh bìa
                 </span>
               )}
@@ -181,7 +273,7 @@ export default function ImageUploader({
                       onClick={() => move(i, i - 1)}
                       className={SMALL_BTN}
                     >
-                      ←
+                      <ChevronLeftIcon className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
@@ -190,7 +282,7 @@ export default function ImageUploader({
                       onClick={() => move(i, i + 1)}
                       className={SMALL_BTN}
                     >
-                      →
+                      <ChevronRightIcon className="h-4 w-4" />
                     </button>
                   </div>
                 ) : (
@@ -201,9 +293,9 @@ export default function ImageUploader({
                   aria-label="Xoá ảnh"
                   disabled={busy}
                   onClick={() => remove(i)}
-                  className={SMALL_BTN}
+                  className={`${SMALL_BTN} hover:bg-rose-600`}
                 >
-                  ✕
+                  <CloseIcon className="h-4 w-4" />
                 </button>
               </div>
             </li>
@@ -214,17 +306,30 @@ export default function ImageUploader({
       <div className="flex flex-wrap items-center gap-3">
         <label
           htmlFor={`${uid}-file`}
-          className={`inline-flex cursor-pointer items-center rounded-xl border border-dashed border-[#8c6d53] bg-white px-4 py-2.5 text-xs font-semibold text-[#3c352d] transition hover:border-[#7a482b] hover:bg-[#f3eee7] ${
+          className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-[#0F766E]/55 bg-white/90 px-4 py-2.5 text-xs font-semibold text-[#0F766E] transition-all duration-200 hover:border-[#0F766E] hover:bg-[#F0FDFA] ${
             busy || full ? 'pointer-events-none opacity-50' : ''
           }`}
         >
-          {busy
-            ? progress || 'Đang tải...'
-            : full
-            ? 'Đã đủ số ảnh'
-            : max === 1
-            ? '+ Chọn ảnh'
-            : '+ Chọn ảnh (chọn được nhiều ảnh)'}
+          {busy ? (
+            <>
+              <span
+                aria-hidden="true"
+                className="h-4 w-4 animate-spin rounded-full border-2 border-[#0F766E]/30 border-t-[#0F766E]"
+              />
+              <span>{progress || 'Đang tải...'}</span>
+            </>
+          ) : (
+            <>
+              <ImagePlusIcon className="h-4 w-4 shrink-0" />
+              <span>
+                {full
+                  ? 'Đã đủ số ảnh'
+                  : max === 1
+                  ? 'Chọn ảnh'
+                  : 'Chọn ảnh (chọn được nhiều ảnh)'}
+              </span>
+            </>
+          )}
         </label>
         <input
           id={`${uid}-file`}
@@ -255,13 +360,13 @@ export default function ImageUploader({
           }}
           placeholder="Hoặc dán link ảnh (https://...)"
           aria-label={`${label}: dán link ảnh`}
-          className="min-w-0 flex-1 rounded-xl border border-[#e6dfd5] bg-white px-3.5 py-2.5 text-sm text-[#2c2623] placeholder:text-[#786e65] focus:border-[#7a482b] focus:outline-none focus:ring-2 focus:ring-[#7a482b]/20 disabled:opacity-50"
+          className="min-w-0 flex-1 rounded-lg border border-[#E2E8F0] bg-white px-3.5 py-2.5 text-sm text-[#134E4A] placeholder:text-[#475569]/70 transition-all duration-200 focus:border-[#0F766E] focus:outline-none focus:ring-3 focus:ring-[#0F766E]/15 disabled:opacity-50"
         />
         <button
           type="button"
           onClick={addUrl}
           disabled={busy || full || !urlText.trim()}
-          className="rounded-xl border border-[#d8cebe] bg-white px-4 text-xs font-semibold text-[#2c2623] transition hover:bg-[#f3eee7] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+          className="cursor-pointer rounded-lg border-2 border-[#0F766E] bg-white px-4 text-xs font-semibold text-[#0F766E] transition-all duration-200 hover:bg-[#0F766E] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-45"
         >
           Thêm
         </button>
@@ -270,12 +375,15 @@ export default function ImageUploader({
       {(error || problems.length > 0) && (
         <div
           role="alert"
-          className="space-y-1 rounded-xl border border-[#e3c9bd] bg-[#fbf1ec] px-4 py-3 text-xs leading-relaxed text-[#8a3b1d]"
+          className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50/90 px-4 py-3 text-xs leading-relaxed text-rose-900"
         >
-          {error && <p>{error}</p>}
-          {problems.map((p) => (
-            <p key={p}>{p}</p>
-          ))}
+          <AlertCircleIcon className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
+          <div className="space-y-1">
+            {error && <p className="font-medium">{error}</p>}
+            {problems.map((p) => (
+              <p key={p}>{p}</p>
+            ))}
+          </div>
         </div>
       )}
     </div>

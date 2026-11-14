@@ -64,6 +64,61 @@ const INQUIRY_LABELS = {
   },
 };
 
+function SendIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" />
+      <path d="m21.854 2.147-10.94 10.939" />
+    </svg>
+  );
+}
+
+function CheckCircleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}
+
+function AlertCircleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" x2="12" y1="8" y2="12" />
+      <line x1="12" x2="12.01" y1="16" y2="16" />
+    </svg>
+  );
+}
+
 export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormProps) {
   const { currentLang } = useLanguage();
   const labels = INQUIRY_LABELS[currentLang] || INQUIRY_LABELS.en;
@@ -77,7 +132,8 @@ export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormPr
     setLoading(true);
     setFeedback(null);
 
-    const formData = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const formData = new FormData(form);
     const result = await submitInquiryAction({
       propertyId,
       fullName: formData.get("fullName") as string,
@@ -92,7 +148,7 @@ export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormPr
         success: true,
         message: labels.successMsg,
       });
-      (e.target as HTMLFormElement).reset();
+      form.reset();
     } else {
       setFeedback({
         success: false,
@@ -102,115 +158,143 @@ export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormPr
   };
 
   const inputClassName =
-    "w-full px-4 py-2.5 bg-white border border-[#e6dfd5] rounded-xl text-sm text-[#2c2623] placeholder:text-[#786e65] focus:outline-none focus:border-[#7a482b] focus:ring-2 focus:ring-[#7a482b]/20 transition";
+    "w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-3 text-base text-[#134E4A] placeholder:text-[#475569]/70 transition-all duration-200 focus:border-[#0F766E] focus:outline-none focus:ring-3 focus:ring-[#0F766E]/15 sm:text-sm";
 
   return (
     <div
       id="contact"
-      className="bg-[#f8f6f0] border border-[#e6dfd5] p-6 lg:p-8 rounded-2xl shadow-sm text-[#2c2623] scroll-mt-24"
+      className="relative scroll-mt-28 overflow-hidden rounded-2xl border border-[#99F6E4] bg-white/80 p-6 text-[#134E4A] shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md lg:p-8"
     >
-      <h3 className="text-xl font-serif font-bold mb-2">{labels.heading}</h3>
-      <p className="text-xs sm:text-sm text-[#574d43] mb-6 leading-relaxed">
-        {propertyTitle ? (
-          <>
-            {labels.subPrefix}{" "}
-            <span className="font-semibold text-[#2c2623]">{propertyTitle}</span>
-          </>
-        ) : (
-          labels.generalSub
+      {/* Điểm sáng chiều sâu cho hiệu ứng Glassmorphism */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-[#14B8A6]/12 blur-3xl"
+      />
+
+      <div className="relative">
+        <h3 className="font-serif mb-2 text-xl font-bold tracking-tight text-[#134E4A] sm:text-2xl">
+          {labels.heading}
+        </h3>
+        <p className="mb-6 text-xs leading-relaxed text-[#475569] sm:text-sm">
+          {propertyTitle ? (
+            <>
+              {labels.subPrefix}{" "}
+              <span className="font-semibold text-[#0F766E]">{propertyTitle}</span>
+            </>
+          ) : (
+            labels.generalSub
+          )}
+        </p>
+
+        {feedback && (
+          <div
+            role="alert"
+            className={`mb-6 flex items-start gap-3 rounded-xl border p-4 text-xs leading-relaxed sm:text-sm ${
+              feedback.success
+                ? "border-emerald-200 bg-emerald-50/90 text-emerald-900"
+                : "border-rose-200 bg-rose-50/90 text-rose-900"
+            }`}
+          >
+            {feedback.success ? (
+              <CheckCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+            ) : (
+              <AlertCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" />
+            )}
+            <span className="font-medium">{feedback.message}</span>
+          </div>
         )}
-      </p>
 
-      {feedback && (
-        <div
-          role="alert"
-          className={`p-4 mb-6 rounded-xl text-sm ${
-            feedback.success
-              ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
-              : "bg-rose-50 text-rose-900 border border-rose-200"
-          }`}
-        >
-          {feedback.message}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label
-            htmlFor={`${uid}-fullName`}
-            className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1.5"
-          >
-            {labels.fullName}
-          </label>
-          <input
-            id={`${uid}-fullName`}
-            type="text"
-            name="fullName"
-            required
-            className={inputClassName}
-            placeholder={labels.fullNamePlaceholder}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label
-              htmlFor={`${uid}-email`}
-              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1.5"
+              htmlFor={`${uid}-fullName`}
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
             >
-              {labels.email}
+              {labels.fullName}
             </label>
             <input
-              id={`${uid}-email`}
-              type="email"
-              name="email"
+              id={`${uid}-fullName`}
+              type="text"
+              name="fullName"
               required
               className={inputClassName}
-              placeholder={labels.emailPlaceholder}
+              placeholder={labels.fullNamePlaceholder}
             />
           </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor={`${uid}-email`}
+                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
+              >
+                {labels.email}
+              </label>
+              <input
+                id={`${uid}-email`}
+                type="email"
+                name="email"
+                required
+                className={inputClassName}
+                placeholder={labels.emailPlaceholder}
+              />
+            </div>
+            <div>
+              <label
+                htmlFor={`${uid}-phone`}
+                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
+              >
+                {labels.phone}
+              </label>
+              <input
+                id={`${uid}-phone`}
+                type="tel"
+                name="phone"
+                required
+                className={inputClassName}
+                placeholder={labels.phonePlaceholder}
+              />
+            </div>
+          </div>
+
           <div>
             <label
-              htmlFor={`${uid}-phone`}
-              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1.5"
+              htmlFor={`${uid}-message`}
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
             >
-              {labels.phone}
+              {labels.message}
             </label>
-            <input
-              id={`${uid}-phone`}
-              type="tel"
-              name="phone"
-              required
+            <textarea
+              id={`${uid}-message`}
+              name="message"
+              rows={4}
               className={inputClassName}
-              placeholder={labels.phonePlaceholder}
+              placeholder={labels.messagePlaceholder}
             />
           </div>
-        </div>
 
-        <div>
-          <label
-            htmlFor={`${uid}-message`}
-            className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1.5"
+          <button
+            type="submit"
+            disabled={loading}
+            className="group inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#0369A1] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-white shadow-[0_4px_6px_rgba(0,0,0,0.1)] transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-55 sm:text-sm motion-reduce:transform-none motion-reduce:transition-none"
           >
-            {labels.message}
-          </label>
-          <textarea
-            id={`${uid}-message`}
-            name="message"
-            rows={4}
-            className={inputClassName}
-            placeholder={labels.messagePlaceholder}
-          ></textarea>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-3 px-6 bg-[#7a482b] hover:bg-[#633a22] text-white font-semibold rounded-xl transition duration-200 disabled:opacity-50 text-sm tracking-wide cursor-pointer shadow-xs"
-        >
-          {loading ? labels.submitting : labels.submit}
-        </button>
-      </form>
+            {loading ? (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                />
+                <span>{labels.submitting}</span>
+              </>
+            ) : (
+              <>
+                <SendIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
+                <span>{labels.submit}</span>
+              </>
+            )}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

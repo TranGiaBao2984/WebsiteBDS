@@ -181,6 +181,168 @@ function parseFloorPlanImages(property?: Property): string[] {
   return parseImages(property.floor_plan);
 }
 
+function MapPinIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
+
+function SettingsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
+function PencilIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
+    </svg>
+  );
+}
+
+function PlusIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M5 12h14" />
+      <path d="M12 5v14" />
+    </svg>
+  );
+}
+
+function SaveIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+      <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
+      <path d="M7 3v4a1 1 0 0 0 1 1h7" />
+    </svg>
+  );
+}
+
+function CheckCircleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}
+
+function AlertCircleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" x2="12" y1="8" y2="12" />
+      <line x1="12" x2="12.01" y1="16" y2="16" />
+    </svg>
+  );
+}
+
 export default function PropertyForm({ property }: PropertyFormProps) {
   const router = useRouter();
   const uid = useId();
@@ -434,20 +596,20 @@ export default function PropertyForm({ property }: PropertyFormProps) {
   };
 
   const inputClassName =
-    "w-full px-3.5 py-2.5 bg-white border border-[#e6dfd5] rounded-xl text-sm text-[#2c2623] placeholder:text-[#786e65] focus:outline-none focus:border-[#7a482b] focus:ring-2 focus:ring-[#7a482b]/20 transition";
+    "w-full rounded-lg border border-[#E2E8F0] bg-white px-3.5 py-2.5 text-sm text-[#134E4A] placeholder:text-[#475569]/70 transition-all duration-200 focus:border-[#0F766E] focus:outline-none focus:ring-3 focus:ring-[#0F766E]/15";
 
   const renderFilterRow = (
     group: FilterGroupKey,
     label: string,
     selectedValue: string,
     onSelect: (val: string) => void,
-    variant: "dark" | "tan"
+    variant: "teal" | "blue"
   ) => {
     const items = filterOptions[group];
 
     return (
-      <div className="space-y-1.5">
-        <span className="block text-[11px] font-bold uppercase tracking-wider text-[#7a482b]">
+      <div className="space-y-2">
+        <span className="block text-[11px] font-bold uppercase tracking-wider text-[#0F766E]">
           {label}
         </span>
 
@@ -461,7 +623,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               return (
                 <div
                   key={`${group}-edit-${idx}`}
-                  className="inline-flex items-center gap-1 bg-white border border-[#7a482b] rounded-lg px-2 py-1 shadow-xs"
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#0F766E] bg-white px-2.5 py-1 shadow-xs"
                 >
                   <input
                     type="text"
@@ -479,70 +641,74 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                         setEditingItem(null);
                       }
                     }}
-                    className="w-28 text-xs text-[#2c2623] focus:outline-none"
+                    className="w-28 text-xs font-medium text-[#134E4A] focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleSaveEditOption}
                     title="Lưu"
-                    className="text-emerald-700 hover:text-emerald-900 font-bold text-xs px-1 cursor-pointer"
+                    className="cursor-pointer rounded p-1 text-emerald-700 transition-colors hover:bg-emerald-50 hover:text-emerald-900"
                   >
-                    ✓
+                    <CheckIcon className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditingItem(null)}
                     title="Hủy"
-                    className="text-[#574d43] hover:text-[#2c2623] font-bold text-xs px-1 cursor-pointer"
+                    className="cursor-pointer rounded p-1 text-[#475569] transition-colors hover:bg-[#F0FDFA] hover:text-[#134E4A]"
                   >
-                    ✕
+                    <CloseIcon className="h-3.5 w-3.5" />
                   </button>
                 </div>
               );
             }
 
             const activeStyle =
-              variant === "tan"
-                ? "bg-[#cbb59d] text-[#2c2623] font-bold border-[#a68e74]"
-                : "bg-[#2c2623] text-white border-[#2c2623]";
+              variant === "blue"
+                ? "border-[#0369A1] bg-[#0369A1] font-semibold text-white shadow-xs"
+                : "border-[#0F766E] bg-[#0F766E] font-semibold text-white shadow-xs";
 
             return (
               <div
                 key={`${group}-${item}-${idx}`}
-                className={`inline-flex items-center rounded-lg border text-xs font-medium transition ${
+                className={`inline-flex items-center rounded-lg border text-xs font-medium transition-all duration-200 ${
                   active
                     ? activeStyle
-                    : "bg-white text-[#3c352d] border-[#e6dfd5] hover:border-[#8c6d53]"
+                    : "border-[#99F6E4] bg-white text-[#134E4A] hover:border-[#14B8A6] hover:bg-[#F0FDFA]"
                 }`}
               >
                 <button
                   type="button"
                   aria-pressed={active}
                   onClick={() => onSelect(active ? "" : item)}
-                  className="px-3.5 py-1.5 cursor-pointer"
+                  className="cursor-pointer px-3.5 py-1.5"
                 >
                   {item}
                 </button>
 
                 {isManagingFilters && (
-                  <div className="flex items-center pr-2 gap-1 border-l border-current/20 pl-1.5">
+                  <div className="flex items-center gap-1 border-l border-current/20 pr-2 pl-1.5">
                     <button
                       type="button"
                       onClick={() =>
                         setEditingItem({ group, index: idx, value: item })
                       }
                       title="Sửa tên"
-                      className="text-[11px] opacity-80 hover:opacity-100 cursor-pointer"
+                      className="cursor-pointer rounded p-0.5 opacity-80 transition-opacity hover:opacity-100"
                     >
-                      ✎
+                      <PencilIcon className="h-3 w-3" />
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDeleteOption(group, idx)}
                       title="Xóa"
-                      className="text-xs text-red-600 hover:text-red-800 font-bold cursor-pointer"
+                      className={`cursor-pointer rounded p-0.5 transition-colors ${
+                        active
+                          ? "text-white/90 hover:text-white"
+                          : "text-rose-600 hover:text-rose-800"
+                      }`}
                     >
-                      ×
+                      <CloseIcon className="h-3 w-3" />
                     </button>
                   </div>
                 )}
@@ -551,7 +717,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           })}
 
           {addingGroup === group ? (
-            <div className="inline-flex items-center gap-1.5 bg-white border border-[#7a482b] rounded-lg px-2.5 py-1 shadow-xs">
+            <div className="inline-flex items-center gap-1.5 rounded-lg border border-[#0F766E] bg-white px-2.5 py-1 shadow-xs">
               <input
                 type="text"
                 autoFocus
@@ -568,12 +734,12 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                   }
                 }}
                 placeholder="Nhập tên mới..."
-                className="w-32 text-xs text-[#2c2623] placeholder:text-[#786e65] focus:outline-none"
+                className="w-32 text-xs text-[#134E4A] placeholder:text-[#475569]/70 focus:outline-none"
               />
               <button
                 type="button"
                 onClick={() => handleAddOption(group)}
-                className="px-2 py-0.5 bg-[#7a482b] text-white rounded text-[11px] font-bold hover:bg-[#633a22] cursor-pointer"
+                className="cursor-pointer rounded-md bg-[#0369A1] px-2.5 py-1 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
               >
                 Thêm
               </button>
@@ -583,9 +749,9 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                   setAddingGroup(null);
                   setNewOptionValue("");
                 }}
-                className="text-xs text-[#574d43] hover:text-[#2c2623] px-1 cursor-pointer"
+                className="cursor-pointer rounded p-1 text-[#475569] transition-colors hover:bg-[#F0FDFA] hover:text-[#134E4A]"
               >
-                ✕
+                <CloseIcon className="h-3.5 w-3.5" />
               </button>
             </div>
           ) : (
@@ -595,9 +761,10 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                 setAddingGroup(group);
                 setNewOptionValue("");
               }}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-dashed border-[#8c6d53] text-[#7a482b] hover:bg-[#f4efe8] transition cursor-pointer"
+              className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-dashed border-[#0F766E]/60 bg-white/80 px-3 py-1.5 text-xs font-semibold text-[#0F766E] transition-all duration-200 hover:border-[#0F766E] hover:bg-[#F0FDFA]"
             >
-              + Thêm
+              <PlusIcon className="h-3.5 w-3.5" />
+              <span>Thêm</span>
             </button>
           )}
         </div>
@@ -608,23 +775,34 @@ export default function PropertyForm({ property }: PropertyFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-8 bg-white p-6 sm:p-8 border border-[#e6dfd5] rounded-2xl shadow-sm"
+      className="relative overflow-hidden space-y-8 rounded-2xl border border-[#99F6E4] bg-white/85 p-6 shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md sm:p-8"
     >
+      {/* Điểm sáng chiều sâu cho hiệu ứng Glassmorphism */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-[#14B8A6]/10 blur-3xl"
+      />
+
       {/* 1. Thông tin cơ bản (3 ngôn ngữ) */}
-      <div className="space-y-5">
-        <h2 className="text-lg font-serif font-bold border-b border-[#e6dfd5] pb-2 text-[#7a482b]">
-          1. Thông tin cơ bản (Đa ngôn ngữ)
-        </h2>
+      <div className="relative space-y-5">
+        <div className="flex items-center gap-3 border-b border-[#E8F0F3] pb-3">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#0F766E] text-xs font-bold text-white">
+            1
+          </span>
+          <h2 className="font-serif text-lg font-bold text-[#134E4A] sm:text-xl">
+            Thông tin cơ bản (Đa ngôn ngữ)
+          </h2>
+        </div>
 
         {/* Tên BĐS 3 ngôn ngữ */}
-        <div className="space-y-3 bg-[#faf8f5] p-4 rounded-xl border border-[#e6dfd5]">
-          <span className="block text-xs font-bold uppercase tracking-wider text-[#2c2623]">
+        <div className="space-y-3.5 rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
+          <span className="block text-xs font-bold uppercase tracking-wider text-[#134E4A]">
             Tên Bất động sản (3 ngôn ngữ) *
           </span>
           <div>
             <label
               htmlFor={`${uid}-titleVi`}
-              className="block text-xs font-semibold text-[#7a482b] mb-1"
+              className="mb-1 block text-xs font-bold text-[#0F766E]"
             >
               Tiếng Việt (VI)
             </label>
@@ -640,7 +818,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           <div>
             <label
               htmlFor={`${uid}-titleEn`}
-              className="block text-xs font-semibold text-[#7a482b] mb-1"
+              className="mb-1 block text-xs font-bold text-[#0F766E]"
             >
               English (EN)
             </label>
@@ -656,7 +834,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           <div>
             <label
               htmlFor={`${uid}-titleJa`}
-              className="block text-xs font-semibold text-[#7a482b] mb-1"
+              className="mb-1 block text-xs font-bold text-[#0F766E]"
             >
               日本語 (JA)
             </label>
@@ -672,15 +850,15 @@ export default function PropertyForm({ property }: PropertyFormProps) {
         </div>
 
         {/* Giá bán 3 ngôn ngữ */}
-        <div className="space-y-3 bg-[#faf8f5] p-4 rounded-xl border border-[#e6dfd5]">
-          <span className="block text-xs font-bold uppercase tracking-wider text-[#2c2623]">
+        <div className="space-y-3.5 rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
+          <span className="block text-xs font-bold uppercase tracking-wider text-[#134E4A]">
             Giá bán theo từng ngôn ngữ (3 ngôn ngữ) *
           </span>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
               <label
                 htmlFor={`${uid}-priceVi`}
-                className="block text-xs font-semibold text-[#7a482b] mb-1"
+                className="mb-1 block text-xs font-bold text-[#0F766E]"
               >
                 Tiếng Việt (VNĐ - ₫)
               </label>
@@ -696,7 +874,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
             <div>
               <label
                 htmlFor={`${uid}-priceEn`}
-                className="block text-xs font-semibold text-[#7a482b] mb-1"
+                className="mb-1 block text-xs font-bold text-[#0F766E]"
               >
                 English (USD - $)
               </label>
@@ -712,7 +890,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
             <div>
               <label
                 htmlFor={`${uid}-priceJa`}
-                className="block text-xs font-semibold text-[#7a482b] mb-1"
+                className="mb-1 block text-xs font-bold text-[#0F766E]"
               >
                 日本語 (JPY - ¥)
               </label>
@@ -734,15 +912,15 @@ export default function PropertyForm({ property }: PropertyFormProps) {
         </div>
 
         {/* Loại BĐS 3 ngôn ngữ */}
-        <div className="space-y-3 bg-[#faf8f5] p-4 rounded-xl border border-[#e6dfd5]">
-          <span className="block text-xs font-bold uppercase tracking-wider text-[#2c2623]">
+        <div className="space-y-3.5 rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
+          <span className="block text-xs font-bold uppercase tracking-wider text-[#134E4A]">
             Loại BĐS (3 ngôn ngữ) *
           </span>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
               <label
                 htmlFor={`${uid}-propertyTypeVi`}
-                className="block text-xs font-semibold text-[#7a482b] mb-1"
+                className="mb-1 block text-xs font-bold text-[#0F766E]"
               >
                 Tiếng Việt (VI)
               </label>
@@ -758,7 +936,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
             <div>
               <label
                 htmlFor={`${uid}-propertyTypeEn`}
-                className="block text-xs font-semibold text-[#7a482b] mb-1"
+                className="mb-1 block text-xs font-bold text-[#0F766E]"
               >
                 English (EN)
               </label>
@@ -774,7 +952,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
             <div>
               <label
                 htmlFor={`${uid}-propertyTypeJa`}
-                className="block text-xs font-semibold text-[#7a482b] mb-1"
+                className="mb-1 block text-xs font-bold text-[#0F766E]"
               >
                 日本語 (JA)
               </label>
@@ -791,14 +969,14 @@ export default function PropertyForm({ property }: PropertyFormProps) {
         </div>
 
         {/* Địa chỉ 3 ngôn ngữ & Ghim Google Maps */}
-        <div className="space-y-3 bg-[#faf8f5] p-4 rounded-xl border border-[#e6dfd5]">
-          <span className="block text-xs font-bold uppercase tracking-wider text-[#2c2623]">
+        <div className="space-y-3.5 rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
+          <span className="block text-xs font-bold uppercase tracking-wider text-[#134E4A]">
             Địa chỉ / Vị trí (3 ngôn ngữ) *
           </span>
           <div>
             <label
               htmlFor={`${uid}-addressVi`}
-              className="block text-xs font-semibold text-[#7a482b] mb-1"
+              className="mb-1 block text-xs font-bold text-[#0F766E]"
             >
               Tiếng Việt (VI)
             </label>
@@ -814,7 +992,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           <div>
             <label
               htmlFor={`${uid}-addressEn`}
-              className="block text-xs font-semibold text-[#7a482b] mb-1"
+              className="mb-1 block text-xs font-bold text-[#0F766E]"
             >
               English (EN)
             </label>
@@ -830,7 +1008,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           <div>
             <label
               htmlFor={`${uid}-addressJa`}
-              className="block text-xs font-semibold text-[#7a482b] mb-1"
+              className="mb-1 block text-xs font-bold text-[#0F766E]"
             >
               日本語 (JA)
             </label>
@@ -844,12 +1022,13 @@ export default function PropertyForm({ property }: PropertyFormProps) {
             />
           </div>
 
-          <div className="pt-2 border-t border-[#e6dfd5]">
+          <div className="border-t border-[#99F6E4]/70 pt-3">
             <label
               htmlFor={`${uid}-mapAddress`}
-              className="block text-xs font-bold text-[#7a482b] mb-1"
+              className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-[#0F766E]"
             >
-              📍 Địa chỉ cụ thể / Tọa độ / Link Google Maps (để ghim trên bản đồ)
+              <MapPinIcon className="h-4 w-4 shrink-0" />
+              <span>Địa chỉ cụ thể / Tọa độ / Link Google Maps (để ghim trên bản đồ)</span>
             </label>
             <input
               id={`${uid}-mapAddress`}
@@ -859,20 +1038,20 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               placeholder="Ví dụ: 1-1-1 Nishi-Shinjuku, Shinjuku-ku, Tokyo hoặc 35.6895, 139.6917 hoặc dán link Google Maps"
               className={inputClassName}
             />
-            <p className="text-xs text-[#574d43] mt-1">
+            <p className="mt-1.5 text-xs text-[#475569]">
               Nếu để trống, bản đồ sẽ tự động lấy theo địa chỉ đã nhập ở trên.
             </p>
           </div>
         </div>
 
         {/* Phân loại bộ lọc hiển thị */}
-        <div className="space-y-4 bg-[#faf8f5] p-4 rounded-xl border border-[#e6dfd5]">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#e6dfd5] pb-2.5">
+        <div className="space-y-4 rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
+          <div className="flex flex-col justify-between gap-2.5 border-b border-[#99F6E4]/70 pb-3 sm:flex-row sm:items-center">
             <div>
-              <span className="block text-xs font-bold uppercase tracking-wider text-[#2c2623]">
+              <span className="block text-xs font-bold uppercase tracking-wider text-[#134E4A]">
                 Thông tin bộ lọc tìm kiếm (Properties)
               </span>
-              <span className="text-xs text-[#574d43]">
+              <span className="mt-0.5 block text-xs text-[#475569]">
                 {savingFilterOptions
                   ? "Đang đồng bộ danh sách bộ lọc..."
                   : "Bấm vào thẻ để chọn, hoặc bấm + Thêm / Sửa & Xóa thẻ"}
@@ -885,13 +1064,23 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                 setIsManagingFilters((prev) => !prev);
                 setEditingItem(null);
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer self-start sm:self-auto ${
+              className={`inline-flex cursor-pointer items-center gap-1.5 self-start rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] sm:self-auto ${
                 isManagingFilters
-                  ? "bg-[#7a482b] text-white border-[#7a482b]"
-                  : "bg-white text-[#3c352d] border-[#e6dfd5] hover:border-[#7a482b]"
+                  ? "border-[#0F766E] bg-[#0F766E] text-white shadow-xs"
+                  : "border-[#99F6E4] bg-white text-[#134E4A] hover:border-[#0F766E] hover:bg-[#F0FDFA]"
               }`}
             >
-              {isManagingFilters ? "✓ Xong" : "⚙️ Sửa / Xóa thẻ"}
+              {isManagingFilters ? (
+                <>
+                  <CheckIcon className="h-3.5 w-3.5" />
+                  <span>Xong</span>
+                </>
+              ) : (
+                <>
+                  <SettingsIcon className="h-3.5 w-3.5 text-[#0F766E]" />
+                  <span>Sửa / Xóa thẻ</span>
+                </>
+              )}
             </button>
           </div>
 
@@ -900,7 +1089,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
             "Location (Tỉnh / Khu vực)",
             filterLocation,
             setFilterLocation,
-            "dark"
+            "teal"
           )}
 
           {renderFilterRow(
@@ -908,7 +1097,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
             "Price (Khoảng giá Yên Nhật)",
             filterPrice,
             setFilterPrice,
-            "dark"
+            "teal"
           )}
 
           {renderFilterRow(
@@ -916,22 +1105,27 @@ export default function PropertyForm({ property }: PropertyFormProps) {
             "Layout (Nhóm bố cục)",
             filterLayout,
             setFilterLayout,
-            "tan"
+            "blue"
           )}
         </div>
       </div>
 
       {/* 2. Thông số kỹ thuật BĐS Nhật Bản */}
-      <div className="space-y-4 pt-2">
-        <h2 className="text-lg font-serif font-bold border-b border-[#e6dfd5] pb-2 text-[#7a482b]">
-          2. Thông số kỹ thuật BĐS Nhật Bản
-        </h2>
+      <div className="relative space-y-5 pt-2">
+        <div className="flex items-center gap-3 border-b border-[#E8F0F3] pb-3">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#0F766E] text-xs font-bold text-white">
+            2
+          </span>
+          <h2 className="font-serif text-lg font-bold text-[#134E4A] sm:text-xl">
+            Thông số kỹ thuật BĐS Nhật Bản
+          </h2>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
             <label
               htmlFor={`${uid}-areaSqm`}
-              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1"
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
             >
               Diện tích sử dụng (m²) *
             </label>
@@ -949,7 +1143,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           <div>
             <label
               htmlFor={`${uid}-buildingSize`}
-              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1"
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
             >
               Diện tích sàn (Building Size)
             </label>
@@ -965,7 +1159,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           <div>
             <label
               htmlFor={`${uid}-landSize`}
-              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1"
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
             >
               Diện tích đất (Land Size)
             </label>
@@ -980,11 +1174,11 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
             <label
               htmlFor={`${uid}-layout`}
-              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1"
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
             >
               Bố cục phòng (Layout)
             </label>
@@ -1000,7 +1194,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           <div>
             <label
               htmlFor={`${uid}-structure`}
-              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1"
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
             >
               Kết cấu (Structure)
             </label>
@@ -1016,7 +1210,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           <div>
             <label
               htmlFor={`${uid}-yearBuilt`}
-              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1"
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
             >
               Năm xây dựng (Year Built)
             </label>
@@ -1024,18 +1218,18 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               id={`${uid}-yearBuilt`}
               type="number"
               name="yearBuilt"
-              defaultValue={property?.year_built || new Date().getFullYear()}
+              defaultValue={property?.year_built || 2026}
               placeholder="2020"
               className={inputClassName}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
             <label
               htmlFor={`${uid}-landRights`}
-              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1"
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
             >
               Quyền sở hữu (Land Rights)
             </label>
@@ -1051,7 +1245,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           <div>
             <label
               htmlFor={`${uid}-access`}
-              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1"
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
             >
               Vị trí ga / Giao thông (Access)
             </label>
@@ -1067,7 +1261,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           <div>
             <label
               htmlFor={`${uid}-parking`}
-              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1"
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
             >
               Chỗ đậu xe (Parking)
             </label>
@@ -1082,11 +1276,11 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
             <label
               htmlFor={`${uid}-zoning`}
-              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1"
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
             >
               Quy hoạch đất (Zoning)
             </label>
@@ -1102,7 +1296,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           <div>
             <label
               htmlFor={`${uid}-bedrooms`}
-              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1"
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
             >
               Số phòng ngủ
             </label>
@@ -1117,7 +1311,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
           <div>
             <label
               htmlFor={`${uid}-bathrooms`}
-              className="block text-xs font-semibold uppercase tracking-wider text-[#3c352d] mb-1"
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
             >
               Số phòng tắm
             </label>
@@ -1133,16 +1327,21 @@ export default function PropertyForm({ property }: PropertyFormProps) {
       </div>
 
       {/* 3. Mô tả 3 ngôn ngữ & Hình ảnh (Tích hợp ImageUploader nén ảnh & sắp xếp ảnh bìa) */}
-      <div className="space-y-5 pt-2">
-        <h2 className="text-lg font-serif font-bold border-b border-[#e6dfd5] pb-2 text-[#7a482b]">
-          3. Mô tả chi tiết (3 ngôn ngữ) & Hình ảnh
-        </h2>
+      <div className="relative space-y-5 pt-2">
+        <div className="flex items-center gap-3 border-b border-[#E8F0F3] pb-3">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#0F766E] text-xs font-bold text-white">
+            3
+          </span>
+          <h2 className="font-serif text-lg font-bold text-[#134E4A] sm:text-xl">
+            Mô tả chi tiết (3 ngôn ngữ) & Hình ảnh
+          </h2>
+        </div>
 
-        <div className="space-y-3 bg-[#faf8f5] p-4 rounded-xl border border-[#e6dfd5]">
+        <div className="space-y-3.5 rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
           <div>
             <label
               htmlFor={`${uid}-descriptionVi`}
-              className="block text-xs font-semibold text-[#7a482b] mb-1"
+              className="mb-1 block text-xs font-bold text-[#0F766E]"
             >
               Mô tả chi tiết — Tiếng Việt (VI)
             </label>
@@ -1153,12 +1352,12 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               defaultValue={getLangText(property?.description, "vi")}
               placeholder="Mô tả tiện ích xung quanh, tình trạng pháp lý, ban công..."
               className={inputClassName}
-            ></textarea>
+            />
           </div>
           <div>
             <label
               htmlFor={`${uid}-descriptionEn`}
-              className="block text-xs font-semibold text-[#7a482b] mb-1"
+              className="mb-1 block text-xs font-bold text-[#0F766E]"
             >
               Description — English (EN)
             </label>
@@ -1169,12 +1368,12 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               defaultValue={getLangText(property?.description, "en")}
               placeholder="Describe surrounding amenities, legal status, balcony..."
               className={inputClassName}
-            ></textarea>
+            />
           </div>
           <div>
             <label
               htmlFor={`${uid}-descriptionJa`}
-              className="block text-xs font-semibold text-[#7a482b] mb-1"
+              className="mb-1 block text-xs font-bold text-[#0F766E]"
             >
               物件詳細 — 日本語 (JA)
             </label>
@@ -1185,12 +1384,12 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               defaultValue={getLangText(property?.description, "ja")}
               placeholder="周辺環境、権利形態、設備などの詳細を入力してください..."
               className={inputClassName}
-            ></textarea>
+            />
           </div>
         </div>
 
         {/* Hình ảnh BĐS chính */}
-        <div className="bg-[#faf8f5] p-4 rounded-xl border border-[#e6dfd5]">
+        <div className="rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
           <ImageUploader
             label="Hình ảnh BĐS *"
             hint="Ảnh đầu tiên sẽ làm ảnh bìa. Tự động nén tối ưu tốc độ tải và hỗ trợ đổi thứ tự."
@@ -1206,7 +1405,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
         </div>
 
         {/* Hình ảnh Sơ đồ nhà ở */}
-        <div className="bg-[#faf8f5] p-4 rounded-xl border border-[#e6dfd5]">
+        <div className="rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
           <ImageUploader
             label="Sơ đồ nhà ở (Floor Plan / 間取り図)"
             hint="Tải ảnh bản vẽ mặt bằng căn hộ/nhà ở (hỗ trợ tối đa 5 sơ đồ)."
@@ -1223,28 +1422,44 @@ export default function PropertyForm({ property }: PropertyFormProps) {
         <div
           ref={bannerRef}
           role="alert"
-          className={`p-4 rounded-xl text-sm border ${
+          className={`flex items-start gap-3 rounded-xl border p-4 text-xs leading-relaxed sm:text-sm ${
             statusBanner.type === "success"
-              ? "bg-emerald-50 text-emerald-900 border-emerald-200"
-              : "bg-rose-50 text-rose-900 border-rose-200"
+              ? "border-emerald-200 bg-emerald-50/90 text-emerald-900"
+              : "border-rose-200 bg-rose-50/90 text-rose-900"
           }`}
         >
-          {statusBanner.text}
+          {statusBanner.type === "success" ? (
+            <CheckCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+          ) : (
+            <AlertCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" />
+          )}
+          <span className="font-medium">{statusBanner.text}</span>
         </div>
       )}
 
       <button
         type="submit"
         disabled={loading || uploading || uploadingFloorPlan}
-        className="w-full py-3.5 px-6 bg-[#7a482b] hover:bg-[#633a22] text-white font-bold rounded-xl transition duration-200 disabled:opacity-50 text-sm tracking-wider uppercase cursor-pointer shadow-xs"
+        className="group inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#0369A1] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-white shadow-[0_4px_6px_rgba(0,0,0,0.1)] transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-55 sm:text-sm motion-reduce:transform-none motion-reduce:transition-none"
       >
-        {loading
-          ? "Đang lưu..."
-          : uploading || uploadingFloorPlan
-          ? "Đang tải ảnh lên..."
-          : isEdit
-          ? "Cập Nhật BĐS"
-          : "Lưu & Đăng BĐS Nhật Bản"}
+        {loading || uploading || uploadingFloorPlan ? (
+          <>
+            <span
+              aria-hidden="true"
+              className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
+            />
+            <span>
+              {loading
+                ? "Đang lưu..."
+                : "Đang tải ảnh lên..."}
+            </span>
+          </>
+        ) : (
+          <>
+            <SaveIcon className="h-4 w-4" />
+            <span>{isEdit ? "Cập Nhật BĐS" : "Lưu & Đăng BĐS Nhật Bản"}</span>
+          </>
+        )}
       </button>
     </form>
   );

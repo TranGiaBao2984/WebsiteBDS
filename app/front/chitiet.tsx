@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLanguage } from '@/app/context/LanguageContext';
 import type { Property } from '@/lib/types';
 import PropertyCard from './PropertyCard';
@@ -16,6 +17,115 @@ interface LightboxState {
   images: string[];
   index: number;
   title: string;
+}
+
+function MapPinIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
+
+function ZoomInIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+      <path d="M11 8v6" />
+      <path d="M8 11h6" />
+    </svg>
+  );
+}
+
+function ChevronLeftIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
+function ExternalLinkIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M15 3h6v6" />
+      <path d="M10 14 21 3" />
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    </svg>
+  );
 }
 
 function unwrapJson(val: unknown): unknown {
@@ -285,7 +395,7 @@ const DETAIL_LABELS = {
     prevImg: 'Ảnh trước',
     nextImg: 'Ảnh tiếp theo',
     zoomHint: 'Bấm để phóng to',
-    closeModal: 'Đóng chế độ xem lớn',
+    closeModal: 'Đóng chế độ xem lớn (ESC)',
     consultCta: 'Đăng ký tư vấn',
   },
   en: {
@@ -314,7 +424,7 @@ const DETAIL_LABELS = {
     prevImg: 'Previous image',
     nextImg: 'Next image',
     zoomHint: 'Click to enlarge',
-    closeModal: 'Close fullscreen view',
+    closeModal: 'Close fullscreen view (ESC)',
     consultCta: 'Inquire Now',
   },
   ja: {
@@ -343,7 +453,7 @@ const DETAIL_LABELS = {
     prevImg: '前の画像',
     nextImg: '次の画像',
     zoomHint: 'クリックして拡大',
-    closeModal: '拡大表示を閉じる',
+    closeModal: '拡大表示を閉じる (ESC)',
     consultCta: 'お問い合わせ',
   },
 };
@@ -353,6 +463,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeFloorPlanIndex, setActiveFloorPlanIndex] = useState(0);
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
+  const [headerOffset, setHeaderOffset] = useState(72);
   const labels = DETAIL_LABELS[currentLang] || DETAIL_LABELS.en;
 
   const title = getCleanText(property.title, currentLang) || 'Property';
@@ -379,9 +490,21 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
   const mainImage = images[activeIndex] || images[0] || fallbackImage;
   const mainFloorPlanImage = floorPlanImages[activeFloorPlanIndex] || floorPlanImages[0] || '';
 
-  // Điều khiển Lightbox bằng bàn phím (Esc, mũi tên trái/phải)
+  // Đo chiều cao Header, khóa cuộn nền và lắng nghe phím tắt Esc / mũi tên khi mở Lightbox
   useEffect(() => {
     if (!lightbox) return;
+
+    const updateHeaderOffset = () => {
+      const headerEl = document.querySelector('header');
+      if (headerEl) {
+        setHeaderOffset(Math.ceil(headerEl.getBoundingClientRect().height));
+      }
+    };
+
+    updateHeaderOffset();
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setLightbox(null);
@@ -405,8 +528,14 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
         );
       }
     };
+
+    window.addEventListener('resize', updateHeaderOffset);
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('resize', updateHeaderOffset);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [lightbox]);
 
   const handlePrevImage = () => {
@@ -430,33 +559,50 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
   };
 
   return (
-    <div className="space-y-12 pb-20 lg:pb-0">
-      {/* Header thông tin chính */}
-      <div className="space-y-4 border-b border-[#e6dfd5] pb-6">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#7a482b]">
-          <span>{propertyType}</span>
-          <span>•</span>
-          <span>
-            {property.bedrooms || 1} {labels.bedrooms}
-          </span>
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#2c2623]">{title}</h1>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <p className="text-sm text-[#574d43]">📍 {location}</p>
-          <div className="sm:text-right">
-            <div className="text-2xl sm:text-3xl font-serif font-bold text-[#7a482b]">
-              {formattedPrice}
+    <div className="space-y-10 pb-24 lg:pb-0">
+      {/* Glassmorphism Property Header */}
+      <div className="relative overflow-hidden rounded-2xl border border-[#99F6E4] bg-white/80 p-6 shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md sm:p-8">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full bg-[#14B8A6]/12 blur-3xl"
+        />
+
+        <div className="relative space-y-4">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#0F766E]">
+            <span className="rounded-md border border-[#99F6E4] bg-[#F0FDFA] px-2.5 py-1">
+              {propertyType}
+            </span>
+            <span className="text-[#14B8A6]">•</span>
+            <span className="rounded-md border border-[#99F6E4] bg-[#F0FDFA] px-2.5 py-1">
+              {property.bedrooms || 1} {labels.bedrooms}
+            </span>
+          </div>
+
+          <h1 className="font-serif text-2xl font-bold leading-tight text-[#134E4A] sm:text-3xl lg:text-4xl">
+            {title}
+          </h1>
+
+          <div className="flex flex-col justify-between gap-4 border-t border-[#E8F0F3] pt-4 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-2 text-sm font-medium text-[#475569]">
+              <MapPinIcon className="h-4 w-4 shrink-0 text-[#0F766E]" />
+              <span>{location}</span>
+            </div>
+
+            <div className="sm:text-right">
+              <div className="font-serif text-2xl font-bold text-[#0F766E] sm:text-3xl">
+                {formattedPrice}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Grid hình ảnh & Form tư vấn */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         {/* Cột trái: Ảnh & Chi tiết */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="space-y-6 lg:col-span-8">
           {/* Khung ảnh lớn hiển thị full ảnh kèm nút chuyển trái/phải và bấm phóng to */}
-          <div className="relative aspect-16/10 rounded-2xl bg-[#f4efe8] overflow-hidden border border-[#e6dfd5] flex items-center justify-center group">
+          <div className="group relative flex aspect-16/10 items-center justify-center overflow-hidden rounded-2xl border border-[#99F6E4] bg-[#E8F0F3]/65 shadow-[0_4px_6px_rgba(0,0,0,0.1)]">
             <button
               type="button"
               onClick={() =>
@@ -467,20 +613,21 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                 })
               }
               aria-label={`${labels.zoomHint} - ${title}`}
-              className="w-full h-full flex items-center justify-center cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-[#7a482b]"
+              className="flex h-full w-full cursor-zoom-in items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0F766E]"
             >
               <img
                 src={mainImage}
                 alt={title}
-                className="w-full h-full object-contain transition-all duration-300 select-none"
+                className="h-full w-full select-none object-contain transition-all duration-300"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = fallbackImage;
                 }}
               />
             </button>
 
-            <span className="pointer-events-none absolute top-3 right-3 bg-black/55 text-white text-[11px] font-medium px-2.5 py-1 rounded-lg backdrop-blur-xs opacity-90 group-hover:opacity-100 transition">
-              🔍 {labels.zoomHint}
+            <span className="pointer-events-none absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-[#134E4A]/80 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur-md transition-opacity duration-200">
+              <ZoomInIcon className="h-3.5 w-3.5 text-[#99F6E4]" />
+              <span>{labels.zoomHint}</span>
             </span>
 
             {images.length > 1 && (
@@ -489,39 +636,21 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                   type="button"
                   onClick={handlePrevImage}
                   aria-label={labels.prevImg}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/55 hover:bg-black/80 text-white flex items-center justify-center transition duration-200 shadow-md cursor-pointer backdrop-blur-xs focus:outline-none focus:ring-2 focus:ring-white"
+                  className="absolute top-1/2 left-3 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-[#134E4A]/75 text-white shadow-md backdrop-blur-md transition-all duration-200 hover:bg-[#0F766E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2.2}
-                    stroke="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                  </svg>
+                  <ChevronLeftIcon className="h-5 w-5" />
                 </button>
 
                 <button
                   type="button"
                   onClick={handleNextImage}
                   aria-label={labels.nextImg}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/55 hover:bg-black/80 text-white flex items-center justify-center transition duration-200 shadow-md cursor-pointer backdrop-blur-xs focus:outline-none focus:ring-2 focus:ring-white"
+                  className="absolute top-1/2 right-3 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-[#134E4A]/75 text-white shadow-md backdrop-blur-md transition-all duration-200 hover:bg-[#0F766E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2.2}
-                    stroke="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                  </svg>
+                  <ChevronRightIcon className="h-5 w-5" />
                 </button>
 
-                <div className="absolute bottom-3 right-3 bg-black/65 text-white text-xs px-2.5 py-1 rounded-full">
+                <div className="absolute right-3 bottom-3 rounded-full border border-white/20 bg-[#134E4A]/80 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
                   {activeIndex + 1} / {images.length}
                 </div>
               </>
@@ -530,7 +659,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
 
           {/* Danh sách ảnh thu nhỏ bên dưới */}
           {images.length > 1 && (
-            <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+            <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
               {images.map((img, idx) => {
                 const isSelected = idx === activeIndex;
                 return (
@@ -540,16 +669,16 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                     onClick={() => setActiveIndex(idx)}
                     aria-label={`Xem ảnh ${idx + 1}`}
                     aria-pressed={isSelected}
-                    className={`aspect-4/3 rounded-xl overflow-hidden border-2 bg-[#f4efe8] flex items-center justify-center transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7a482b] ${
+                    className={`flex aspect-4/3 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 bg-[#E8F0F3]/60 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] ${
                       isSelected
-                        ? 'border-[#7a482b] ring-2 ring-[#7a482b]/30 opacity-100'
-                        : 'border-[#e6dfd5] opacity-80 hover:opacity-100 hover:border-[#8c6d53]'
+                        ? 'border-[#0F766E] opacity-100 ring-2 ring-[#0F766E]/25'
+                        : 'border-[#99F6E4]/80 opacity-80 hover:border-[#14B8A6] hover:opacity-100'
                     }`}
                   >
                     <img
                       src={img}
                       alt={`${title} ${idx + 1}`}
-                      className="w-full h-full object-contain"
+                      className="h-full w-full object-contain"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = fallbackImage;
                       }}
@@ -560,69 +689,69 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             </div>
           )}
 
-          {/* Thông số kỹ thuật đầy đủ 12 trường (chống vỡ hàng trên mobile) */}
-          <div className="bg-white p-6 rounded-2xl border border-[#e6dfd5] space-y-4">
-            <h2 className="font-serif font-bold text-lg text-[#2c2623] border-b border-[#f0eae1] pb-3">
+          {/* Thông số kỹ thuật đầy đủ 12 trường */}
+          <div className="space-y-5 rounded-xl border border-[#99F6E4] bg-white/85 p-6 shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md">
+            <h2 className="font-serif border-b border-[#E8F0F3] pb-3 text-lg font-bold text-[#134E4A]">
               {labels.specsTitle}
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 text-xs sm:text-sm">
+            <div className="grid grid-cols-1 gap-x-6 gap-y-5 text-xs sm:grid-cols-2 sm:text-sm lg:grid-cols-3">
               <div>
-                <span className="text-[#574d43] block mb-0.5">{labels.area}</span>
-                <span className="font-bold text-[#2c2623]">
+                <span className="mb-1 block font-medium text-[#475569]">{labels.area}</span>
+                <span className="font-bold text-[#134E4A]">
                   {property.area_sqm ? `${property.area_sqm} m²` : '--'}
                 </span>
               </div>
               <div>
-                <span className="text-[#574d43] block mb-0.5">{labels.buildingSize}</span>
-                <span className="font-bold text-[#2c2623]">{property.building_size || '--'}</span>
+                <span className="mb-1 block font-medium text-[#475569]">{labels.buildingSize}</span>
+                <span className="font-bold text-[#134E4A]">{property.building_size || '--'}</span>
               </div>
               <div>
-                <span className="text-[#574d43] block mb-0.5">{labels.landSize}</span>
-                <span className="font-bold text-[#2c2623]">{property.land_size || '--'}</span>
+                <span className="mb-1 block font-medium text-[#475569]">{labels.landSize}</span>
+                <span className="font-bold text-[#134E4A]">{property.land_size || '--'}</span>
               </div>
               <div>
-                <span className="text-[#574d43] block mb-0.5">{labels.layout}</span>
-                <span className="font-bold text-[#2c2623]">{property.layout || '--'}</span>
+                <span className="mb-1 block font-medium text-[#475569]">{labels.layout}</span>
+                <span className="font-bold text-[#134E4A]">{property.layout || '--'}</span>
               </div>
               <div>
-                <span className="text-[#574d43] block mb-0.5">{labels.structure}</span>
-                <span className="font-bold text-[#2c2623]">{property.structure || '--'}</span>
+                <span className="mb-1 block font-medium text-[#475569]">{labels.structure}</span>
+                <span className="font-bold text-[#134E4A]">{property.structure || '--'}</span>
               </div>
               <div>
-                <span className="text-[#574d43] block mb-0.5">{labels.yearBuilt}</span>
-                <span className="font-bold text-[#2c2623]">{property.year_built || '--'}</span>
+                <span className="mb-1 block font-medium text-[#475569]">{labels.yearBuilt}</span>
+                <span className="font-bold text-[#134E4A]">{property.year_built || '--'}</span>
               </div>
               <div>
-                <span className="text-[#574d43] block mb-0.5">{labels.parking}</span>
-                <span className="font-bold text-[#2c2623]">{property.parking || '--'}</span>
+                <span className="mb-1 block font-medium text-[#475569]">{labels.parking}</span>
+                <span className="font-bold text-[#134E4A]">{property.parking || '--'}</span>
               </div>
               <div>
-                <span className="text-[#574d43] block mb-0.5">{labels.bedroomsCount}</span>
-                <span className="font-bold text-[#2c2623]">{property.bedrooms ?? '--'}</span>
+                <span className="mb-1 block font-medium text-[#475569]">{labels.bedroomsCount}</span>
+                <span className="font-bold text-[#134E4A]">{property.bedrooms ?? '--'}</span>
               </div>
               <div>
-                <span className="text-[#574d43] block mb-0.5">{labels.bathroomsCount}</span>
-                <span className="font-bold text-[#2c2623]">{property.bathrooms ?? '--'}</span>
+                <span className="mb-1 block font-medium text-[#475569]">{labels.bathroomsCount}</span>
+                <span className="font-bold text-[#134E4A]">{property.bathrooms ?? '--'}</span>
               </div>
-              <div className="sm:col-span-2 lg:col-span-3 pt-2 border-t border-[#f5f0e8]">
-                <span className="text-[#574d43] block mb-0.5">{labels.landRights}</span>
-                <span className="font-bold text-[#2c2623]">{property.land_rights || '--'}</span>
+              <div className="border-t border-[#E8F0F3] pt-3 sm:col-span-2 lg:col-span-3">
+                <span className="mb-1 block font-medium text-[#475569]">{labels.landRights}</span>
+                <span className="font-bold text-[#134E4A]">{property.land_rights || '--'}</span>
               </div>
               <div className="sm:col-span-2 lg:col-span-3">
-                <span className="text-[#574d43] block mb-0.5">{labels.access}</span>
-                <span className="font-bold text-[#2c2623]">{property.access || '--'}</span>
+                <span className="mb-1 block font-medium text-[#475569]">{labels.access}</span>
+                <span className="font-bold text-[#134E4A]">{property.access || '--'}</span>
               </div>
               <div className="sm:col-span-2 lg:col-span-3">
-                <span className="text-[#574d43] block mb-0.5">{labels.zoning}</span>
-                <span className="font-bold text-[#2c2623]">{property.zoning || '--'}</span>
+                <span className="mb-1 block font-medium text-[#475569]">{labels.zoning}</span>
+                <span className="font-bold text-[#134E4A]">{property.zoning || '--'}</span>
               </div>
             </div>
           </div>
 
-          {/* Khung Sơ đồ nhà ở (Hỗ trợ bấm phóng to toàn màn hình) */}
-          <div className="bg-white p-6 rounded-2xl border border-[#e6dfd5] space-y-4">
-            <div className="flex items-center justify-between gap-2 border-b border-[#f0eae1] pb-3">
-              <h2 className="font-serif font-bold text-lg text-[#2c2623]">
+          {/* Khung Sơ đồ nhà ở (Hỗ trợ bấm phóng to) */}
+          <div className="space-y-4 rounded-xl border border-[#99F6E4] bg-white/85 p-6 shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md">
+            <div className="flex items-center justify-between gap-2 border-b border-[#E8F0F3] pb-3">
+              <h2 className="font-serif text-lg font-bold text-[#134E4A]">
                 {labels.floorPlanTitle}
               </h2>
               {floorPlanImages.length > 0 && (
@@ -635,16 +764,17 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                       title: `${labels.floorPlanTitle} - ${title}`,
                     })
                   }
-                  className="text-xs font-semibold text-[#7a482b] hover:underline cursor-pointer"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-md text-xs font-bold text-[#0369A1] transition-colors duration-200 hover:text-[#0F766E] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
                 >
-                  🔍 {labels.zoomHint}
+                  <ZoomInIcon className="h-3.5 w-3.5" />
+                  <span>{labels.zoomHint}</span>
                 </button>
               )}
             </div>
 
             {floorPlanImages.length > 0 ? (
               <div className="space-y-4">
-                <div className="relative aspect-16/10 rounded-xl bg-[#f4efe8] overflow-hidden border border-[#e6dfd5] flex items-center justify-center group">
+                <div className="group relative flex aspect-16/10 items-center justify-center overflow-hidden rounded-xl border border-[#99F6E4] bg-[#E8F0F3]/65">
                   <button
                     type="button"
                     onClick={() =>
@@ -655,12 +785,12 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                       })
                     }
                     aria-label={`${labels.zoomHint} - ${labels.floorPlanTitle}`}
-                    className="w-full h-full flex items-center justify-center cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-[#7a482b]"
+                    className="flex h-full w-full cursor-zoom-in items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0F766E]"
                   >
                     <img
                       src={mainFloorPlanImage}
                       alt={`${labels.floorPlanTitle} - ${title}`}
-                      className="w-full h-full object-contain transition-all duration-300 select-none"
+                      className="h-full w-full select-none object-contain transition-all duration-300"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = fallbackImage;
                       }}
@@ -673,39 +803,21 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                         type="button"
                         onClick={handlePrevFloorPlan}
                         aria-label={labels.prevImg}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/55 hover:bg-black/80 text-white flex items-center justify-center transition duration-200 shadow-md cursor-pointer backdrop-blur-xs focus:outline-none focus:ring-2 focus:ring-white"
+                        className="absolute top-1/2 left-3 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-[#134E4A]/75 text-white shadow-md backdrop-blur-md transition-all duration-200 hover:bg-[#0F766E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={2.2}
-                          stroke="currentColor"
-                          className="w-5 h-5"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                        </svg>
+                        <ChevronLeftIcon className="h-5 w-5" />
                       </button>
 
                       <button
                         type="button"
                         onClick={handleNextFloorPlan}
                         aria-label={labels.nextImg}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/55 hover:bg-black/80 text-white flex items-center justify-center transition duration-200 shadow-md cursor-pointer backdrop-blur-xs focus:outline-none focus:ring-2 focus:ring-white"
+                        className="absolute top-1/2 right-3 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-[#134E4A]/75 text-white shadow-md backdrop-blur-md transition-all duration-200 hover:bg-[#0F766E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={2.2}
-                          stroke="currentColor"
-                          className="w-5 h-5"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                        </svg>
+                        <ChevronRightIcon className="h-5 w-5" />
                       </button>
 
-                      <div className="absolute bottom-3 right-3 bg-black/65 text-white text-xs px-2.5 py-1 rounded-full">
+                      <div className="absolute right-3 bottom-3 rounded-full border border-white/20 bg-[#134E4A]/80 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
                         {activeFloorPlanIndex + 1} / {floorPlanImages.length}
                       </div>
                     </>
@@ -713,7 +825,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                 </div>
 
                 {floorPlanImages.length > 1 && (
-                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
                     {floorPlanImages.map((img, idx) => {
                       const isSelected = idx === activeFloorPlanIndex;
                       return (
@@ -723,16 +835,16 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                           onClick={() => setActiveFloorPlanIndex(idx)}
                           aria-label={`${labels.floorPlanTitle} ${idx + 1}`}
                           aria-pressed={isSelected}
-                          className={`aspect-4/3 rounded-xl overflow-hidden border-2 bg-[#f4efe8] flex items-center justify-center transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7a482b] ${
+                          className={`flex aspect-4/3 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 bg-[#E8F0F3]/60 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] ${
                             isSelected
-                              ? 'border-[#7a482b] ring-2 ring-[#7a482b]/30 opacity-100'
-                              : 'border-[#e6dfd5] opacity-80 hover:opacity-100 hover:border-[#8c6d53]'
+                              ? 'border-[#0F766E] opacity-100 ring-2 ring-[#0F766E]/25'
+                              : 'border-[#99F6E4]/80 opacity-80 hover:border-[#14B8A6] hover:opacity-100'
                           }`}
                         >
                           <img
                             src={img}
                             alt={`${labels.floorPlanTitle} ${idx + 1}`}
-                            className="w-full h-full object-contain"
+                            className="h-full w-full object-contain"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = fallbackImage;
                             }}
@@ -744,31 +856,34 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                 )}
               </div>
             ) : (
-              <div className="py-8 text-center text-xs sm:text-sm text-[#574d43] bg-[#faf8f5] rounded-xl border border-dashed border-[#e6dfd5]">
+              <div className="rounded-xl border border-dashed border-[#99F6E4] bg-[#F0FDFA] py-8 text-center text-xs font-medium text-[#475569] sm:text-sm">
                 {labels.noFloorPlan}
               </div>
             )}
           </div>
 
           {/* Mô tả chi tiết */}
-          <div className="bg-white p-6 rounded-2xl border border-[#e6dfd5] space-y-3">
-            <h2 className="font-serif font-bold text-lg text-[#2c2623] border-b border-[#f0eae1] pb-3">
+          <div className="space-y-4 rounded-xl border border-[#99F6E4] bg-white/85 p-6 shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md">
+            <h2 className="font-serif border-b border-[#E8F0F3] pb-3 text-lg font-bold text-[#134E4A]">
               {labels.descTitle}
             </h2>
-            <p className="text-[15px] sm:text-base text-[#3c352d] leading-7 max-w-prose whitespace-pre-line">
+            <p className="max-w-prose whitespace-pre-line text-[15px] leading-7 text-[#134E4A] sm:text-base">
               {description}
             </p>
           </div>
 
           {/* Khung Vị trí trên bản đồ (Google Maps) */}
-          <div className="bg-white p-6 rounded-2xl border border-[#e6dfd5] space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#f0eae1] pb-3">
+          <div className="space-y-4 rounded-xl border border-[#99F6E4] bg-white/85 p-6 shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md">
+            <div className="flex flex-col justify-between gap-3 border-b border-[#E8F0F3] pb-3 sm:flex-row sm:items-center">
               <div>
-                <h2 className="font-serif font-bold text-lg text-[#2c2623]">
+                <h2 className="font-serif text-lg font-bold text-[#134E4A]">
                   {labels.mapTitle}
                 </h2>
                 {displayAddress && (
-                  <p className="text-xs sm:text-sm text-[#574d43] mt-0.5">📍 {displayAddress}</p>
+                  <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-[#475569] sm:text-sm">
+                    <MapPinIcon className="h-4 w-4 shrink-0 text-[#0F766E]" />
+                    <span>{displayAddress}</span>
+                  </p>
                 )}
               </div>
 
@@ -776,31 +891,18 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                 href={externalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#f4efe8] hover:bg-[#7a482b] text-[#2c2623] hover:text-white text-xs font-bold rounded-xl transition duration-200 self-start sm:self-auto cursor-pointer"
+                className="inline-flex cursor-pointer items-center gap-1.5 self-start rounded-lg border-2 border-[#0F766E] bg-transparent px-4 py-2 text-xs font-semibold text-[#0F766E] transition-all duration-200 hover:bg-[#0F766E] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2 sm:self-auto"
               >
                 <span>{labels.openGoogleMaps}</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                  className="w-3.5 h-3.5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-                  />
-                </svg>
+                <ExternalLinkIcon className="h-3.5 w-3.5" />
               </a>
             </div>
 
-            <div className="relative aspect-video rounded-xl overflow-hidden border border-[#e6dfd5] bg-[#f4efe8]">
+            <div className="relative aspect-video overflow-hidden rounded-xl border border-[#99F6E4] bg-[#E8F0F3]">
               <iframe
                 src={embedUrl}
                 title={`${labels.mapTitle} - ${title}`}
-                className="w-full h-full border-0"
+                className="h-full w-full border-0"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               />
@@ -808,9 +910,9 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
           </div>
         </div>
 
-        {/* Cột phải: Form tư vấn */}
+        {/* Cột phải: Form tư vấn (cách top-28 để không bị sticky Header che khuất) */}
         <div className="lg:col-span-4">
-          <div className="sticky top-6">
+          <div className="sticky top-28">
             <InquiryForm propertyId={property.id} propertyTitle={title} />
           </div>
         </div>
@@ -818,9 +920,9 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
 
       {/* Bất động sản tương tự */}
       {similarProperties.length > 0 && (
-        <div className="space-y-6 pt-8 border-t border-[#e6dfd5]">
-          <h2 className="text-2xl font-serif font-bold text-[#2c2623]">{labels.similarTitle}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-6 border-t border-[#99F6E4] pt-8">
+          <h2 className="font-serif text-2xl font-bold text-[#134E4A]">{labels.similarTitle}</h2>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {similarProperties.map((item) => (
               <PropertyCard key={item.id} property={item} />
             ))}
@@ -829,101 +931,112 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
       )}
 
       {/* Thanh CTA cố định đáy màn hình trên Mobile */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-[#e6dfd5] px-4 py-3 shadow-[0_-4px_16px_rgba(44,38,35,0.08)]">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#99F6E4] bg-[#F0FDFA]/90 px-4 py-3 shadow-[0_-4px_16px_rgba(19,78,74,0.08)] backdrop-blur-md lg:hidden">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-medium text-[#574d43] truncate">{title}</p>
-            <p className="text-base sm:text-lg font-serif font-bold text-[#7a482b] truncate">
+            <p className="truncate text-[11px] font-medium text-[#475569]">{title}</p>
+            <p className="font-serif truncate text-base font-bold text-[#0F766E] sm:text-lg">
               {formattedPrice}
             </p>
           </div>
           <button
             type="button"
             onClick={scrollToContact}
-            className="shrink-0 px-5 py-2.5 bg-[#7a482b] hover:bg-[#633a22] text-white text-xs sm:text-sm font-bold rounded-xl transition shadow-xs cursor-pointer"
+            className="shrink-0 cursor-pointer rounded-lg bg-[#0369A1] px-5 py-2.5 text-xs font-semibold text-white shadow-[0_4px_6px_rgba(0,0,0,0.1)] transition-all duration-200 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2 sm:text-sm"
           >
             {labels.consultCta}
           </button>
         </div>
       </div>
 
-      {/* Lightbox phóng to ảnh / sơ đồ nhà ở */}
-      {lightbox && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={lightbox.title}
-          className="fixed inset-0 z-50 bg-black/90 flex flex-col justify-between p-4 sm:p-6"
-          onClick={() => setLightbox(null)}
-        >
+      {/* Lightbox phóng to ảnh / sơ đồ nhà ở — đặt ngay bên dưới Header */}
+      {lightbox &&
+        typeof document !== 'undefined' &&
+        createPortal(
           <div
-            className="flex items-center justify-between gap-4 text-white"
-            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={lightbox.title}
+            style={{ top: `${headerOffset}px` }}
+            className="fixed inset-x-0 bottom-0 z-40 flex flex-col justify-between bg-[#0F172A]/92 p-4 backdrop-blur-md sm:p-6"
+            onClick={() => setLightbox(null)}
           >
-            <p className="text-xs sm:text-sm font-medium truncate">
-              {lightbox.title} ({lightbox.index + 1}/{lightbox.images.length})
-            </p>
-            <button
-              type="button"
-              onClick={() => setLightbox(null)}
-              aria-label={labels.closeModal}
-              className="px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition cursor-pointer"
+            <div
+              className="flex shrink-0 items-center justify-between gap-4 border-b border-white/15 pb-3 text-white"
+              onClick={(e) => e.stopPropagation()}
             >
-              ✕
-            </button>
-          </div>
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="shrink-0 rounded-md bg-[#0F766E] px-2.5 py-1 text-xs font-bold text-white">
+                  {lightbox.index + 1} / {lightbox.images.length}
+                </span>
+                <p className="truncate text-xs font-medium text-white/90 sm:text-sm">
+                  {lightbox.title}
+                </p>
+              </div>
 
-          <div
-            className="relative flex-1 flex items-center justify-center my-4 overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={lightbox.images[lightbox.index] || fallbackImage}
-              alt={`${lightbox.title} ${lightbox.index + 1}`}
-              className="max-h-[82vh] max-w-full object-contain rounded-lg select-none"
-            />
+              <button
+                type="button"
+                onClick={() => setLightbox(null)}
+                aria-label={labels.closeModal}
+                className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-white/25 bg-white/15 px-3 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:border-rose-500 hover:bg-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                <CloseIcon className="h-4 w-4" />
+                <span>ESC</span>
+              </button>
+            </div>
 
-            {lightbox.images.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setLightbox((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            index: prev.index === 0 ? prev.images.length - 1 : prev.index - 1,
-                          }
-                        : null
-                    )
-                  }
-                  aria-label={labels.prevImg}
-                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition cursor-pointer"
-                >
-                  ‹
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setLightbox((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            index: prev.index === prev.images.length - 1 ? 0 : prev.index + 1,
-                          }
-                        : null
-                    )
-                  }
-                  aria-label={labels.nextImg}
-                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition cursor-pointer"
-                >
-                  ›
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+            <div
+              className="relative my-3 flex min-h-0 flex-1 items-center justify-center overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={lightbox.images[lightbox.index] || fallbackImage}
+                alt={`${lightbox.title} ${lightbox.index + 1}`}
+                className="max-h-full max-w-full select-none rounded-xl object-contain shadow-2xl"
+              />
+
+              {lightbox.images.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLightbox((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              index: prev.index === 0 ? prev.images.length - 1 : prev.index - 1,
+                            }
+                          : null
+                      )
+                    }
+                    aria-label={labels.prevImg}
+                    className="absolute top-1/2 left-2 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-[#134E4A]/80 text-white shadow-lg backdrop-blur-md transition-colors duration-200 hover:bg-[#0F766E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:left-4"
+                  >
+                    <ChevronLeftIcon className="h-6 w-6" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLightbox((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              index: prev.index === prev.images.length - 1 ? 0 : prev.index + 1,
+                            }
+                          : null
+                      )
+                    }
+                    aria-label={labels.nextImg}
+                    className="absolute top-1/2 right-2 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-[#134E4A]/80 text-white shadow-lg backdrop-blur-md transition-colors duration-200 hover:bg-[#0F766E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:right-4"
+                  >
+                    <ChevronRightIcon className="h-6 w-6" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

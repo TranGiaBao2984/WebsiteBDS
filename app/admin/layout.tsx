@@ -1,8 +1,11 @@
-import { ReactNode } from 'react';
-
-// Khai báo cho Next.js 16 cho phép render động (blocking route) cho toàn bộ khu vực /admin
-export const instant = false;
-
-export default function AdminLayout({ children }: { children: ReactNode }) {
-  return <div className="flex-1">{children}</div>;
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-screen bg-[#F0FDFA] text-[#134E4A]">
+      {children}
+    </div>
+  );
 }

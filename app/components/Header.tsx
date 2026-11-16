@@ -123,14 +123,14 @@ export default function Header() {
 
   return (
     <>
-      {/* Top Bar — Nền xanh ngọc đậm đồng bộ bảng màu Foreground */}
-      <div className="hidden bg-[#134E4A] text-[#F0FDFA] lg:block">
+      {/* Top Bar — Nền than ấm đồng bộ bảng màu Japandi */}
+      <div className="hidden bg-[#1E1B18] text-[#FAF8F5] lg:block">
         <div className={`${CONTAINER} flex h-9 items-center justify-between gap-6 whitespace-nowrap text-xs font-medium tracking-wide`}>
-          <p className="text-[#F0FDFA]/90">{topBar.intro}</p>
-          <span className="text-[#99F6E4]">{topBar.services}</span>
+          <p className="text-[#FAF8F5]/90">{topBar.intro}</p>
+          <span className="text-[#E5DFD6]">{topBar.services}</span>
           <a
             href={`mailto:${SITE.email}`}
-            className="cursor-pointer transition-colors duration-200 hover:text-[#99F6E4] focus-visible:underline focus-visible:outline-none"
+            className="cursor-pointer transition-colors duration-200 hover:text-[#E5DFD6] focus-visible:underline focus-visible:outline-none"
           >
             {SITE.email}
           </a>
@@ -139,16 +139,16 @@ export default function Header() {
               href={SITE.whatsappHref}
               target="_blank"
               rel="noreferrer"
-              className="cursor-pointer transition-colors duration-200 hover:text-[#99F6E4] focus-visible:underline focus-visible:outline-none"
+              className="cursor-pointer transition-colors duration-200 hover:text-[#E5DFD6] focus-visible:underline focus-visible:outline-none"
             >
               WhatsApp
             </a>
-            <span className="text-[#14B8A6]">•</span>
+            <span className="text-[#A64237]">•</span>
             <a
               href={SITE.instagramHref}
               target="_blank"
               rel="noreferrer"
-              className="cursor-pointer transition-colors duration-200 hover:text-[#99F6E4] focus-visible:underline focus-visible:outline-none"
+              className="cursor-pointer transition-colors duration-200 hover:text-[#E5DFD6] focus-visible:underline focus-visible:outline-none"
             >
               Instagram ({SITE.instagramHandle})
             </a>
@@ -156,13 +156,13 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Main Glassmorphism Navbar */}
-      <header className="sticky top-0 z-50 border-b border-[#99F6E4]/80 bg-[#F0FDFA]/80 shadow-[0_1px_2px_rgba(0,0,0,0.05)] backdrop-blur-md">
+      {/* Main Warm Minimalist Navbar */}
+      <header className="sticky top-0 z-50 border-b border-[#E5DFD6] bg-[#FAF8F5]/90 shadow-[0_1px_2px_rgba(38,34,31,0.04)] backdrop-blur-md">
         <div className={`${CONTAINER} flex items-center justify-between gap-4 whitespace-nowrap py-3`}>
           {/* Logo */}
           <Link
             href="/"
-            className="group flex shrink-0 cursor-pointer items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
+            className="group flex shrink-0 cursor-pointer items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237]"
           >
             <Image
               src="/logo_mii.png"
@@ -182,10 +182,10 @@ export default function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`relative shrink-0 cursor-pointer py-1.5 text-base transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] rounded ${
+                  className={`relative shrink-0 cursor-pointer rounded py-1.5 text-base transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
                     active
-                      ? 'font-bold text-[#0F766E] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:bg-[#0F766E]'
-                      : 'font-medium text-[#475569] hover:text-[#134E4A]'
+                      ? 'font-bold text-[#A64237] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:bg-[#A64237]'
+                      : 'font-medium text-[#66605A] hover:text-[#26221F]'
                   }`}
                 >
                   {link.name}
@@ -194,8 +194,8 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Switcher 3 Ngôn ngữ (Desktop Glass Pill) */}
-          <div className="hidden shrink-0 items-center gap-1 rounded-lg border border-[#99F6E4] bg-white/75 p-1 text-xs font-semibold backdrop-blur-sm lg:flex">
+          {/* Switcher 3 Ngôn ngữ (Desktop Pill) */}
+          <div className="hidden shrink-0 items-center gap-1 rounded-lg border border-[#E5DFD6] bg-white p-1 text-xs font-semibold shadow-2xs lg:flex">
             {LANGUAGES.map((lang) => {
               const selected = currentLang === lang.code;
               return (
@@ -203,10 +203,10 @@ export default function Header() {
                   key={lang.code}
                   type="button"
                   onClick={() => setLanguage(lang.code)}
-                  className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] ${
+                  className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
                     selected
-                      ? 'bg-[#0F766E] text-white shadow-xs'
-                      : 'text-[#475569] hover:bg-[#F0FDFA] hover:text-[#134E4A]'
+                      ? 'bg-[#A64237] text-white shadow-xs'
+                      : 'text-[#66605A] hover:bg-[#F2EFE9] hover:text-[#26221F]'
                   }`}
                 >
                   {lang.label}
@@ -219,9 +219,9 @@ export default function Header() {
           <div className="hidden items-center gap-5 lg:flex">
             <a
               href={SITE.hotlineHref}
-              className="flex shrink-0 cursor-pointer items-center gap-2.5 rounded-lg py-1 text-sm font-bold text-[#134E4A] transition-colors duration-200 hover:text-[#0F766E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
+              className="flex shrink-0 cursor-pointer items-center gap-2.5 rounded-lg py-1 text-sm font-bold text-[#26221F] transition-colors duration-200 hover:text-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237]"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[#99F6E4] bg-white/80 text-[#0F766E] shadow-xs">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E5DFD6] bg-white text-[#A64237] shadow-2xs">
                 <PhoneIcon className="h-4 w-4" />
               </span>
               <span>{SITE.hotline}</span>
@@ -230,7 +230,7 @@ export default function Header() {
             <Link
               href={SITE.ctaHref}
               onClick={handleCtaClick}
-              className="inline-flex shrink-0 cursor-pointer items-center rounded-lg bg-[#0369A1] px-6 py-3 text-sm font-semibold text-white shadow-[0_4px_6px_rgba(0,0,0,0.1)] transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+              className="inline-flex shrink-0 cursor-pointer items-center rounded-lg bg-[#A64237] px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#8C352C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
             >
               {t.header.getConsultation}
             </Link>
@@ -240,7 +240,7 @@ export default function Header() {
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
-            className="cursor-pointer rounded-lg border border-[#99F6E4] bg-white/80 p-2 text-[#134E4A] transition-colors duration-200 hover:bg-white hover:text-[#0F766E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] lg:hidden"
+            className="cursor-pointer rounded-lg border border-[#E5DFD6] bg-white p-2 text-[#26221F] transition-colors duration-200 hover:bg-[#F2EFE9] hover:text-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] lg:hidden"
             aria-label="Open Menu"
           >
             <MenuIcon className="h-6 w-6" />
@@ -248,12 +248,12 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Mobile Glassmorphism Drawer */}
+      {/* Mobile Drawer */}
       {menuOpen && (
-        <div className="fixed inset-0 z-60 bg-[#134E4A]/45 backdrop-blur-sm lg:hidden">
-          <div className="absolute top-0 right-0 flex h-full w-[82%] max-w-sm flex-col justify-between overflow-y-auto border-l border-[#99F6E4] bg-[#F0FDFA]/95 p-6 shadow-2xl backdrop-blur-xl">
+        <div className="fixed inset-0 z-60 bg-[#1E1B18]/45 backdrop-blur-sm lg:hidden">
+          <div className="absolute top-0 right-0 flex h-full w-[82%] max-w-sm flex-col justify-between overflow-y-auto border-l border-[#E5DFD6] bg-[#FAF8F5] p-6 shadow-2xl">
             <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-[#99F6E4] pb-4">
+              <div className="flex items-center justify-between border-b border-[#E5DFD6] pb-4">
                 <Image
                   src="/logo_mii.png"
                   alt={SITE.name}
@@ -265,7 +265,7 @@ export default function Header() {
                   type="button"
                   onClick={closeMenu}
                   aria-label="Close Menu"
-                  className="cursor-pointer rounded-lg border border-[#99F6E4] bg-white/80 p-2 text-[#134E4A] transition-colors duration-200 hover:text-[#0F766E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
+                  className="cursor-pointer rounded-lg border border-[#E5DFD6] bg-white p-2 text-[#26221F] transition-colors duration-200 hover:bg-[#F2EFE9] hover:text-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237]"
                 >
                   <CloseIcon className="h-5 w-5" />
                 </button>
@@ -279,10 +279,10 @@ export default function Header() {
                       key={link.href}
                       href={link.href}
                       onClick={closeMenu}
-                      className={`block cursor-pointer rounded-lg px-3 py-2.5 text-base transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] ${
+                      className={`block cursor-pointer rounded-lg px-3 py-2.5 text-base transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
                         active
-                          ? 'bg-white font-bold text-[#0F766E] ring-1 ring-[#99F6E4]'
-                          : 'font-medium text-[#134E4A] hover:bg-white/60 hover:text-[#0F766E]'
+                          ? 'bg-white font-bold text-[#A64237] ring-1 ring-[#E5DFD6]'
+                          : 'font-medium text-[#26221F] hover:bg-[#F2EFE9] hover:text-[#A64237]'
                       }`}
                     >
                       {link.name}
@@ -292,8 +292,8 @@ export default function Header() {
               </nav>
 
               {/* Switcher 3 Ngôn ngữ (Mobile) */}
-              <div className="border-t border-[#99F6E4] pt-4">
-                <p className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-[#475569]">
+              <div className="border-t border-[#E5DFD6] pt-4">
+                <p className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-[#948D86]">
                   {t.header.language}
                 </p>
                 <div className="flex flex-wrap gap-2 text-sm">
@@ -302,10 +302,10 @@ export default function Header() {
                       key={lang.code}
                       type="button"
                       onClick={() => setLanguage(lang.code)}
-                      className={`cursor-pointer rounded-lg px-3 py-1.5 font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] ${
+                      className={`cursor-pointer rounded-lg px-3 py-1.5 font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
                         currentLang === lang.code
-                          ? 'bg-[#0F766E] font-bold text-white shadow-xs'
-                          : 'border border-[#99F6E4] bg-white/80 text-[#134E4A] hover:bg-white'
+                          ? 'bg-[#A64237] font-bold text-white shadow-xs'
+                          : 'border border-[#E5DFD6] bg-white text-[#26221F] hover:bg-[#F2EFE9]'
                       }`}
                     >
                       {lang.label}
@@ -315,22 +315,22 @@ export default function Header() {
               </div>
 
               {/* Liên hệ nhanh Mobile */}
-              <div className="space-y-2 rounded-xl border border-[#99F6E4] bg-white/80 p-4 text-xs text-[#475569]">
-                <p className="font-bold text-[#134E4A]">{SITE.company}</p>
+              <div className="space-y-2 rounded-xl border border-[#E5DFD6] bg-white p-4 text-xs text-[#66605A]">
+                <p className="font-bold text-[#26221F]">{SITE.company}</p>
                 <p>{topBar.services}</p>
                 <a
                   href={SITE.hotlineHref}
-                  className="block cursor-pointer pt-1 font-bold text-[#0F766E] hover:underline"
+                  className="block cursor-pointer pt-1 font-bold text-[#A64237] hover:underline"
                 >
                   Mobile: {SITE.hotline}
                 </a>
                 <a
                   href={`mailto:${SITE.email}`}
-                  className="block cursor-pointer break-all hover:text-[#134E4A] hover:underline"
+                  className="block cursor-pointer break-all hover:text-[#26221F] hover:underline"
                 >
                   {SITE.email}
                 </a>
-                <div className="flex gap-4 pt-1.5 font-semibold text-[#0369A1]">
+                <div className="flex gap-4 pt-1.5 font-semibold text-[#A64237]">
                   <a
                     href={SITE.whatsappHref}
                     target="_blank"
@@ -351,14 +351,14 @@ export default function Header() {
               </div>
             </div>
 
-            <div className="mt-6 border-t border-[#99F6E4] pt-5">
+            <div className="mt-6 border-t border-[#E5DFD6] pt-5">
               <Link
                 href={SITE.ctaHref}
                 onClick={(e) => {
                   closeMenu();
                   handleCtaClick(e);
                 }}
-                className="block w-full cursor-pointer rounded-lg bg-[#0369A1] py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-white shadow-[0_4px_6px_rgba(0,0,0,0.1)] transition-all duration-200 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2"
+                className="block w-full cursor-pointer rounded-lg bg-[#A64237] py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition-all duration-200 hover:bg-[#8C352C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2"
               >
                 {t.header.getConsultation}
               </Link>

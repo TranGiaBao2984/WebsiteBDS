@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { Property } from '@/lib/types';
@@ -13,7 +13,8 @@ import {
 } from '@/lib/filter-constants';
 import PropertyCard from './PropertyCard';
 
-type FilterKey = 'location' | 'layout' | 'price' | 'q';
+type FilterKey = 'location' | 'layout' | 'price' | 'q' | 'sort';
+type SortOption = 'default' | 'price_asc' | 'price_desc';
 
 const LEGACY_PRICE_MAP: Record<string, string> = {
   lt3: '< ¥3M',
@@ -29,33 +30,66 @@ const LEGACY_LAYOUT_MAP: Record<string, string> = {
   Kominka: 'KOMINKA (TRADITIONAL)',
 };
 
-const SEARCH_UI_LABELS = {
+const CATALOG_UI_LABELS = {
   vi: {
-    label: 'TÌM KIẾM',
-    placeholder: 'Tìm theo tên BĐS hoặc khu vực (Việt / Anh / Nhật)...',
+    eyebrow: 'DANH MỤC BẤT ĐỘNG SẢN NHẬT BẢN',
+    subtitle: 'Tìm kiếm căn hộ, nhà ở và bất động sản chọn lọc theo khu vực, ngân sách và loại mặt bằng.',
+    placeholder: 'Nhập tên bất động sản, ga tàu hoặc khu vực (Việt / Anh / Nhật)...',
     clearSearch: 'Xóa từ khóa',
-    suggestionsHeader: 'Gợi ý bất động sản',
+    suggestionsHeader: 'Gợi ý phù hợp nhất',
     viewDetail: 'Xem chi tiết',
-    noSuggestions: 'Không có BĐS nào khớp từ khóa này',
-    keywordTag: 'từ khóa',
+    noSuggestions: 'Không có bất động sản nào khớp từ khóa này',
+    activeFiltersLabel: 'Đang lọc theo:',
+    keywordPrefix: 'Từ khóa',
+    locationPrefix: 'Khu vực',
+    pricePrefix: 'Giá',
+    layoutPrefix: 'Mặt bằng',
+    clearAll: 'Xóa tất cả',
+    sortLabel: 'Sắp xếp:',
+    sortDefault: 'Mới nhất',
+    sortPriceAsc: 'Giá: Thấp → Cao',
+    sortPriceDesc: 'Giá: Cao → Thấp',
+    emptyHint: 'Thử bỏ bớt điều kiện lọc hoặc đổi từ khóa tìm kiếm khác để xem thêm lựa chọn.',
   },
   en: {
-    label: 'SEARCH',
-    placeholder: 'Search by property name or location (EN / JA / VI)...',
+    eyebrow: 'JAPAN PROPERTY PORTFOLIO',
+    subtitle: 'Explore curated apartments, residences, and traditional homes by prefecture, budget, and layout.',
+    placeholder: 'Search by property name, station, or area (EN / JA / VI)...',
     clearSearch: 'Clear search',
-    suggestionsHeader: 'Matching Properties',
+    suggestionsHeader: 'Top Matching Properties',
     viewDetail: 'View details',
     noSuggestions: 'No properties match this keyword',
-    keywordTag: 'keyword',
+    activeFiltersLabel: 'Active filters:',
+    keywordPrefix: 'Keyword',
+    locationPrefix: 'Location',
+    pricePrefix: 'Price',
+    layoutPrefix: 'Layout',
+    clearAll: 'Reset all',
+    sortLabel: 'Sort:',
+    sortDefault: 'Featured',
+    sortPriceAsc: 'Price: Low → High',
+    sortPriceDesc: 'Price: High → Low',
+    emptyHint: 'Try removing one or more filters or searching with another keyword.',
   },
   ja: {
-    label: '検索',
-    placeholder: '物件名・エリアで検索（日本語 / 英語 / ベトナム語）...',
+    eyebrow: '日本不動産物件一覧',
+    subtitle: 'エリア・ご予算・間取りから、ご希望に合う厳選物件をお探しいただけます。',
+    placeholder: '物件名・駅名・エリアで検索（日本語 / 英語 / ベトナム語）...',
     clearSearch: '検索をクリア',
     suggestionsHeader: '一致する物件候補',
     viewDetail: '詳細を見る',
     noSuggestions: '一致する物件が見つかりませんでした',
-    keywordTag: 'キーワード',
+    activeFiltersLabel: '適用中の条件:',
+    keywordPrefix: 'キーワード',
+    locationPrefix: 'エリア',
+    pricePrefix: '価格',
+    layoutPrefix: '間取り',
+    clearAll: 'すべて解除',
+    sortLabel: '並び替え:',
+    sortDefault: '新着順',
+    sortPriceAsc: '価格が安い順',
+    sortPriceDesc: '価格が高い順',
+    emptyHint: '条件を一部解除するか、別のキーワードでお試しください。',
   },
 };
 
@@ -91,6 +125,62 @@ function CloseIcon({ className }: { className?: string }) {
     >
       <path d="M18 6 6 18" />
       <path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
+function MapPinIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
+
+function TagIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
+      <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
+    </svg>
+  );
+}
+
+function LayoutGridIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <rect width="7" height="7" x="3" y="3" rx="1" />
+      <rect width="7" height="7" x="14" y="3" rx="1" />
+      <rect width="7" height="7" x="14" y="14" rx="1" />
+      <rect width="7" height="7" x="3" y="14" rx="1" />
     </svg>
   );
 }
@@ -317,7 +407,7 @@ function matchesPriceFilter(
 
 function PropertyCatalogContent({ properties }: { properties: Property[] }) {
   const { t, currentLang } = useLanguage();
-  const searchLabels = SEARCH_UI_LABELS[currentLang] || SEARCH_UI_LABELS.en;
+  const ui = CATALOG_UI_LABELS[currentLang] || CATALOG_UI_LABELS.en;
   const catalogObj =
     t && typeof t === 'object' && 'catalog' in t
       ? (t as Record<string, Record<string, string>>).catalog
@@ -357,6 +447,9 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
   const read = (key: FilterKey): string => {
     const v = searchParams.get(key);
     if (key === 'q') return v ? v.normalize('NFC') : '';
+    if (key === 'sort') {
+      return v === 'price_asc' || v === 'price_desc' ? v : 'default';
+    }
     if (!v || v.toUpperCase() === 'ALL') return 'ALL';
     if (key === 'price' && LEGACY_PRICE_MAP[v]) return LEGACY_PRICE_MAP[v];
     if (key === 'layout' && LEGACY_LAYOUT_MAP[v]) return LEGACY_LAYOUT_MAP[v];
@@ -366,11 +459,15 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
   const selectedLocation = read('location');
   const selectedLayout = read('layout');
   const selectedPrice = read('price');
+  const selectedSort = read('sort') as SortOption;
 
   const setFilter = (key: FilterKey, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (!value || value === 'ALL') params.delete(key);
-    else params.set(key, value.normalize('NFC'));
+    if (!value || value === 'ALL' || (key === 'sort' && value === 'default')) {
+      params.delete(key);
+    } else {
+      params.set(key, value.normalize('NFC'));
+    }
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
@@ -384,106 +481,179 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
   const clearFilters = () => {
     setSearchInput('');
     setShowDropdown(false);
-    router.replace(pathname, { scroll: false });
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('q');
+    params.delete('location');
+    params.delete('price');
+    params.delete('layout');
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   const locationOptions = ['ALL', ...filterOptions.locations];
   const priceOptions = ['ALL', ...filterOptions.prices];
   const layoutOptions = ['ALL', ...filterOptions.layouts];
 
-  const searchSuggestions = searchInput.trim()
-    ? properties.filter((item) => matchesSearchKeyword(item, searchInput)).slice(0, 6)
-    : [];
+  const searchSuggestions = useMemo(() => {
+    if (!searchInput.trim()) return [];
+    return properties.filter((item) => matchesSearchKeyword(item, searchInput)).slice(0, 6);
+  }, [properties, searchInput]);
 
-  const filteredProperties = properties.filter((item) => {
-    const descRecord = getDescriptionRecord(item);
+  const filteredAndSortedProperties = useMemo(() => {
+    const filtered = properties.filter((item) => {
+      const descRecord = getDescriptionRecord(item);
 
-    if (searchInput.trim() !== '') {
-      if (!matchesSearchKeyword(item, searchInput)) return false;
-    }
-
-    if (selectedLocation !== 'ALL') {
-      const savedLocTag =
-        typeof descRecord.filter_location === 'string' ? descRecord.filter_location.trim() : '';
-
-      if (savedLocTag) {
-        if (normalizeLabel(savedLocTag) !== normalizeLabel(selectedLocation)) return false;
-      } else {
-        const allLocText = normalizeLabel(JSON.stringify(item.location || ''));
-        if (!allLocText.includes(normalizeLabel(selectedLocation))) return false;
-      }
-    }
-
-    if (selectedPrice !== 'ALL') {
-      if (!matchesPriceFilter(item, descRecord, selectedPrice)) return false;
-    }
-
-    if (selectedLayout !== 'ALL') {
-      const savedLayoutTag =
-        typeof descRecord.filter_layout === 'string' ? descRecord.filter_layout.trim() : '';
-
-      if (savedLayoutTag) {
-        return normalizeLabel(savedLayoutTag) === normalizeLabel(selectedLayout);
+      if (searchInput.trim() !== '') {
+        if (!matchesSearchKeyword(item, searchInput)) return false;
       }
 
-      const layout = normalizeLabel(getString(item.layout));
-      const structure = normalizeLabel(getString(item.structure));
-      const target = normalizeLabel(selectedLayout);
+      if (selectedLocation !== 'ALL') {
+        const savedLocTag =
+          typeof descRecord.filter_location === 'string' ? descRecord.filter_location.trim() : '';
 
-      if (target.includes('1k') || target.includes('1ldk')) {
-        return layout.includes('1k') || layout.includes('1ldk') || layout.includes('1dk');
-      }
-      if (target.includes('2ldk') || target.includes('3ldk')) {
-        return (
-          layout.includes('2ldk') ||
-          layout.includes('3ldk') ||
-          layout.includes('4ldk') ||
-          layout.includes('2dk') ||
-          layout.includes('3dk')
-        );
-      }
-      if (target.includes('kominka') || target.includes('traditional')) {
-        return layout.includes('kominka') || structure.includes('traditional');
+        if (savedLocTag) {
+          if (normalizeLabel(savedLocTag) !== normalizeLabel(selectedLocation)) return false;
+        } else {
+          const allLocText = normalizeLabel(JSON.stringify(item.location || ''));
+          if (!allLocText.includes(normalizeLabel(selectedLocation))) return false;
+        }
       }
 
-      return layout.includes(target) || structure.includes(target);
-    }
+      if (selectedPrice !== 'ALL') {
+        if (!matchesPriceFilter(item, descRecord, selectedPrice)) return false;
+      }
 
-    return true;
-  });
+      if (selectedLayout !== 'ALL') {
+        const savedLayoutTag =
+          typeof descRecord.filter_layout === 'string' ? descRecord.filter_layout.trim() : '';
 
-  const hasFilters =
-    searchInput.trim() !== '' ||
-    selectedLocation !== 'ALL' ||
-    selectedLayout !== 'ALL' ||
-    selectedPrice !== 'ALL';
+        if (savedLayoutTag) {
+          return normalizeLabel(savedLayoutTag) === normalizeLabel(selectedLayout);
+        }
+
+        const layout = normalizeLabel(getString(item.layout));
+        const structure = normalizeLabel(getString(item.structure));
+        const target = normalizeLabel(selectedLayout);
+
+        if (target.includes('1k') || target.includes('1ldk')) {
+          return layout.includes('1k') || layout.includes('1ldk') || layout.includes('1dk');
+        }
+        if (target.includes('2ldk') || target.includes('3ldk')) {
+          return (
+            layout.includes('2ldk') ||
+            layout.includes('3ldk') ||
+            layout.includes('4ldk') ||
+            layout.includes('2dk') ||
+            layout.includes('3dk')
+          );
+        }
+        if (target.includes('kominka') || target.includes('traditional')) {
+          return layout.includes('kominka') || structure.includes('traditional');
+        }
+
+        return layout.includes(target) || structure.includes(target);
+      }
+
+      return true;
+    });
+
+    if (selectedSort === 'default') return filtered;
+
+    return [...filtered].sort((a, b) => {
+      const priceA = getYenPrice(a, getDescriptionRecord(a));
+      const priceB = getYenPrice(b, getDescriptionRecord(b));
+      return selectedSort === 'price_asc' ? priceA - priceB : priceB - priceA;
+    });
+  }, [properties, searchInput, selectedLocation, selectedPrice, selectedLayout, selectedSort]);
+
+  const activeChips: { key: FilterKey; label: string; onRemove: () => void }[] = [];
+  if (searchInput.trim() !== '') {
+    activeChips.push({
+      key: 'q',
+      label: `${ui.keywordPrefix}: “${searchInput.trim()}”`,
+      onRemove: () => handleSearchChange(''),
+    });
+  }
+  if (selectedLocation !== 'ALL') {
+    activeChips.push({
+      key: 'location',
+      label: `${ui.locationPrefix}: ${selectedLocation}`,
+      onRemove: () => setFilter('location', 'ALL'),
+    });
+  }
+  if (selectedPrice !== 'ALL') {
+    activeChips.push({
+      key: 'price',
+      label: `${ui.pricePrefix}: ${selectedPrice}`,
+      onRemove: () => setFilter('price', 'ALL'),
+    });
+  }
+  if (selectedLayout !== 'ALL') {
+    const layoutText = selectedLayout.toUpperCase().includes('KOMINKA')
+      ? getString(catalogObj?.kominka) || selectedLayout
+      : selectedLayout;
+    activeChips.push({
+      key: 'layout',
+      label: `${ui.layoutPrefix}: ${layoutText}`,
+      onRemove: () => setFilter('layout', 'ALL'),
+    });
+  }
+
+  const hasFilters = activeChips.length > 0;
 
   return (
     <section className="w-full space-y-8">
-      {/* Glassmorphism Catalog Header */}
-      <div className="relative overflow-hidden rounded-2xl border border-[#99F6E4] bg-white/75 p-6 text-center shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md sm:p-8 sm:text-left">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[#14B8A6]/12 blur-3xl"
-        />
-        <h1 className="font-serif relative text-2xl font-bold tracking-tight text-[#134E4A] sm:text-3xl lg:text-4xl">
-          {getString(catalogObj?.title) || 'Danh sách bất động sản'}
-        </h1>
+      {/* 1. EDITORIAL HEADER — Nằm trực tiếp trên nền kem, cân đối 2 bên với Live Counter & Sort */}
+      <div className="flex flex-col justify-between gap-5 border-b border-[#E5DFD6] pb-6 lg:flex-row lg:items-end">
+        <div className="max-w-2xl space-y-2">
+          <span className="inline-block text-[11px] font-bold uppercase tracking-[0.22em] text-[#A64237]">
+            {ui.eyebrow}
+          </span>
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-[#26221F] sm:text-4xl">
+            {getString(catalogObj?.title) || 'Tất Cả Bất Động Sản'}
+          </h1>
+          <p className="text-sm leading-relaxed text-[#66605A]">{ui.subtitle}</p>
+        </div>
+
+        {/* Cụm điều khiển kết quả & Sắp xếp gắn liền với tiêu đề */}
+        <div className="flex flex-wrap items-center justify-between gap-4 sm:justify-end">
+          <div className="flex items-baseline gap-1.5 rounded-xl border border-[#E5DFD6] bg-white px-4 py-2.5 shadow-2xs">
+            <span className="font-serif text-xl font-bold text-[#A64237]">
+              {filteredAndSortedProperties.length}
+            </span>
+            <span className="text-xs font-medium text-[#66605A]">
+              {getString(catalogObj?.properties) || 'bất động sản'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 rounded-xl border border-[#E5DFD6] bg-white px-3.5 py-2 shadow-2xs">
+            <label
+              htmlFor="catalog-sort-select"
+              className="text-xs font-semibold text-[#948D86]"
+            >
+              {ui.sortLabel}
+            </label>
+            <select
+              id="catalog-sort-select"
+              value={selectedSort}
+              onChange={(e) => setFilter('sort', e.target.value)}
+              className="cursor-pointer bg-transparent pr-1 text-xs font-bold text-[#26221F] focus:outline-none"
+            >
+              <option value="default">{ui.sortDefault}</option>
+              <option value="price_asc">{ui.sortPriceAsc}</option>
+              <option value="price_desc">{ui.sortPriceDesc}</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      {/* Glassmorphism Search & Filter Panel */}
-      <div className="space-y-6 rounded-2xl border border-[#99F6E4] bg-white/80 p-5 shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md sm:p-6">
-        {/* THANH TÌM KIẾM TÊN BĐS (3 NGÔN NGỮ VI / EN / JA) */}
-        <div ref={searchBoxRef} className="relative max-w-2xl">
-          <label
-            htmlFor="property-trilingual-search"
-            className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
-          >
-            {searchLabels.label}
-          </label>
+      {/* 2. UNIFIED SEARCH & FILTER CONSOLE — Gom toàn bộ tìm kiếm & bộ lọc vào 1 khối duy nhất */}
+      <div className="overflow-visible rounded-2xl border border-[#E5DFD6] bg-white shadow-[0_6px_20px_rgba(38,34,31,0.05)]">
+        {/* Tầng trên: Thanh tìm kiếm toàn chiều rộng (Full-width Search) */}
+        <div ref={searchBoxRef} className="relative border-b border-[#E5DFD6] p-4 sm:p-5">
           <div className="relative flex items-center">
-            <span className="pointer-events-none absolute left-4 text-[#0F766E]">
-              <SearchIcon className="h-4 w-4" />
+            <span className="pointer-events-none absolute left-4 text-[#A64237]">
+              <SearchIcon className="h-4.5 w-4.5" />
             </span>
 
             <input
@@ -497,36 +667,36 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
                   setShowDropdown(false);
                 }
               }}
-              placeholder={searchLabels.placeholder}
-              className="w-full rounded-lg border border-[#E2E8F0] bg-white py-3 pr-10 pl-11 text-base text-[#134E4A] placeholder:text-[#475569]/75 transition-all duration-200 focus:border-[#0F766E] focus:outline-none focus:ring-3 focus:ring-[#0F766E]/15 sm:text-sm"
+              placeholder={ui.placeholder}
+              className="w-full rounded-xl border border-[#E5DFD6] bg-[#FAF8F5] py-3.5 pr-11 pl-11 text-sm text-[#26221F] placeholder:text-[#948D86] transition-all duration-200 focus:border-[#A64237] focus:bg-white focus:outline-none focus:ring-3 focus:ring-[#A64237]/15"
             />
 
             {searchInput && (
               <button
                 type="button"
                 onClick={() => handleSearchChange('')}
-                aria-label={searchLabels.clearSearch}
-                className="absolute right-3 cursor-pointer rounded-md p-1.5 text-[#475569] transition-colors duration-200 hover:bg-[#F0FDFA] hover:text-[#134E4A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
+                aria-label={ui.clearSearch}
+                className="absolute right-3 cursor-pointer rounded-lg p-1.5 text-[#66605A] transition-colors duration-200 hover:bg-[#F2EFE9] hover:text-[#26221F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237]"
               >
                 <CloseIcon className="h-4 w-4" />
               </button>
             )}
           </div>
 
-          {/* Dropdown hiển thị gợi ý tên BĐS cả 3 ngôn ngữ */}
+          {/* Dropdown gợi ý trực tiếp 3 ngôn ngữ */}
           {showDropdown && searchInput.trim() !== '' && (
-            <div className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border border-[#99F6E4] bg-white/95 shadow-[0_10px_15px_rgba(0,0,0,0.1)] backdrop-blur-xl">
-              <div className="flex items-center justify-between border-b border-[#E8F0F3] bg-[#F0FDFA] px-4 py-2.5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#0F766E]">
-                  {searchLabels.suggestionsHeader}
+            <div className="absolute right-4 left-4 z-30 mt-2 overflow-hidden rounded-xl border border-[#E5DFD6] bg-white shadow-[0_14px_30px_rgba(38,34,31,0.14)] sm:right-5 sm:left-5">
+              <div className="flex items-center justify-between border-b border-[#E5DFD6] bg-[#FAF8F5] px-4 py-2.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#A64237]">
+                  {ui.suggestionsHeader}
                 </span>
-                <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-[#134E4A] ring-1 ring-[#99F6E4]">
+                <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-[#26221F] ring-1 ring-[#E5DFD6]">
                   {searchSuggestions.length}
                 </span>
               </div>
 
               {searchSuggestions.length > 0 ? (
-                <ul className="max-h-80 divide-y divide-[#E8F0F3] overflow-y-auto">
+                <ul className="max-h-80 divide-y divide-[#E5DFD6] overflow-y-auto">
                   {searchSuggestions.map((item) => {
                     const titles = getTriLingualTitles(item.title);
                     const descRecord = getDescriptionRecord(item);
@@ -541,16 +711,16 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
                         <Link
                           href={`/properties/${item.id}`}
                           onClick={() => setShowDropdown(false)}
-                          className="group flex cursor-pointer items-start gap-3.5 p-3.5 transition-colors duration-200 hover:bg-[#F0FDFA] focus-visible:bg-[#F0FDFA] focus-visible:outline-none"
+                          className="group flex cursor-pointer items-center gap-3.5 p-3.5 transition-colors duration-200 hover:bg-[#FAF8F5] focus-visible:bg-[#FAF8F5] focus-visible:outline-none"
                         >
                           {thumb ? (
                             <img
                               src={thumb}
                               alt={titles.en || titles.vi || 'Property'}
-                              className="h-14 w-14 shrink-0 rounded-lg border border-[#99F6E4] object-cover"
+                              className="h-14 w-14 shrink-0 rounded-lg border border-[#E5DFD6] object-cover"
                             />
                           ) : (
-                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-[#99F6E4] bg-[#F0FDFA] text-[#0F766E]">
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-[#E5DFD6] bg-[#F2EFE9] text-[#A64237]">
                               <BuildingIcon className="h-6 w-6" />
                             </div>
                           )}
@@ -561,24 +731,24 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
                                 key={`${item.id}-${entry.lang}`}
                                 className="flex items-baseline gap-1.5 text-xs"
                               >
-                                <span className="inline-block shrink-0 rounded border border-[#99F6E4] bg-[#F0FDFA] px-1.5 py-0.5 text-[10px] font-bold text-[#0F766E]">
+                                <span className="inline-block shrink-0 rounded border border-[#E5DFD6] bg-[#FAF8F5] px-1.5 py-0.5 text-[10px] font-bold text-[#A64237]">
                                   {entry.lang}
                                 </span>
-                                <span className="truncate font-medium text-[#134E4A] transition-colors group-hover:text-[#0F766E]">
+                                <span className="truncate font-medium text-[#26221F] transition-colors group-hover:text-[#A64237]">
                                   {entry.text}
                                 </span>
                               </div>
                             ))}
+                          </div>
 
-                            <div className="flex items-center justify-between pt-1 text-xs text-[#475569]">
-                              <span className="font-semibold text-[#134E4A]">
-                                {yen > 0 ? `¥${yen.toLocaleString('en-US')}` : ''}
-                              </span>
-                              <span className="inline-flex items-center gap-1 font-semibold text-[#0369A1] group-hover:underline">
-                                <span>{searchLabels.viewDetail}</span>
-                                <ArrowRightIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
-                              </span>
-                            </div>
+                          <div className="shrink-0 text-right">
+                            <span className="font-serif block text-sm font-bold text-[#26221F]">
+                              {yen > 0 ? `¥${yen.toLocaleString('en-US')}` : ''}
+                            </span>
+                            <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-[#A64237] group-hover:underline">
+                              <span>{ui.viewDetail}</span>
+                              <ArrowRightIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
+                            </span>
                           </div>
                         </Link>
                       </li>
@@ -586,162 +756,176 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
                   })}
                 </ul>
               ) : (
-                <div className="px-4 py-6 text-center text-xs font-medium text-[#475569]">
-                  {searchLabels.noSuggestions}
+                <div className="px-4 py-6 text-center text-xs font-medium text-[#66605A]">
+                  {ui.noSuggestions}
                 </div>
               )}
             </div>
           )}
         </div>
 
-        {/* LOCATION */}
-        <div className="border-t border-[#E8F0F3] pt-5">
-          <span className="mb-2.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]">
-            {getString(catalogObj?.locationLabel) || 'Khu vực'}
-          </span>
-          <div className="flex flex-wrap items-center gap-2">
-            {locationOptions.map((loc) => {
-              const isActive =
-                loc === 'ALL'
-                  ? selectedLocation === 'ALL'
-                  : normalizeLabel(selectedLocation) === normalizeLabel(loc);
-              return (
-                <button
-                  key={loc}
-                  type="button"
-                  onClick={() => setFilter('location', loc)}
-                  aria-pressed={isActive}
-                  className={`cursor-pointer rounded-lg border px-3.5 py-2 text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-1 ${
-                    isActive
-                      ? 'border-[#0F766E] bg-[#0F766E] text-white shadow-xs'
-                      : 'border-[#99F6E4] bg-white text-[#134E4A] hover:border-[#14B8A6] hover:bg-[#F0FDFA]'
-                  }`}
-                >
-                  {loc === 'ALL' ? getString(catalogObj?.allLocations) || 'Tất cả' : loc}
-                </button>
-              );
-            })}
+        {/* Tầng giữa: Lưới 2 cột cân bằng thị giác (Cột trái: Khu vực | Cột phải: Giá & Mặt bằng) */}
+        <div className="grid grid-cols-1 divide-y divide-[#E5DFD6] bg-[#FAF8F5]/55 lg:grid-cols-12 lg:divide-x lg:divide-y-0">
+          {/* Cột trái (6/12): KHU VỰC */}
+          <div className="p-4 sm:p-5 lg:col-span-6">
+            <div className="mb-3 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#26221F]">
+              <MapPinIcon className="h-3.5 w-3.5 text-[#A64237]" />
+              <span>{getString(catalogObj?.locationLabel) || 'Khu vực'}</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {locationOptions.map((loc) => {
+                const isActive =
+                  loc === 'ALL'
+                    ? selectedLocation === 'ALL'
+                    : normalizeLabel(selectedLocation) === normalizeLabel(loc);
+                return (
+                  <button
+                    key={loc}
+                    type="button"
+                    onClick={() => setFilter('location', loc)}
+                    aria-pressed={isActive}
+                    className={`cursor-pointer rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
+                      isActive
+                        ? 'border-[#A64237] bg-[#A64237] text-white shadow-xs'
+                        : 'border-[#E5DFD6] bg-white text-[#26221F] hover:border-[#A64237] hover:text-[#A64237]'
+                    }`}
+                  >
+                    {loc === 'ALL' ? getString(catalogObj?.allLocations) || 'Tất cả' : loc}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Cột phải (6/12): KHOẢNG GIÁ + MẶT BẰNG xếp 2 tầng gọn gàng */}
+          <div className="flex flex-col justify-between divide-y divide-[#E5DFD6] lg:col-span-6">
+            {/* Khoảng giá */}
+            <div className="p-4 sm:p-5">
+              <div className="mb-2.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#26221F]">
+                <TagIcon className="h-3.5 w-3.5 text-[#A64237]" />
+                <span>{getString(catalogObj?.priceLabel) || 'Khoảng giá'}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {priceOptions.map((priceLabel) => {
+                  const isActive =
+                    priceLabel === 'ALL'
+                      ? selectedPrice === 'ALL'
+                      : normalizeLabel(selectedPrice) === normalizeLabel(priceLabel);
+                  return (
+                    <button
+                      key={priceLabel}
+                      type="button"
+                      onClick={() => setFilter('price', priceLabel)}
+                      aria-pressed={isActive}
+                      className={`cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
+                        isActive
+                          ? 'border-[#A64237] bg-[#A64237] text-white shadow-xs'
+                          : 'border-[#E5DFD6] bg-white text-[#26221F] hover:border-[#A64237] hover:text-[#A64237]'
+                      }`}
+                    >
+                      {priceLabel === 'ALL'
+                        ? getString(catalogObj?.allPrices) || 'Tất cả'
+                        : priceLabel}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Mặt bằng */}
+            <div className="p-4 sm:p-5">
+              <div className="mb-2.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#26221F]">
+                <LayoutGridIcon className="h-3.5 w-3.5 text-[#A64237]" />
+                <span>{getString(catalogObj?.layoutLabel) || 'Mặt bằng'}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {layoutOptions.map((layoutLabel) => {
+                  const isActive =
+                    layoutLabel === 'ALL'
+                      ? selectedLayout === 'ALL'
+                      : normalizeLabel(selectedLayout) === normalizeLabel(layoutLabel);
+                  const displayLabel =
+                    layoutLabel === 'ALL'
+                      ? getString(catalogObj?.allLayouts) || 'Tất cả'
+                      : layoutLabel.toUpperCase().includes('KOMINKA')
+                        ? getString(catalogObj?.kominka) || layoutLabel
+                        : layoutLabel;
+
+                  return (
+                    <button
+                      key={layoutLabel}
+                      type="button"
+                      onClick={() => setFilter('layout', layoutLabel)}
+                      aria-pressed={isActive}
+                      className={`cursor-pointer rounded-lg border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
+                        isActive
+                          ? 'border-[#A64237] bg-[#A64237] text-white shadow-xs'
+                          : 'border-[#E5DFD6] bg-white text-[#26221F] hover:border-[#A64237] hover:text-[#A64237]'
+                      }`}
+                    >
+                      {displayLabel}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* PRICE */}
-        <div className="border-t border-[#E8F0F3] pt-5">
-          <span className="mb-2.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]">
-            {getString(catalogObj?.priceLabel) || 'Khoảng giá'}
-          </span>
-          <div className="flex flex-wrap items-center gap-2">
-            {priceOptions.map((priceLabel) => {
-              const isActive =
-                priceLabel === 'ALL'
-                  ? selectedPrice === 'ALL'
-                  : normalizeLabel(selectedPrice) === normalizeLabel(priceLabel);
-              return (
-                <button
-                  key={priceLabel}
-                  type="button"
-                  onClick={() => setFilter('price', priceLabel)}
-                  aria-pressed={isActive}
-                  className={`cursor-pointer rounded-lg border px-3.5 py-2 text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-1 ${
-                    isActive
-                      ? 'border-[#0F766E] bg-[#0F766E] text-white shadow-xs'
-                      : 'border-[#99F6E4] bg-white text-[#134E4A] hover:border-[#14B8A6] hover:bg-[#F0FDFA]'
-                  }`}
-                >
-                  {priceLabel === 'ALL'
-                    ? getString(catalogObj?.allPrices) || 'Tất cả'
-                    : priceLabel}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* LAYOUT */}
-        <div className="border-t border-[#E8F0F3] pt-5">
-          <span className="mb-2.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]">
-            {getString(catalogObj?.layoutLabel) || 'Mặt bằng'}
-          </span>
-          <div className="flex flex-wrap items-center gap-2">
-            {layoutOptions.map((layoutLabel) => {
-              const isActive =
-                layoutLabel === 'ALL'
-                  ? selectedLayout === 'ALL'
-                  : normalizeLabel(selectedLayout) === normalizeLabel(layoutLabel);
-              const displayLabel =
-                layoutLabel === 'ALL'
-                  ? getString(catalogObj?.allLayouts) || 'Tất cả'
-                  : layoutLabel.toUpperCase().includes('KOMINKA')
-                    ? getString(catalogObj?.kominka) || layoutLabel
-                    : layoutLabel;
-
-              return (
-                <button
-                  key={layoutLabel}
-                  type="button"
-                  onClick={() => setFilter('layout', layoutLabel)}
-                  aria-pressed={isActive}
-                  className={`cursor-pointer rounded-lg border px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-1 ${
-                    isActive
-                      ? 'border-[#0F766E] bg-[#0F766E] text-white shadow-xs'
-                      : 'border-[#99F6E4] bg-white text-[#134E4A] hover:border-[#14B8A6] hover:bg-[#F0FDFA]'
-                  }`}
-                >
-                  {displayLabel}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Thanh trạng thái số lượng kết quả */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#99F6E4]/80 bg-white/70 px-4 py-3 text-xs text-[#475569] backdrop-blur-sm">
-        <div>
-          {getString(catalogObj?.showing) || 'Hiển thị'}{' '}
-          <span className="font-bold text-[#0F766E]">{filteredProperties.length}</span>{' '}
-          {getString(catalogObj?.properties) || 'bất động sản'}
-          {selectedLocation !== 'ALL' && (
-            <span className="ml-1">
-              {getString(catalogObj?.inLocation) || 'tại'}{' '}
-              <strong className="text-[#134E4A]">{selectedLocation}</strong>
-            </span>
-          )}
-          {searchInput.trim() !== '' && (
-            <span className="ml-1">
-              ({searchLabels.keywordTag}:{' '}
-              <strong className="text-[#134E4A]">“{searchInput.trim()}”</strong>)
-            </span>
-          )}
-        </div>
+        {/* Tầng đáy: Thanh Active Filter Chips nối liền kết quả bên dưới (chỉ hiện khi có bộ lọc) */}
         {hasFilters && (
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="inline-flex cursor-pointer items-center gap-1 rounded-md font-bold text-[#0369A1] transition-colors duration-200 hover:text-[#0F766E] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
-          >
-            <CloseIcon className="h-3.5 w-3.5" />
-            <span>{getString(catalogObj?.clearFilter) || 'Xóa bộ lọc'}</span>
-          </button>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-b-2xl border-t border-[#E5DFD6] bg-[#F2EFE9]/75 px-4 py-3 sm:px-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-[#66605A]">
+                {ui.activeFiltersLabel}
+              </span>
+              {activeChips.map((chip) => (
+                <button
+                  key={chip.key}
+                  type="button"
+                  onClick={chip.onRemove}
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#A64237]/30 bg-white px-3 py-1 text-xs font-semibold text-[#A64237] shadow-2xs transition-colors duration-200 hover:border-[#A64237] hover:bg-[#A64237] hover:text-white"
+                >
+                  <span>{chip.label}</span>
+                  <CloseIcon className="h-3 w-3" />
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="inline-flex cursor-pointer items-center gap-1 text-xs font-bold text-[#A64237] transition-colors duration-200 hover:text-[#8C352C] hover:underline"
+            >
+              <CloseIcon className="h-3.5 w-3.5" />
+              <span>{ui.clearAll}</span>
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Lưới kết quả bất động sản */}
-      <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
-        {filteredProperties.length > 0 ? (
-          filteredProperties.map((item) => <PropertyCard key={item.id} property={item} />)
+      {/* 3. LƯỚI BẤT ĐỘNG SẢN — Nối tiếp trực tiếp bên dưới khối Console */}
+      <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-7">
+        {filteredAndSortedProperties.length > 0 ? (
+          filteredAndSortedProperties.map((item) => (
+            <PropertyCard key={item.id} property={item} />
+          ))
         ) : (
-          <div className="col-span-full flex w-full flex-col items-center justify-center space-y-4 rounded-xl border border-[#99F6E4] bg-white/80 p-12 text-center shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full border border-[#99F6E4] bg-[#F0FDFA] text-[#0F766E]">
-              <BuildingIcon className="h-6 w-6" />
+          <div className="col-span-full flex w-full flex-col items-center justify-center space-y-4 rounded-2xl border border-[#E5DFD6] bg-white p-14 text-center shadow-[0_4px_12px_rgba(38,34,31,0.05)]">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-[#E5DFD6] bg-[#F2EFE9] text-[#A64237]">
+              <BuildingIcon className="h-7 w-7" />
             </span>
-            <p className="font-serif text-base font-semibold text-[#134E4A]">
-              {getString(catalogObj?.noResults) || 'Không tìm thấy kết quả phù hợp'}
-            </p>
+            <div className="space-y-1">
+              <p className="font-serif text-lg font-bold text-[#26221F]">
+                {getString(catalogObj?.noResults) || 'Không tìm thấy kết quả phù hợp'}
+              </p>
+              <p className="text-xs text-[#66605A]">{ui.emptyHint}</p>
+            </div>
             {hasFilters && (
               <button
                 type="button"
                 onClick={clearFilters}
-                className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-[#0369A1] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-white shadow-[0_4px_6px_rgba(0,0,0,0.1)] transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+                className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-[#A64237] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#8C352C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
               >
                 <CloseIcon className="h-4 w-4" />
                 <span>{getString(catalogObj?.clearFilter) || 'Xóa bộ lọc'}</span>
@@ -764,7 +948,7 @@ export default function SanPhamSection({ properties }: { properties: Property[] 
   return (
     <Suspense
       fallback={
-        <div className="py-10 text-center text-xs font-medium text-[#475569]">
+        <div className="py-12 text-center text-xs font-medium text-[#66605A]">
           {getString(catalogObj?.loading) || 'Đang tải...'}
         </div>
       }

@@ -56,33 +56,27 @@ export default function TrangChuSection({ properties }: { properties: Property[]
 
   return (
     <section id="trangchu" className="w-full space-y-10">
-      {/* Glassmorphism Showcase Header */}
-      <div className="relative overflow-hidden rounded-2xl border border-[#99F6E4] bg-white/75 p-6 shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md sm:p-8 lg:p-10">
-        {/* Điểm sáng chiều sâu cho hiệu ứng Glassmorphism */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full bg-[#14B8A6]/12 blur-3xl"
-        />
-
+      {/* Japandi Warm Minimalist Showcase Header */}
+      <div className="relative overflow-hidden rounded-2xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.05)] sm:p-8 lg:p-10">
         <div className="relative flex flex-col justify-between gap-6 text-center sm:flex-row sm:items-end sm:text-left">
           <div className="space-y-2.5">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#99F6E4] bg-[#F0FDFA]/90 px-3.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[#0F766E]">
-              <BuildingIcon className="h-3.5 w-3.5 text-[#0F766E]" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#E5DFD6] bg-[#F2EFE9] px-3.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[#A64237]">
+              <BuildingIcon className="h-3.5 w-3.5 text-[#A64237]" />
               <span>{t.home.badge}</span>
             </span>
 
-            <h2 className="font-serif text-2xl font-semibold leading-tight tracking-tight text-[#134E4A] sm:text-3xl lg:text-4xl">
+            <h2 className="font-serif text-2xl font-semibold leading-tight tracking-tight text-[#26221F] sm:text-3xl lg:text-4xl">
               {t.home.title}
             </h2>
 
-            <p className="max-w-2xl text-sm leading-relaxed text-[#475569] sm:text-base">
+            <p className="max-w-2xl text-sm leading-relaxed text-[#66605A] sm:text-base">
               {t.home.description}
             </p>
           </div>
 
           <Link
             href="/properties"
-            className="group inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 self-center rounded-lg bg-[#0369A1] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-white shadow-[0_4px_6px_rgba(0,0,0,0.1)] transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2 sm:self-end motion-reduce:transform-none motion-reduce:transition-none"
+            className="group inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 self-center rounded-lg bg-[#A64237] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#8C352C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 sm:self-end motion-reduce:transform-none motion-reduce:transition-none"
           >
             <span>{t.home.viewAll}</span>
             <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
@@ -95,11 +89,11 @@ export default function TrangChuSection({ properties }: { properties: Property[]
         {properties.length > 0 ? (
           properties.map((item) => <PropertyCard key={item.id} property={item} />)
         ) : (
-          <div className="col-span-full flex w-full flex-col items-center justify-center rounded-xl border border-[#99F6E4] bg-white/80 p-12 text-center shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md">
-            <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-[#99F6E4] bg-[#F0FDFA] text-[#0F766E]">
+          <div className="col-span-full flex w-full flex-col items-center justify-center rounded-xl border border-[#E5DFD6] bg-white p-12 text-center shadow-[0_4px_12px_rgba(38,34,31,0.05)]">
+            <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-[#E5DFD6] bg-[#F2EFE9] text-[#A64237]">
               <BuildingIcon className="h-6 w-6" />
             </span>
-            <p className="font-serif text-base font-semibold text-[#134E4A]">
+            <p className="font-serif text-base font-semibold text-[#26221F]">
               {t.home.noProperties}
             </p>
           </div>
@@ -110,7 +104,7 @@ export default function TrangChuSection({ properties }: { properties: Property[]
       <div className="pt-2 text-center">
         <Link
           href="/properties"
-          className="group inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-[#0F766E] bg-white/75 px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[#0F766E] backdrop-blur-sm transition-all duration-200 hover:bg-[#0F766E] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2"
+          className="group inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#E5DFD6] bg-white px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[#26221F] shadow-2xs transition-all duration-200 hover:border-[#A64237] hover:bg-[#A64237] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2"
         >
           <span>{t.home.exploreMore}</span>
           <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />

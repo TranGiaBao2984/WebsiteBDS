@@ -88,73 +88,73 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer className="mt-16 border-t border-[#99F6E4] bg-[#E8F0F3]/75 px-6 py-12 backdrop-blur-md sm:px-10 sm:py-16 lg:px-16">
+    <footer className="mt-16 border-t border-[#E5DFD6] bg-[#F2EFE9] px-6 py-12 sm:px-10 sm:py-16 lg:px-16">
       <div className="mx-auto max-w-6xl space-y-10">
         <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:gap-10">
           {/* Cột trái: Thương hiệu, giới thiệu & thông tin văn phòng */}
           <div className="space-y-5 text-left lg:col-span-6">
             <div className="space-y-2">
-              <span className="block text-xs font-bold uppercase tracking-[0.18em] text-[#0F766E]">
+              <span className="block text-xs font-bold uppercase tracking-[0.18em] text-[#948D86]">
                 {labels.badge}
               </span>
-              <h2 className="font-serif text-2xl font-semibold tracking-tight text-[#134E4A] sm:text-3xl">
+              <h2 className="font-serif text-2xl font-semibold tracking-tight text-[#26221F] sm:text-3xl">
                 {labels.title}
               </h2>
-              <p className="text-xs font-semibold italic text-[#0369A1] sm:text-sm">
+              <p className="text-xs font-semibold italic text-[#A64237] sm:text-sm">
                 “{SITE.slogan}”
               </p>
-              <p className="pt-1 text-xs leading-relaxed text-[#475569] sm:text-sm">
+              <p className="pt-1 text-xs leading-relaxed text-[#66605A] sm:text-sm">
                 {labels.description}
               </p>
             </div>
 
-            <div className="space-y-3 rounded-xl border border-[#99F6E4] bg-white/80 p-5 text-xs text-[#134E4A] shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md sm:p-6">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#0F766E]">
+            <div className="space-y-3 rounded-xl border border-[#E5DFD6] bg-white p-5 text-xs text-[#26221F] shadow-[0_4px_12px_rgba(38,34,31,0.04)] sm:p-6">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#A64237]">
                 {labels.officeHeading}
               </p>
-              <p className="font-serif text-sm font-bold text-[#134E4A]">
+              <p className="font-serif text-sm font-bold text-[#26221F]">
                 {SITE.company} — {SITE.brand} {SITE.subBrand}
               </p>
 
               <div className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-3">
                 <div>
-                  <span className="block text-[11px] font-medium text-[#475569]">
+                  <span className="block text-[11px] font-medium text-[#948D86]">
                     {labels.mobileLabel}
                   </span>
                   <a
                     href={SITE.hotlineHref}
-                    className="inline-block cursor-pointer rounded font-bold text-[#134E4A] transition-colors duration-200 hover:text-[#0F766E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
+                    className="inline-block cursor-pointer rounded font-bold text-[#26221F] transition-colors duration-200 hover:text-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237]"
                   >
                     {SITE.hotline}
                   </a>
                 </div>
                 <div>
-                  <span className="block text-[11px] font-medium text-[#475569]">
+                  <span className="block text-[11px] font-medium text-[#948D86]">
                     {labels.telLabel}
                   </span>
                   <a
                     href={SITE.telHref}
-                    className="inline-block cursor-pointer rounded font-bold text-[#134E4A] transition-colors duration-200 hover:text-[#0F766E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
+                    className="inline-block cursor-pointer rounded font-bold text-[#26221F] transition-colors duration-200 hover:text-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237]"
                   >
                     {SITE.tel}
                   </a>
                 </div>
                 <div>
-                  <span className="block text-[11px] font-medium text-[#475569]">
+                  <span className="block text-[11px] font-medium text-[#948D86]">
                     {labels.faxLabel}
                   </span>
-                  <span className="font-bold text-[#134E4A]">{SITE.fax}</span>
+                  <span className="font-bold text-[#26221F]">{SITE.fax}</span>
                 </div>
               </div>
 
-              <div className="border-t border-[#E8F0F3] pt-3">
-                <span className="block text-[11px] font-medium text-[#475569]">
+              <div className="border-t border-[#E5DFD6] pt-3">
+                <span className="block text-[11px] font-medium text-[#948D86]">
                   {labels.addressLabel}
                 </span>
-                <p className="mt-0.5 font-semibold text-[#134E4A]">
+                <p className="mt-0.5 font-semibold text-[#26221F]">
                   {SITE.postalCode} {SITE.addressJa}
                 </p>
-                <p className="mt-0.5 text-[11px] text-[#475569]">
+                <p className="mt-0.5 text-[11px] text-[#66605A]">
                   {SITE.addressEn}
                 </p>
               </div>
@@ -163,12 +163,12 @@ export default function Footer() {
 
           {/* Cột phải: Các nút kết nối trực tiếp */}
           <div className="space-y-3 lg:col-span-6">
-            {/* WhatsApp — Primary Accent CTA */}
+            {/* WhatsApp — Primary Terracotta CTA */}
             <a
               href={SITE.whatsappHref}
               target="_blank"
               rel="noreferrer"
-              className="group flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl bg-[#0369A1] px-5 py-4 text-xs font-semibold uppercase tracking-wider text-white shadow-[0_4px_6px_rgba(0,0,0,0.1)] transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+              className="group flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl bg-[#A64237] px-5 py-4 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#8C352C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
             >
               <div className="flex items-center gap-3">
                 <svg
@@ -188,11 +188,11 @@ export default function Footer() {
               href={SITE.instagramHref}
               target="_blank"
               rel="noreferrer"
-              className="group flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-[#99F6E4] bg-white/80 px-5 py-4 text-xs font-semibold uppercase tracking-wider text-[#134E4A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-[#14B8A6] hover:bg-white hover:shadow-[0_4px_6px_rgba(0,0,0,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+              className="group flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-[#E5DFD6] bg-white px-5 py-4 text-xs font-semibold uppercase tracking-wider text-[#26221F] shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:border-[#A64237] hover:bg-[#FAF8F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
             >
               <div className="flex items-center gap-3">
                 <svg
-                  className="h-5 w-5 shrink-0 fill-current text-[#0F766E]"
+                  className="h-5 w-5 shrink-0 fill-current text-[#A64237]"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
                 >
@@ -200,17 +200,17 @@ export default function Footer() {
                 </svg>
                 <span>{labels.instagram}</span>
               </div>
-              <ArrowRightIcon className="h-4 w-4 shrink-0 text-[#0F766E] transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
+              <ArrowRightIcon className="h-4 w-4 shrink-0 text-[#A64237] transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
             </a>
 
             {/* Email */}
             <a
               href={`mailto:${SITE.email}`}
-              className="group flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-[#99F6E4] bg-white/80 px-5 py-4 text-xs font-semibold tracking-wider text-[#134E4A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-[#14B8A6] hover:bg-white hover:shadow-[0_4px_6px_rgba(0,0,0,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+              className="group flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-[#E5DFD6] bg-white px-5 py-4 text-xs font-semibold tracking-wider text-[#26221F] shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:border-[#A64237] hover:bg-[#FAF8F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
             >
               <div className="flex items-center gap-3">
                 <svg
-                  className="h-5 w-5 shrink-0 fill-none stroke-current text-[#0F766E]"
+                  className="h-5 w-5 shrink-0 fill-none stroke-current text-[#A64237]"
                   strokeWidth="1.75"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
@@ -223,7 +223,7 @@ export default function Footer() {
                 </svg>
                 <span className="break-all">{labels.email}</span>
               </div>
-              <ArrowRightIcon className="h-4 w-4 shrink-0 text-[#0F766E] transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
+              <ArrowRightIcon className="h-4 w-4 shrink-0 text-[#A64237] transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
             </a>
 
             {/* Website công ty Re iDea */}
@@ -231,11 +231,11 @@ export default function Footer() {
               href={SITE.websiteHref}
               target="_blank"
               rel="noreferrer"
-              className="group flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-[#99F6E4] bg-white/80 px-5 py-4 text-xs font-semibold uppercase tracking-wider text-[#134E4A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-[#14B8A6] hover:bg-white hover:shadow-[0_4px_6px_rgba(0,0,0,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+              className="group flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-[#E5DFD6] bg-white px-5 py-4 text-xs font-semibold uppercase tracking-wider text-[#26221F] shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:border-[#A64237] hover:bg-[#FAF8F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
             >
               <div className="flex items-center gap-3">
                 <svg
-                  className="h-5 w-5 shrink-0 fill-none stroke-current text-[#0F766E]"
+                  className="h-5 w-5 shrink-0 fill-none stroke-current text-[#A64237]"
                   strokeWidth="1.75"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
@@ -248,18 +248,18 @@ export default function Footer() {
                 </svg>
                 <span>{labels.website}</span>
               </div>
-              <ArrowRightIcon className="h-4 w-4 shrink-0 text-[#0F766E] transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
+              <ArrowRightIcon className="h-4 w-4 shrink-0 text-[#A64237] transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
             </a>
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-between gap-2 border-t border-[#99F6E4]/80 pt-6 text-center text-xs font-medium text-[#475569] sm:flex-row">
+        <div className="flex flex-col items-center justify-between gap-2 border-t border-[#E5DFD6] pt-6 text-center text-xs font-medium text-[#66605A] sm:flex-row">
           <span>
             © {year} {labels.rights}
           </span>
           <Link
             href="/privacy"
-            className="font-semibold text-[#0F766E] underline-offset-4 transition-colors hover:text-[#0369A1] hover:underline"
+            className="font-semibold text-[#A64237] underline-offset-4 transition-colors hover:text-[#8C352C] hover:underline"
           >
             {labels.privacyPolicy}
           </Link>

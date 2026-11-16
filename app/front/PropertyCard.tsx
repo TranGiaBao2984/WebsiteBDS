@@ -255,18 +255,18 @@ function getLocalizedStatus(
   if (normalized === 'SOLD' || normalized === 'CLOSED') {
     return {
       label: labels.statusSold,
-      badgeClass: 'bg-[#475569]/90 text-white border-white/25',
+      badgeClass: 'bg-[#A64237]/95 text-white border-white/20',
     };
   }
   if (normalized === 'RESERVED' || normalized === 'PENDING') {
     return {
       label: labels.statusReserved,
-      badgeClass: 'bg-[#0369A1]/90 text-white border-white/25',
+      badgeClass: 'bg-[#66605A]/90 text-white border-white/20',
     };
   }
   return {
     label: normalized === 'AVAILABLE' ? labels.statusAvailable : rawStatus || labels.statusAvailable,
-    badgeClass: 'bg-[#0F766E]/90 text-white border-white/25',
+    badgeClass: 'bg-[#1E1B18]/80 text-[#FAF8F5] border-white/20',
   };
 }
 
@@ -288,10 +288,10 @@ export default function PropertyCard({ property }: PropertyCardProps) {
   return (
     <Link
       href={`/properties/${property.id}`}
-      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-[#99F6E4] bg-white shadow-[0_4px_6px_rgba(0,0,0,0.1)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#14B8A6] hover:shadow-[0_10px_15px_rgba(0,0,0,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-[#E5DFD6] bg-white shadow-[0_4px_12px_rgba(38,34,31,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#A64237] hover:shadow-[0_10px_20px_rgba(38,34,31,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
     >
       {/* Hình ảnh */}
-      <div className="relative aspect-4/3 overflow-hidden bg-[#E8F0F3]">
+      <div className="relative aspect-4/3 overflow-hidden bg-[#F2EFE9]">
         <img
           src={mainImage}
           alt={title}
@@ -301,7 +301,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80';
           }}
         />
-        {/* Glassmorphism Status Badge */}
+        {/* Status Badge */}
         <div
           className={`absolute top-3 left-3 rounded-lg border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider backdrop-blur-md shadow-xs ${badgeClass}`}
         >
@@ -312,24 +312,24 @@ export default function PropertyCard({ property }: PropertyCardProps) {
       {/* Nội dung */}
       <div className="flex grow flex-col justify-between space-y-4 p-6">
         <div>
-          <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#0F766E]">
-            <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-[#0F766E]" />
+          <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#948D86]">
+            <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-[#A64237]" />
             <span className="truncate">{location}</span>
           </div>
-          <h3 className="font-serif line-clamp-2 text-base font-bold leading-snug text-[#134E4A] transition-colors duration-200 group-hover:text-[#0F766E]">
+          <h3 className="font-serif line-clamp-2 text-base font-bold leading-snug text-[#26221F] transition-colors duration-200 group-hover:text-[#A64237]">
             {title}
           </h3>
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-[#E8F0F3] pt-4">
+        <div className="flex items-center justify-between gap-3 border-t border-[#E5DFD6] pt-4">
           <div className="min-w-0">
-            <span className="block text-xs font-medium text-[#475569]">{labels.price}</span>
-            <span className="block truncate text-lg font-bold text-[#0F766E]">
+            <span className="block text-xs font-medium text-[#948D86]">{labels.price}</span>
+            <span className="font-serif block truncate text-lg font-bold text-[#A64237]">
               {formattedPrice}
             </span>
           </div>
 
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#F0FDFA] px-3.5 py-2 text-xs font-semibold text-[#0F766E] ring-1 ring-[#99F6E4] transition-all duration-200 group-hover:bg-[#0369A1] group-hover:text-white group-hover:ring-[#0369A1]">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#FAF8F5] px-3.5 py-2 text-xs font-semibold text-[#26221F] ring-1 ring-[#E5DFD6] transition-all duration-200 group-hover:bg-[#A64237] group-hover:text-white group-hover:ring-[#A64237]">
             <span>{labels.details}</span>
             <ArrowRightIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
           </span>

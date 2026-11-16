@@ -36,10 +36,10 @@ const INQUIRY_LABELS = {
     errorMsg: "Gửi yêu cầu thất bại. Vui lòng thử lại.",
   },
   en: {
-    heading: "Property Consultation",
+    heading: "Interested in this property?",
     subPrefix: "Requesting details for:",
     generalSub:
-      "Leave your details to receive direct consultation from Mii Shintani (RE AGENT by Re iDea).",
+      "Ask Mii about availability, additional photos, arranging a viewing, or purchasing from overseas.",
     fullName: "Full Name *",
     fullNamePlaceholder: "John Doe / Yamada Taro",
     email: "Email *",
@@ -194,28 +194,22 @@ export default function InquiryForm({
   };
 
   const inputClassName =
-    "w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-3 text-base text-[#134E4A] placeholder:text-[#475569]/70 transition-all duration-200 focus:border-[#0F766E] focus:outline-none focus:ring-3 focus:ring-[#0F766E]/15 sm:text-sm";
+    "w-full rounded-lg border border-[#E5DFD6] bg-[#FAF8F5] px-4 py-3 text-base text-[#26221F] placeholder:text-[#948D86] transition-all duration-200 focus:border-[#A64237] focus:bg-white focus:outline-none focus:ring-3 focus:ring-[#A64237]/15 sm:text-sm";
 
   return (
     <div
       id="contact"
-      className="relative scroll-mt-28 overflow-hidden rounded-2xl border border-[#99F6E4] bg-white/80 p-6 text-[#134E4A] shadow-[0_4px_6px_rgba(0,0,0,0.1)] backdrop-blur-md lg:p-8"
+      className="relative scroll-mt-28 overflow-hidden rounded-2xl border border-[#E5DFD6] bg-white p-6 text-[#26221F] shadow-[0_4px_16px_rgba(38,34,31,0.06)] lg:p-8"
     >
-      {/* Điểm sáng chiều sâu cho hiệu ứng Glassmorphism */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-[#14B8A6]/12 blur-3xl"
-      />
-
       <div className="relative">
-        <h3 className="font-serif mb-2 text-xl font-bold tracking-tight text-[#134E4A] sm:text-2xl">
+        <h3 className="font-serif mb-2 text-xl font-bold tracking-tight text-[#26221F] sm:text-2xl">
           {labels.heading}
         </h3>
-        <p className="mb-6 text-xs leading-relaxed text-[#475569] sm:text-sm">
+        <p className="mb-6 text-xs leading-relaxed text-[#66605A] sm:text-sm">
           {propertyTitle ? (
             <>
               {labels.subPrefix}{" "}
-              <span className="font-semibold text-[#0F766E]">
+              <span className="font-semibold text-[#A64237]">
                 {propertyTitle}
               </span>
             </>
@@ -258,7 +252,7 @@ export default function InquiryForm({
           <div>
             <label
               htmlFor={`${uid}-fullName`}
-              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#948D86]"
             >
               {labels.fullName}
             </label>
@@ -277,7 +271,7 @@ export default function InquiryForm({
             <div>
               <label
                 htmlFor={`${uid}-email`}
-                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
+                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#948D86]"
               >
                 {labels.email}
               </label>
@@ -294,7 +288,7 @@ export default function InquiryForm({
             <div>
               <label
                 htmlFor={`${uid}-phone`}
-                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
+                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#948D86]"
               >
                 {labels.phone}
               </label>
@@ -313,7 +307,7 @@ export default function InquiryForm({
           <div>
             <label
               htmlFor={`${uid}-message`}
-              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
+              className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#948D86]"
             >
               {labels.message}
             </label>
@@ -327,24 +321,24 @@ export default function InquiryForm({
             />
           </div>
 
-          {/* Checkbox đồng ý chủ động theo Nghị định 13/2023/NĐ-CP (mặc định không tích sẵn) */}
-          <div className="flex items-start gap-2.5 rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/80 p-3">
+          {/* Checkbox đồng ý chủ động theo Nghị định 13/2023/NĐ-CP */}
+          <div className="flex items-start gap-2.5 rounded-xl border border-[#E5DFD6] bg-[#FAF8F5] p-3">
             <input
               id={`${uid}-consent`}
               type="checkbox"
               name="consent"
               required
-              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-[#0F766E] text-[#0F766E] focus:ring-[#0F766E]"
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-[#E5DFD6] accent-[#A64237] focus:ring-[#A64237]"
             />
             <label
               htmlFor={`${uid}-consent`}
-              className="cursor-pointer text-[11px] leading-relaxed text-[#475569] sm:text-xs"
+              className="cursor-pointer text-[11px] leading-relaxed text-[#66605A] sm:text-xs"
             >
               {labels.consentPrefix}
               <Link
                 href="/privacy"
                 target="_blank"
-                className="font-semibold text-[#0369A1] underline underline-offset-2 hover:text-[#0F766E]"
+                className="font-semibold text-[#A64237] underline underline-offset-2 hover:text-[#8C352C]"
               >
                 {labels.consentLink}
               </Link>
@@ -355,7 +349,7 @@ export default function InquiryForm({
           <button
             type="submit"
             disabled={loading}
-            className="group inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#0369A1] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-white shadow-[0_4px_6px_rgba(0,0,0,0.1)] transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-55 sm:text-sm motion-reduce:transform-none motion-reduce:transition-none"
+            className="group inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#A64237] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#8C352C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-55 sm:text-sm motion-reduce:transform-none motion-reduce:transition-none"
           >
             {loading ? (
               <>

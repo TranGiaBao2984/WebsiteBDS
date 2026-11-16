@@ -150,17 +150,17 @@ export default function PrivacyPolicyPage() {
   const content = PRIVACY_CONTENT[currentLang] || PRIVACY_CONTENT.en;
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-10 text-[#134E4A] sm:px-6 sm:py-14">
-      <article className="space-y-8 rounded-2xl border border-[#99F6E4] bg-white/85 p-6 shadow-[0_4px_6px_rgba(0,0,0,0.08)] backdrop-blur-md sm:p-10">
-        <header className="space-y-3 border-b border-[#E8F0F3] pb-6">
-          <span className="block text-xs font-bold uppercase tracking-[0.16em] text-[#0F766E]">
+    <main className="mx-auto w-full max-w-4xl px-4 py-10 text-[#26221F] sm:px-6 sm:py-14">
+      <article className="space-y-8 rounded-2xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.05)] sm:p-10">
+        <header className="space-y-3 border-b border-[#E5DFD6] pb-6">
+          <span className="block text-xs font-bold uppercase tracking-[0.16em] text-[#A64237]">
             {content.badge}
           </span>
-          <h1 className="font-serif text-2xl font-bold leading-tight text-[#134E4A] sm:text-3xl">
+          <h1 className="font-serif text-2xl font-bold leading-tight text-[#26221F] sm:text-3xl">
             {content.title}
           </h1>
-          <p className="text-xs font-medium text-[#475569]">{content.updated}</p>
-          <p className="pt-2 text-sm leading-relaxed text-[#475569]">
+          <p className="text-xs font-medium text-[#948D86]">{content.updated}</p>
+          <p className="pt-2 text-sm leading-relaxed text-[#66605A]">
             {content.intro}
           </p>
         </header>
@@ -168,10 +168,10 @@ export default function PrivacyPolicyPage() {
         <div className="space-y-6">
           {content.sections.map((section) => (
             <section key={section.heading} className="space-y-2.5">
-              <h2 className="font-serif text-lg font-bold text-[#134E4A]">
+              <h2 className="font-serif text-lg font-bold text-[#26221F]">
                 {section.heading}
               </h2>
-              <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-[#475569]">
+              <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-[#66605A]">
                 {section.items.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
@@ -180,10 +180,10 @@ export default function PrivacyPolicyPage() {
           ))}
         </div>
 
-        <div className="border-t border-[#E8F0F3] pt-6">
+        <div className="border-t border-[#E5DFD6] pt-6">
           <Link
             href="/"
-            className="inline-flex items-center rounded-lg border border-[#99F6E4] bg-[#F0FDFA] px-4 py-2 text-xs font-semibold text-[#0F766E] transition-colors hover:bg-[#0F766E] hover:text-white"
+            className="inline-flex items-center rounded-lg border border-[#E5DFD6] bg-[#FAF8F5] px-4 py-2 text-xs font-semibold text-[#26221F] transition-colors hover:border-[#A64237] hover:bg-[#A64237] hover:text-white"
           >
             {content.backHome}
           </Link>

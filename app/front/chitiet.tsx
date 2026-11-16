@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '@/app/context/LanguageContext';
 import type { NearbyCategory, Property } from '@/lib/types';
@@ -268,25 +268,6 @@ function ZoomInIcon({ className }: { className?: string }) {
       <circle cx="11" cy="11" r="8" />
       <path d="m21 21-4.3-4.3" />
       <path d="M11 8v6" />
-      <path d="M8 11h6" />
-    </svg>
-  );
-}
-
-function ZoomOutIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className={className}
-    >
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.3-4.3" />
       <path d="M8 11h6" />
     </svg>
   );
@@ -664,8 +645,6 @@ const DETAIL_LABELS = {
     prevImg: 'Ảnh trước',
     nextImg: 'Ảnh tiếp theo',
     zoomHint: 'Bấm để phóng to',
-    zoomInBtn: 'Phóng to',
-    zoomOutBtn: 'Thu nhỏ',
     closeLabel: 'Đóng',
     closeModal: 'Đóng chế độ xem lớn (ESC)',
     consultCta: 'Đăng ký tư vấn',
@@ -697,11 +676,9 @@ const DETAIL_LABELS = {
     prevImg: 'Previous image',
     nextImg: 'Next image',
     zoomHint: 'Click to enlarge',
-    zoomInBtn: 'Zoom in',
-    zoomOutBtn: 'Zoom out',
     closeLabel: 'Close',
     closeModal: 'Close fullscreen view (ESC)',
-    backdropHint: 'Click image to zoom • Click anywhere outside or press ESC to close',
+    backdropHint: 'Click image to zoom, click & hold to drag • Click outside or press ESC to close',
     consultCta: 'Inquire Now',
   },
   ja: {
@@ -731,22 +708,32 @@ const DETAIL_LABELS = {
     prevImg: '前の画像',
     nextImg: '次の画像',
     zoomHint: 'クリックして拡大',
-    zoomInBtn: '拡大',
-    zoomOutBtn: '縮小',
     closeLabel: '閉じる',
     closeModal: '拡大表示を閉じる (ESC)',
-    backdropHint: '画像クリックで拡大/縮小 • 周りの暗い部分またはESCで閉じます',
+    backdropHint: '画像クリックで拡大、長押しドラッグで移動 • 周りの暗い部分またはESCで閉じます',
     consultCta: 'お問い合わせ',
   },
 };
+
+const ZOOM_SCALE = 2.2;
 
 export default function ChiTietSection({ property, similarProperties = [] }: ChiTietSectionProps) {
   const { currentLang } = useLanguage();
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeFloorPlanIndex, setActiveFloorPlanIndex] = useState(0);
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
+
+  // State zoom + click-and-hold drag
   const [isZoomed, setIsZoomed] = useState(false);
-  const [zoomOrigin, setZoomOrigin] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
+  const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const dragStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const hasDraggedRef = useRef(false);
+  const suppressBackdropCloseRef = useRef(false);
+
   const labels = DETAIL_LABELS[currentLang] || DETAIL_LABELS.en;
 
   const title = getCleanText(property.title, currentLang) || 'Property';
@@ -774,14 +761,20 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
   const mainImage = images[activeIndex] || images[0] || fallbackImage;
   const mainFloorPlanImage = floorPlanImages[activeFloorPlanIndex] || floorPlanImages[0] || '';
 
-  const openLightbox = (nextState: LightboxState) => {
+  const resetZoom = () => {
     setIsZoomed(false);
-    setZoomOrigin({ x: 50, y: 50 });
+    setPanOffset({ x: 0, y: 0 });
+    setIsDragging(false);
+    hasDraggedRef.current = false;
+  };
+
+  const openLightbox = (nextState: LightboxState) => {
+    resetZoom();
     setLightbox(nextState);
   };
 
   const closeLightbox = () => {
-    setIsZoomed(false);
+    resetZoom();
     setLightbox(null);
   };
 
@@ -793,10 +786,10 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setIsZoomed(false);
+        resetZoom();
         setLightbox(null);
       } else if (e.key === 'ArrowLeft' && lightbox.images.length > 1) {
-        setIsZoomed(false);
+        resetZoom();
         setLightbox((prev) =>
           prev
             ? {
@@ -806,7 +799,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             : null
         );
       } else if (e.key === 'ArrowRight' && lightbox.images.length > 1) {
-        setIsZoomed(false);
+        resetZoom();
         setLightbox((prev) =>
           prev
             ? {
@@ -824,6 +817,47 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [lightbox]);
+
+  // Theo dõi mousemove / mouseup toàn cục khi đang giữ chuột kéo ảnh
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleWindowMouseMove = (e: MouseEvent) => {
+      const dx = e.clientX - dragStartRef.current.x;
+      const dy = e.clientY - dragStartRef.current.y;
+
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+        hasDraggedRef.current = true;
+      }
+
+      const imgEl = imgRef.current;
+      const maxX = imgEl ? (imgEl.offsetWidth * (ZOOM_SCALE - 1)) / 2 : 500;
+      const maxY = imgEl ? (imgEl.offsetHeight * (ZOOM_SCALE - 1)) / 2 : 500;
+
+      const nextX = Math.min(maxX, Math.max(-maxX, panStartRef.current.x + dx));
+      const nextY = Math.min(maxY, Math.max(-maxY, panStartRef.current.y + dy));
+
+      setPanOffset({ x: nextX, y: nextY });
+    };
+
+    const handleWindowMouseUp = () => {
+      setIsDragging(false);
+      // Ngăn click sự kiện nổi lên backdrop nếu người dùng kéo chuột ra ngoài viền ảnh rồi mới thả
+      if (hasDraggedRef.current) {
+        suppressBackdropCloseRef.current = true;
+        requestAnimationFrame(() => {
+          suppressBackdropCloseRef.current = false;
+        });
+      }
+    };
+
+    window.addEventListener('mousemove', handleWindowMouseMove);
+    window.addEventListener('mouseup', handleWindowMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', handleWindowMouseUp);
+    };
+  }, [isDragging]);
 
   const handlePrevImage = () => {
     setActiveIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
@@ -845,31 +879,51 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
     document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleLightboxImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
+  const handleLightboxImageMouseDown = (e: React.MouseEvent<HTMLImageElement>) => {
+    if (e.button !== 0) return; // Chỉ xử lý chuột trái
+    e.preventDefault();
     e.stopPropagation();
-    if (!isZoomed) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      setZoomOrigin({
-        x: Math.min(100, Math.max(0, x)),
-        y: Math.min(100, Math.max(0, y)),
-      });
-      setIsZoomed(true);
-    } else {
-      setIsZoomed(false);
+
+    hasDraggedRef.current = false;
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+    panStartRef.current = { ...panOffset };
+
+    if (isZoomed) {
+      setIsDragging(true);
     }
   };
 
-  const handleLightboxImageMouseMove = (e: React.MouseEvent<HTMLImageElement>) => {
-    if (!isZoomed) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setZoomOrigin({
-      x: Math.min(100, Math.max(0, x)),
-      y: Math.min(100, Math.max(0, y)),
-    });
+  const handleLightboxImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
+    e.stopPropagation();
+
+    // Nếu vừa giữ chuột kéo xong thì chỉ kết thúc thao tác kéo, không thu nhỏ lại
+    if (hasDraggedRef.current) {
+      hasDraggedRef.current = false;
+      return;
+    }
+
+    if (!isZoomed) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      // Căn điểm vừa click vào giữa khung nhìn khi phóng to
+      const offsetFromCenterX = e.clientX - (rect.left + rect.width / 2);
+      const offsetFromCenterY = e.clientY - (rect.top + rect.height / 2);
+
+      const maxX = (rect.width * (ZOOM_SCALE - 1)) / 2;
+      const maxY = (rect.height * (ZOOM_SCALE - 1)) / 2;
+
+      const initialX = Math.min(maxX, Math.max(-maxX, -offsetFromCenterX * (ZOOM_SCALE - 1)));
+      const initialY = Math.min(maxY, Math.max(-maxY, -offsetFromCenterY * (ZOOM_SCALE - 1)));
+
+      setPanOffset({ x: initialX, y: initialY });
+      setIsZoomed(true);
+    } else {
+      resetZoom();
+    }
+  };
+
+  const handleBackdropClick = () => {
+    if (suppressBackdropCloseRef.current) return;
+    closeLightbox();
   };
 
   return (
@@ -1313,7 +1367,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
         </div>
       </div>
 
-      {/* Lightbox phóng to ảnh / sơ đồ nhà ở — Bấm vào ảnh để zoom 2.2x, bấm khoảng tối xung quanh để thoát */}
+      {/* Lightbox phóng to ảnh: Click ảnh để zoom, nhấn giữ chuột & kéo để xem từng góc, bấm vùng tối xung quanh để thoát */}
       {lightbox &&
         typeof document !== 'undefined' &&
         createPortal(
@@ -1322,7 +1376,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             aria-modal="true"
             aria-label={lightbox.title}
             className="fixed inset-0 z-70 flex cursor-zoom-out flex-col justify-between bg-[#141210]/94 p-4 backdrop-blur-md select-none sm:p-6"
-            onClick={closeLightbox}
+            onClick={handleBackdropClick}
           >
             {/* Top Bar */}
             <div
@@ -1338,60 +1392,41 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                 </p>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
-                {/* Nút Zoom +/- nhanh */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setZoomOrigin({ x: 50, y: 50 });
-                    setIsZoomed((prev) => !prev);
-                  }}
-                  aria-label={isZoomed ? labels.zoomOutBtn : labels.zoomInBtn}
-                  className={`inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold shadow-sm backdrop-blur-md transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
-                    isZoomed
-                      ? 'border-[#A64237] bg-[#A64237] text-white'
-                      : 'border-white/25 bg-white/12 text-[#FAF8F5] hover:border-[#A64237] hover:bg-[#A64237]'
-                  }`}
-                >
-                  {isZoomed ? (
-                    <ZoomOutIcon className="h-4 w-4" />
-                  ) : (
-                    <ZoomInIcon className="h-4 w-4" />
-                  )}
-                  <span className="hidden sm:inline">
-                    {isZoomed ? labels.zoomOutBtn : labels.zoomInBtn}
-                  </span>
-                </button>
-
-                {/* Nút Đóng */}
-                <button
-                  type="button"
-                  onClick={closeLightbox}
-                  aria-label={labels.closeModal}
-                  className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-white/25 bg-white/12 px-4 py-2 text-xs font-semibold text-[#FAF8F5] shadow-sm backdrop-blur-md transition-all duration-200 hover:border-[#A64237] hover:bg-[#A64237] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                >
-                  <CloseIcon className="h-4 w-4" />
-                  <span>{labels.closeLabel}</span>
-                  <kbd className="hidden rounded bg-black/35 px-1.5 py-0.5 font-mono text-[10px] text-white/80 sm:inline-block">
-                    ESC
-                  </kbd>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={closeLightbox}
+                aria-label={labels.closeModal}
+                className="inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-white/25 bg-white/12 px-4 py-2 text-xs font-semibold text-[#FAF8F5] shadow-sm backdrop-blur-md transition-all duration-200 hover:border-[#A64237] hover:bg-[#A64237] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                <CloseIcon className="h-4 w-4" />
+                <span>{labels.closeLabel}</span>
+                <kbd className="hidden rounded bg-black/35 px-1.5 py-0.5 font-mono text-[10px] text-white/80 sm:inline-block">
+                  ESC
+                </kbd>
+              </button>
             </div>
 
-            {/* Center Stage — Bấm vào ảnh để zoom 2.2x, bấm khoảng tối hai bên để đóng */}
+            {/* Center Stage */}
             <div className="relative my-2 flex min-h-0 flex-1 items-center justify-center overflow-hidden px-2 sm:px-14">
               <img
+                ref={imgRef}
                 src={lightbox.images[lightbox.index] || fallbackImage}
                 alt={`${lightbox.title} ${lightbox.index + 1}`}
+                draggable={false}
+                onMouseDown={handleLightboxImageMouseDown}
                 onClick={handleLightboxImageClick}
-                onMouseMove={handleLightboxImageMouseMove}
                 style={{
-                  transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
-                  transform: isZoomed ? 'scale(2.2)' : 'scale(1)',
+                  transform: isZoomed
+                    ? `translate3d(${panOffset.x}px, ${panOffset.y}px, 0) scale(${ZOOM_SCALE})`
+                    : 'translate3d(0px, 0px, 0) scale(1)',
+                  transition: isDragging ? 'none' : 'transform 200ms ease-out',
                 }}
-                className={`max-h-full max-w-full w-auto h-auto select-none rounded-xl border border-white/15 object-contain shadow-2xl transition-transform duration-200 ease-out ${
-                  isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'
+                className={`max-h-full max-w-full w-auto h-auto select-none rounded-xl border border-white/15 object-contain shadow-2xl ${
+                  isZoomed
+                    ? isDragging
+                      ? 'cursor-grabbing'
+                      : 'cursor-grab'
+                    : 'cursor-zoom-in'
                 }`}
               />
 
@@ -1401,7 +1436,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setIsZoomed(false);
+                      resetZoom();
                       setLightbox((prev) =>
                         prev
                           ? {
@@ -1420,7 +1455,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setIsZoomed(false);
+                      resetZoom();
                       setLightbox((prev) =>
                         prev
                           ? {
@@ -1453,7 +1488,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                         key={`${img}-${idx}`}
                         type="button"
                         onClick={() => {
-                          setIsZoomed(false);
+                          resetZoom();
                           setLightbox((prev) => (prev ? { ...prev, index: idx } : null));
                         }}
                         aria-label={`${idx + 1} / ${lightbox.images.length}`}
@@ -1469,6 +1504,8 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                   })}
                 </div>
               )}
+
+              
             </div>
           </div>,
           document.body

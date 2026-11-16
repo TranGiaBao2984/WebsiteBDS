@@ -6,9 +6,31 @@ import { createSupabaseBrowser } from '@/lib/supabase-browser';
 import { IMAGE_BUCKET } from '@/lib/storage';
 
 const MAX_SIDE = 1600;
+const WEBP_QUALITY = 0.82;
 const JPEG_QUALITY = 0.85;
+const MAX_RAW_FILE_BYTES = 20 * 1024 * 1024; // Giới hạn ảnh gốc tối đa 20MB
 
-async function compressToJpeg(file: File): Promise<Blob> {
+interface CompressedImageResult {
+  blob: Blob;
+  ext: 'webp' | 'jpg';
+  contentType: 'image/webp' | 'image/jpeg';
+}
+
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  type: string,
+  quality: number
+): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), type, quality);
+  });
+}
+
+async function compressImage(file: File): Promise<CompressedImageResult> {
+  if (file.size > MAX_RAW_FILE_BYTES) {
+    throw new Error('Dung lượng ảnh vượt quá 20MB. Vui lòng chọn ảnh nhẹ hơn.');
+  }
+
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
   const w = Math.round(bitmap.width * scale);
@@ -18,29 +40,45 @@ async function compressToJpeg(file: File): Promise<Blob> {
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Trình duyệt không hỗ trợ xử lý ảnh.');
+  if (!ctx) {
+    bitmap.close();
+    throw new Error('Trình duyệt không hỗ trợ xử lý ảnh.');
+  }
 
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, w, h);
   ctx.drawImage(bitmap, 0, 0, w, h);
   bitmap.close();
 
-  return new Promise((resolve, reject) =>
-    canvas.toBlob(
-      (b) => (b ? resolve(b) : reject(new Error('Không nén được ảnh.'))),
-      'image/jpeg',
-      JPEG_QUALITY
-    )
-  );
+  // Ưu tiên xuất WebP để tối ưu tốc độ tải trên 4G; tự động lùi về JPEG nếu trình duyệt không hỗ trợ
+  const webpBlob = await canvasToBlob(canvas, 'image/webp', WEBP_QUALITY);
+  if (webpBlob && webpBlob.type === 'image/webp') {
+    return {
+      blob: webpBlob,
+      ext: 'webp',
+      contentType: 'image/webp',
+    };
+  }
+
+  const jpegBlob = await canvasToBlob(canvas, 'image/jpeg', JPEG_QUALITY);
+  if (!jpegBlob) {
+    throw new Error('Không nén được ảnh.');
+  }
+
+  return {
+    blob: jpegBlob,
+    ext: 'jpg',
+    contentType: 'image/jpeg',
+  };
 }
 
 async function uploadImage(file: File): Promise<string> {
-  const blob = await compressToJpeg(file);
+  const { blob, ext, contentType } = await compressImage(file);
   const supabase = createSupabaseBrowser();
-  const path = `${crypto.randomUUID()}.jpg`;
+  const path = `${crypto.randomUUID()}.${ext}`;
 
   const { error } = await supabase.storage.from(IMAGE_BUCKET).upload(path, blob, {
-    contentType: 'image/jpeg',
+    contentType,
     cacheControl: '31536000',
   });
   if (error) throw new Error(error.message);
@@ -190,15 +228,17 @@ export default function ImageUploader({
     setProblems([]);
     setBusyBoth(true);
 
-    let next = value;
+    let next = [...value];
     for (let i = 0; i < files.length; i++) {
-      setProgress(`Đang tải ${i + 1}/${files.length}...`);
+      setProgress(`Đang tối ưu & tải ${i + 1}/${files.length}...`);
       try {
         const url = await uploadImage(files[i]);
         next = [...next, url];
         onChange(next);
       } catch (e) {
-        errs.push(`${files[i].name}: ${e instanceof Error ? e.message : 'lỗi không xác định'}`);
+        errs.push(
+          `${files[i].name}: ${e instanceof Error ? e.message : 'lỗi không xác định'}`
+        );
       }
     }
 
@@ -225,6 +265,10 @@ export default function ImageUploader({
     if (!u || full) return;
     if (!isHttpUrl(u)) {
       setProblems(['Link ảnh không hợp lệ (phải bắt đầu bằng http hoặc https).']);
+      return;
+    }
+    if (value.includes(u)) {
+      setProblems(['Link ảnh này đã có trong danh sách.']);
       return;
     }
     setProblems([]);
@@ -255,7 +299,12 @@ export default function ImageUploader({
               key={`${url}-${i}`}
               className="group relative overflow-hidden rounded-xl border border-[#99F6E4] bg-[#E8F0F3]/60 shadow-xs"
             >
-              <img src={url} alt={`${label} ${i + 1}`} className="aspect-4/3 w-full object-cover" />
+              <img
+                src={url}
+                alt={`${label} ${i + 1}`}
+                loading="lazy"
+                className="aspect-4/3 w-full object-cover"
+              />
 
               {max > 1 && i === 0 && (
                 <span className="absolute top-2 left-2 rounded-md border border-white/20 bg-[#0F766E] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">

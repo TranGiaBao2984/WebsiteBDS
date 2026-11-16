@@ -1,19 +1,21 @@
 "use client";
 
-import { useId, useState } from "react";
+import Link from "next/link";
+import { useEffect, useId, useRef, useState } from "react";
 import { submitInquiryAction } from "@/app/back/inquiries";
 import { useLanguage } from "@/app/context/LanguageContext";
 
 interface InquiryFormProps {
-  propertyId: string;
-  propertyTitle: string;
+  propertyId?: string;
+  propertyTitle?: string;
 }
 
 const INQUIRY_LABELS = {
   vi: {
     heading: "Đăng ký Tư vấn BĐS",
     subPrefix: "Gửi yêu cầu thông tin về:",
-    generalSub: "Để lại thông tin để nhận tư vấn trực tiếp từ Mii Shintani (RE AGENT by Re iDea).",
+    generalSub:
+      "Để lại thông tin để nhận tư vấn trực tiếp từ Mii Shintani (RE AGENT by Re iDea).",
     fullName: "Họ và tên *",
     fullNamePlaceholder: "Nguyễn Văn A / Yamada Taro",
     email: "Email *",
@@ -21,16 +23,23 @@ const INQUIRY_LABELS = {
     phone: "Số điện thoại *",
     phonePlaceholder: "+81 70-9017-1920",
     message: "Lời nhắn tư vấn",
-    messagePlaceholder: "Tôi muốn hẹn lịch xem nhà thực tế / Nhận báo giá tổng chi phí sang tên...",
+    messagePlaceholder:
+      "Tôi muốn hẹn lịch xem nhà thực tế / Nhận báo giá tổng chi phí sang tên...",
+    consentPrefix:
+      "Tôi đồng ý cho Mii Shintani thu thập và xử lý thông tin liên hệ trên để tư vấn bất động sản theo ",
+    consentLink: "Chính sách bảo mật",
+    consentSuffix: " (Nghị định 13/2023/NĐ-CP). *",
     submit: "Liên Hệ Ngay Với Mii Shintani",
     submitting: "Đang gửi thông tin...",
-    successMsg: "Cảm ơn bạn! Mii đã nhận thông tin và sẽ phản hồi trong 24h.",
+    successMsg:
+      "Cảm ơn bạn! Mii đã nhận thông tin và gửi email xác nhận. Chúng tôi sẽ phản hồi trong 24h.",
     errorMsg: "Gửi yêu cầu thất bại. Vui lòng thử lại.",
   },
   en: {
     heading: "Property Consultation",
     subPrefix: "Requesting details for:",
-    generalSub: "Leave your details to receive direct consultation from Mii Shintani (RE AGENT by Re iDea).",
+    generalSub:
+      "Leave your details to receive direct consultation from Mii Shintani (RE AGENT by Re iDea).",
     fullName: "Full Name *",
     fullNamePlaceholder: "John Doe / Yamada Taro",
     email: "Email *",
@@ -38,17 +47,23 @@ const INQUIRY_LABELS = {
     phone: "Phone Number *",
     phonePlaceholder: "+81 70-9017-1920",
     message: "Consultation Message",
-    messagePlaceholder: "I would like to schedule a viewing / request total closing cost details...",
+    messagePlaceholder:
+      "I would like to schedule a viewing / request total closing cost details...",
+    consentPrefix:
+      "I consent to the collection and processing of my contact details for real estate advisory in accordance with the ",
+    consentLink: "Privacy Policy",
+    consentSuffix: ". *",
     submit: "Contact Mii Shintani Now",
     submitting: "Sending information...",
     successMsg:
-      "Thank you! Mii Shintani (RE AGENT by Re iDea) has received your inquiry and will respond within 24 hours.",
+      "Thank you! Mii Shintani has received your inquiry and sent a confirmation email. We will respond within 24 hours.",
     errorMsg: "Failed to send request. Please try again.",
   },
   ja: {
     heading: "物件のお問い合わせ・相談",
     subPrefix: "お問い合わせ物件:",
-    generalSub: "株式会社 Re iDea（RE AGENT）新谷 美依へのお問い合わせ・内見予約はこちら。",
+    generalSub:
+      "株式会社 Re iDea（RE AGENT）新谷 美依へのお問い合わせ・内見予約はこちら。",
     fullName: "お名前 *",
     fullNamePlaceholder: "山田 太郎",
     email: "メールアドレス *",
@@ -57,9 +72,14 @@ const INQUIRY_LABELS = {
     phonePlaceholder: "070-9017-1920",
     message: "ご相談内容",
     messagePlaceholder: "内見の予約をしたい / 諸費用を含めた見積もりが欲しい...",
+    consentPrefix:
+      "不動産相談の対応を目的とした個人情報の取り扱いに同意します（",
+    consentLink: "プライバシーポリシー",
+    consentSuffix: "）。*",
     submit: "Mii Shintani に今すぐ相談する",
     submitting: "送信中...",
-    successMsg: "ありがとうございます！お問い合わせを受け付けました。24時間以内にご返信いたします。",
+    successMsg:
+      "ありがとうございます！お問い合わせを受け付け、確認メールをお送りしました。24時間以内にご返信いたします。",
     errorMsg: "送信に失敗しました。もう一度お試しください。",
   },
 };
@@ -119,13 +139,24 @@ function AlertCircleIcon({ className }: { className?: string }) {
   );
 }
 
-export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormProps) {
+export default function InquiryForm({
+  propertyId,
+  propertyTitle,
+}: InquiryFormProps) {
   const { currentLang } = useLanguage();
   const labels = INQUIRY_LABELS[currentLang] || INQUIRY_LABELS.en;
   const uid = useId();
 
+  const formLoadedAtRef = useRef<number>(0);
   const [loading, setLoading] = useState(false);
-  const [feedback, setFeedback] = useState<{ success?: boolean; message?: string } | null>(null);
+  const [feedback, setFeedback] = useState<{
+    success?: boolean;
+    message?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    formLoadedAtRef.current = Date.now();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -136,10 +167,14 @@ export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormPr
     const formData = new FormData(form);
     const result = await submitInquiryAction({
       propertyId,
-      fullName: formData.get("fullName") as string,
-      email: formData.get("email") as string,
-      phone: formData.get("phone") as string,
-      message: formData.get("message") as string,
+      fullName: (formData.get("fullName") as string) || "",
+      email: (formData.get("email") as string) || "",
+      phone: (formData.get("phone") as string) || "",
+      message: (formData.get("message") as string) || "",
+      website: (formData.get("website") as string) || "",
+      consent: formData.get("consent") === "on",
+      lang: currentLang,
+      formLoadedAt: formLoadedAtRef.current,
     });
 
     setLoading(false);
@@ -149,6 +184,7 @@ export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormPr
         message: labels.successMsg,
       });
       form.reset();
+      formLoadedAtRef.current = Date.now();
     } else {
       setFeedback({
         success: false,
@@ -179,7 +215,9 @@ export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormPr
           {propertyTitle ? (
             <>
               {labels.subPrefix}{" "}
-              <span className="font-semibold text-[#0F766E]">{propertyTitle}</span>
+              <span className="font-semibold text-[#0F766E]">
+                {propertyTitle}
+              </span>
             </>
           ) : (
             labels.generalSub
@@ -205,6 +243,18 @@ export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormPr
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Trường bẫy bot ẩn (Honeypot) - người dùng thật không nhìn thấy */}
+          <div className="sr-only" aria-hidden="true">
+            <label htmlFor={`${uid}-website`}>Website</label>
+            <input
+              id={`${uid}-website`}
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
+
           <div>
             <label
               htmlFor={`${uid}-fullName`}
@@ -217,6 +267,7 @@ export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormPr
               type="text"
               name="fullName"
               required
+              maxLength={100}
               className={inputClassName}
               placeholder={labels.fullNamePlaceholder}
             />
@@ -235,6 +286,7 @@ export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormPr
                 type="email"
                 name="email"
                 required
+                maxLength={150}
                 className={inputClassName}
                 placeholder={labels.emailPlaceholder}
               />
@@ -251,6 +303,7 @@ export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormPr
                 type="tel"
                 name="phone"
                 required
+                maxLength={30}
                 className={inputClassName}
                 placeholder={labels.phonePlaceholder}
               />
@@ -268,9 +321,35 @@ export default function InquiryForm({ propertyId, propertyTitle }: InquiryFormPr
               id={`${uid}-message`}
               name="message"
               rows={4}
+              maxLength={2000}
               className={inputClassName}
               placeholder={labels.messagePlaceholder}
             />
+          </div>
+
+          {/* Checkbox đồng ý chủ động theo Nghị định 13/2023/NĐ-CP (mặc định không tích sẵn) */}
+          <div className="flex items-start gap-2.5 rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/80 p-3">
+            <input
+              id={`${uid}-consent`}
+              type="checkbox"
+              name="consent"
+              required
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-[#0F766E] text-[#0F766E] focus:ring-[#0F766E]"
+            />
+            <label
+              htmlFor={`${uid}-consent`}
+              className="cursor-pointer text-[11px] leading-relaxed text-[#475569] sm:text-xs"
+            >
+              {labels.consentPrefix}
+              <Link
+                href="/privacy"
+                target="_blank"
+                className="font-semibold text-[#0369A1] underline underline-offset-2 hover:text-[#0F766E]"
+              >
+                {labels.consentLink}
+              </Link>
+              {labels.consentSuffix}
+            </label>
           </div>
 
           <button

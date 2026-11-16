@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { SITE } from '@/lib/site';
@@ -19,6 +20,7 @@ const FOOTER_LABELS = {
     telLabel: 'Tel',
     faxLabel: 'FAX',
     addressLabel: 'Địa chỉ',
+    privacyPolicy: 'Chính sách bảo mật (Nghị định 13/2023/NĐ-CP)',
     rights: 'RE AGENT by Re iDea (株式会社 Re iDea). All rights reserved.',
   },
   en: {
@@ -35,6 +37,7 @@ const FOOTER_LABELS = {
     telLabel: 'Tel',
     faxLabel: 'FAX',
     addressLabel: 'Address',
+    privacyPolicy: 'Privacy Policy',
     rights: 'RE AGENT by Re iDea (株式会社 Re iDea). All rights reserved.',
   },
   ja: {
@@ -51,6 +54,7 @@ const FOOTER_LABELS = {
     telLabel: 'Tel',
     faxLabel: 'FAX',
     addressLabel: '所在地',
+    privacyPolicy: 'プライバシーポリシー',
     rights: 'RE AGENT by Re iDea（株式会社 Re iDea）. All rights reserved.',
   },
 };
@@ -150,7 +154,9 @@ export default function Footer() {
                 <p className="mt-0.5 font-semibold text-[#134E4A]">
                   {SITE.postalCode} {SITE.addressJa}
                 </p>
-                <p className="mt-0.5 text-[11px] text-[#475569]">{SITE.addressEn}</p>
+                <p className="mt-0.5 text-[11px] text-[#475569]">
+                  {SITE.addressEn}
+                </p>
               </div>
             </div>
           </div>
@@ -247,8 +253,16 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-[#99F6E4]/80 pt-6 text-center text-xs font-medium text-[#475569]">
-          © {year} {labels.rights}
+        <div className="flex flex-col items-center justify-between gap-2 border-t border-[#99F6E4]/80 pt-6 text-center text-xs font-medium text-[#475569] sm:flex-row">
+          <span>
+            © {year} {labels.rights}
+          </span>
+          <Link
+            href="/privacy"
+            className="font-semibold text-[#0F766E] underline-offset-4 transition-colors hover:text-[#0369A1] hover:underline"
+          >
+            {labels.privacyPolicy}
+          </Link>
         </div>
       </div>
     </footer>

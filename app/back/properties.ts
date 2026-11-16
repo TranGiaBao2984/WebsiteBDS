@@ -2,11 +2,11 @@ import { supabase } from '@/lib/supabase';
 import { cacheTag } from 'next/cache';
 import type { Property } from '@/lib/types';
 
-// Đã bổ sung description, price_yen, price_vnd để trang danh sách nhận diện được bộ lọc động từ Admin
+// Chỉ lấy đúng các cột cần cho thẻ danh sách & bộ lọc động từ Admin
 const CARD_COLUMNS =
   'id, title, price, location, layout, building_size, year_built, structure, current_status, images, created_at, description, price_yen, price_vnd';
 
-/** Toàn bộ danh sách cho trang /properties (lọc phía client). */
+/** Toàn bộ danh sách cho trang /sanpham (lọc phía client). */
 export async function getProperties(): Promise<Property[]> {
   'use cache';
   cacheTag('properties'); // trang admin gọi updateTag('properties') để làm mới
@@ -63,13 +63,17 @@ export async function getPropertyById(id: string): Promise<Property | null> {
   return data as Property;
 }
 
-export async function getSimilarProperties(currentId: string, limit = 2): Promise<Property[]> {
+export async function getSimilarProperties(
+  currentId: string,
+  limit = 3
+): Promise<Property[]> {
   'use cache';
   cacheTag('properties'); // trang admin gọi updateTag('properties') để làm mới
   const { data, error } = await supabase
     .from('properties')
     .select(CARD_COLUMNS)
     .neq('id', currentId)
+    .order('created_at', { ascending: false })
     .limit(limit);
 
   if (error) {

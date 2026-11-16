@@ -1,6 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
+import Image from 'next/image';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { AGENT_INFO } from '@/lib/agent-info';
 import InquiryForm from './InquiryForm';
@@ -274,12 +274,16 @@ export default function VeToiSection() {
       <div className="relative overflow-hidden rounded-2xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.05)] sm:p-10">
         <div className="relative grid grid-cols-1 items-center gap-8 md:grid-cols-12">
           <div className="relative aspect-4/5 overflow-hidden rounded-2xl border border-[#E5DFD6] bg-[#F2EFE9] shadow-sm md:col-span-5">
-            <img
+            <Image
               src="/face.jpg"
               alt={AGENT_INFO.nameEn}
-              className="h-full w-full object-cover object-top"
+              fill
+              priority
+              quality={80}
+              sizes="(max-width: 768px) 100vw, 420px"
+              className="object-cover object-top"
             />
-            <div className="absolute right-3 bottom-3 left-3 rounded-xl border border-white/15 bg-[#1E1B18]/85 px-4 py-2.5 text-white backdrop-blur-md">
+            <div className="absolute right-3 bottom-3 left-3 z-10 rounded-xl border border-white/15 bg-[#1E1B18]/85 px-4 py-2.5 text-white backdrop-blur-md">
               <p className="text-[11px] font-bold uppercase tracking-widest">
                 {AGENT_INFO.brand}{' '}
                 <span className="font-normal text-[#E5DFD6]">{AGENT_INFO.subBrand}</span>
@@ -380,7 +384,6 @@ export default function VeToiSection() {
             <p className="mt-1 text-xs text-[#66605A]">{content.connectSubtitle}</p>
           </div>
 
-          {/* Nút liên hệ trực tiếp đồng bộ bảng màu Japandi */}
           <div className="flex flex-wrap gap-2.5">
             <a
               href={AGENT_INFO.whatsappUrl}

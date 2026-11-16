@@ -159,7 +159,7 @@ export default function Header() {
       {/* Main Warm Minimalist Navbar */}
       <header className="sticky top-0 z-50 border-b border-[#E5DFD6] bg-[#FAF8F5]/90 shadow-[0_1px_2px_rgba(38,34,31,0.04)] backdrop-blur-md">
         <div className={`${CONTAINER} flex items-center justify-between gap-4 whitespace-nowrap py-3`}>
-          {/* Logo */}
+          {/* Logo tối ưu kích thước tải */}
           <Link
             href="/"
             className="group flex shrink-0 cursor-pointer items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237]"
@@ -169,6 +169,8 @@ export default function Header() {
               alt={SITE.name}
               width={600}
               height={150}
+              sizes="(max-width: 1024px) 180px, 240px"
+              quality={85}
               priority
               className="h-16 w-auto object-contain mix-blend-multiply transition-opacity duration-200 group-hover:opacity-85 lg:h-20"
             />
@@ -259,6 +261,8 @@ export default function Header() {
                   alt={SITE.name}
                   width={300}
                   height={100}
+                  sizes="160px"
+                  quality={85}
                   className="h-14 w-auto object-contain mix-blend-multiply"
                 />
                 <button

@@ -1,21 +1,33 @@
-"use server";
+'use server';
 
-import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase-server";
+import { cacheTag, revalidatePath, updateTag } from 'next/cache';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase-server';
 import {
   DEFAULT_FILTER_OPTIONS,
   type FilterOptionsData,
-} from "@/lib/filter-constants";
+} from '@/lib/filter-constants';
 
-const SETTINGS_KEY = "property_filter_options";
+const SETTINGS_KEY = 'property_filter_options';
 
-export async function getFilterOptions(): Promise<FilterOptionsData> {
+function createPublicClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
+
+// Hàm nội bộ (không export) để dùng 'use cache' mà không xung đột với 'use server'
+async function readCachedFilterOptions(): Promise<FilterOptionsData> {
+  'use cache';
+  cacheTag('filter-options');
+
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", SETTINGS_KEY)
+      .from('site_settings')
+      .select('value')
+      .eq('key', SETTINGS_KEY)
       .maybeSingle();
 
     if (error || !data?.value) {
@@ -42,6 +54,10 @@ export async function getFilterOptions(): Promise<FilterOptionsData> {
   }
 }
 
+export async function getFilterOptions(): Promise<FilterOptionsData> {
+  return readCachedFilterOptions();
+}
+
 export async function saveFilterOptions(options: FilterOptionsData) {
   try {
     const supabase = await createClient();
@@ -52,27 +68,27 @@ export async function saveFilterOptions(options: FilterOptionsData) {
       layouts: options.layouts.map((s) => s.trim()).filter(Boolean),
     };
 
-    const { error } = await supabase.from("site_settings").upsert(
+    const { error } = await supabase.from('site_settings').upsert(
       {
         key: SETTINGS_KEY,
         value: cleanOptions,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "key" }
+      { onConflict: 'key' }
     );
 
     if (error) {
       throw new Error(error.message);
     }
 
-    revalidatePath("/admin");
-    revalidatePath("/properties");
-    revalidatePath("/properties");
-    revalidatePath("/");
+    updateTag('filter-options');
+    revalidatePath('/admin');
+    revalidatePath('/properties');
+    revalidatePath('/');
 
     return { success: true, data: cleanOptions };
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Lưu bộ lọc thất bại";
+    const msg = err instanceof Error ? err.message : 'Lưu bộ lọc thất bại';
     return { success: false, error: msg };
   }
 }

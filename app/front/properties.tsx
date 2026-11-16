@@ -1,7 +1,7 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { Property } from '@/lib/types';
@@ -15,6 +15,26 @@ import PropertyCard from './PropertyCard';
 
 type FilterKey = 'location' | 'layout' | 'price' | 'q' | 'sort';
 type SortOption = 'default' | 'price_asc' | 'price_desc';
+
+interface IndexedProperty {
+  raw: Property;
+  titles: {
+    vi: string;
+    en: string;
+    ja: string;
+    uniqueList: { lang: 'VI' | 'EN' | 'JA'; text: string }[];
+  };
+  searchBlob: string;
+  searchBlobAscii: string;
+  savedLocTag: string;
+  fallbackLocBlob: string;
+  savedPriceTag: string;
+  yenPrice: number;
+  savedLayoutTag: string;
+  layoutNorm: string;
+  structureNorm: string;
+  thumb: string | null;
+}
 
 const LEGACY_PRICE_MAP: Record<string, string> = {
   lt3: '< ¥3M',
@@ -232,7 +252,7 @@ function BuildingIcon({ className }: { className?: string }) {
 
 function unwrapJson(val: unknown): unknown {
   let current: unknown = val;
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 6; i++) {
     if (typeof current === 'string') {
       const trimmed = current.trim();
       if (
@@ -326,29 +346,6 @@ function stripVietnameseAccents(str: string): string {
     .toLowerCase();
 }
 
-function matchesSearchKeyword(property: Property, keyword: string): boolean {
-  const cleanQuery = keyword.normalize('NFC').trim().toLowerCase();
-  if (!cleanQuery) return true;
-
-  const asciiQuery = stripVietnameseAccents(cleanQuery);
-  const titles = getTriLingualTitles(property.title);
-  const descRecord = getDescriptionRecord(property);
-
-  const searchableFields = [
-    titles.vi,
-    titles.en,
-    titles.ja,
-    getString(property.location),
-    typeof descRecord.filter_location === 'string' ? descRecord.filter_location : '',
-  ].filter(Boolean);
-
-  return searchableFields.some((field) => {
-    const normField = field.normalize('NFC').toLowerCase();
-    const asciiField = stripVietnameseAccents(normField);
-    return normField.includes(cleanQuery) || asciiField.includes(asciiQuery);
-  });
-}
-
 function getYenPrice(property: Property, descRecord: Record<string, unknown>): number {
   const savedJa = Number(descRecord.price_ja);
   if (Number.isFinite(savedJa) && savedJa > 0) return savedJa;
@@ -360,44 +357,35 @@ function getYenPrice(property: Property, descRecord: Record<string, unknown>): n
   return Number.isFinite(basePrice) && basePrice > 0 ? basePrice : 0;
 }
 
-function matchesPriceFilter(
-  property: Property,
-  descRecord: Record<string, unknown>,
-  selectedPrice: string
-): boolean {
-  const savedPriceTag =
-    typeof descRecord.filter_price === 'string' ? descRecord.filter_price.trim() : '';
-
-  if (savedPriceTag) {
-    return normalizeLabel(savedPriceTag) === normalizeLabel(selectedPrice);
+function matchesPriceIndexed(item: IndexedProperty, selectedPriceNorm: string): boolean {
+  if (item.savedPriceTag) {
+    return item.savedPriceTag === selectedPriceNorm;
   }
 
-  const yen = getYenPrice(property, descRecord);
+  const yen = item.yenPrice;
   if (yen <= 0) return false;
 
-  const clean = selectedPrice.replace(/[-–—]/g, '–').trim();
-
-  const ltMatch = clean.match(/^<\s*¥?\s*(\d+(?:\.\d+)?)\s*M?$/i);
+  const ltMatch = selectedPriceNorm.match(/^<\s*¥?\s*(\d+(?:\.\d+)?)\s*m?$/i);
   if (ltMatch) {
-    const maxVal = Number(ltMatch[1]) * (clean.toUpperCase().includes('M') ? 1_000_000 : 1);
+    const maxVal = Number(ltMatch[1]) * (selectedPriceNorm.includes('m') ? 1_000_000 : 1);
     return yen < maxVal;
   }
 
-  const gteMatch = clean.match(/^(?:≥|>=|>)\s*¥?\s*(\d+(?:\.\d+)?)\s*M?$/i);
+  const gteMatch = selectedPriceNorm.match(/^(?:≥|>=|>)\s*¥?\s*(\d+(?:\.\d+)?)\s*m?$/i);
   if (gteMatch) {
-    const minVal = Number(gteMatch[1]) * (clean.toUpperCase().includes('M') ? 1_000_000 : 1);
+    const minVal = Number(gteMatch[1]) * (selectedPriceNorm.includes('m') ? 1_000_000 : 1);
     return yen >= minVal;
   }
 
-  const rangeMatch = clean.match(/^¥?\s*(\d+(?:\.\d+)?)\s*–\s*¥?\s*(\d+(?:\.\d+)?)\s*M?$/i);
+  const rangeMatch = selectedPriceNorm.match(/^¥?\s*(\d+(?:\.\d+)?)\s*–\s*¥?\s*(\d+(?:\.\d+)?)\s*m?$/i);
   if (rangeMatch) {
-    const multiplier = clean.toUpperCase().includes('M') ? 1_000_000 : 1;
+    const multiplier = selectedPriceNorm.includes('m') ? 1_000_000 : 1;
     const minVal = Number(rangeMatch[1]) * multiplier;
     const maxVal = Number(rangeMatch[2]) * multiplier;
     return yen >= minVal && yen <= maxVal;
   }
 
-  const exactNum = Number(clean.replace(/[^\d.]/g, ''));
+  const exactNum = Number(selectedPriceNorm.replace(/[^\d.]/g, ''));
   if (Number.isFinite(exactNum) && exactNum > 0) {
     return yen === exactNum;
   }
@@ -405,7 +393,13 @@ function matchesPriceFilter(
   return false;
 }
 
-function PropertyCatalogContent({ properties }: { properties: Property[] }) {
+function PropertyCatalogContent({
+  properties,
+  initialFilterOptions,
+}: {
+  properties: Property[];
+  initialFilterOptions?: FilterOptionsData;
+}) {
   const { t, currentLang } = useLanguage();
   const ui = CATALOG_UI_LABELS[currentLang] || CATALOG_UI_LABELS.en;
   const catalogObj =
@@ -417,12 +411,15 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [filterOptions, setFilterOptions] = useState<FilterOptionsData>(DEFAULT_FILTER_OPTIONS);
+  const [filterOptions, setFilterOptions] = useState<FilterOptionsData>(
+    initialFilterOptions || DEFAULT_FILTER_OPTIONS
+  );
   const [searchInput, setSearchInput] = useState<string>(() => searchParams.get('q') || '');
   const [showDropdown, setShowDropdown] = useState(false);
   const searchBoxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (initialFilterOptions) return;
     let mounted = true;
     getFilterOptions().then((opts) => {
       if (mounted) {
@@ -432,7 +429,7 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [initialFilterOptions]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -461,24 +458,39 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
   const selectedPrice = read('price');
   const selectedSort = read('sort') as SortOption;
 
-  const setFilter = (key: FilterKey, value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (!value || value === 'ALL' || (key === 'sort' && value === 'default')) {
-      params.delete(key);
-    } else {
-      params.set(key, value.normalize('NFC'));
-    }
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  };
+  const setFilter = useCallback(
+    (key: FilterKey, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (!value || value === 'ALL' || (key === 'sort' && value === 'default')) {
+        params.delete(key);
+      } else {
+        params.set(key, value.normalize('NFC'));
+      }
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
 
-  const handleSearchChange = (val: string) => {
+  // Debounce đồng bộ từ khóa tìm kiếm lên URL mà không dùng ref
+  useEffect(() => {
+    const currentParamQ = (searchParams.get('q') || '').normalize('NFC');
+    const trimmedInput = searchInput.trim().normalize('NFC');
+    if (currentParamQ === trimmedInput) return;
+
+    const timer = setTimeout(() => {
+      setFilter('q', trimmedInput);
+    }, trimmedInput === '' ? 0 : 300);
+
+    return () => clearTimeout(timer);
+  }, [searchInput, searchParams, setFilter]);
+
+  const handleSearchChange = useCallback((val: string) => {
     setSearchInput(val);
     setShowDropdown(true);
-    setFilter('q', val.trim());
-  };
+  }, []);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setSearchInput('');
     setShowDropdown(false);
     const params = new URLSearchParams(searchParams.toString());
@@ -488,70 +500,132 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
     params.delete('layout');
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  };
+  }, [pathname, router, searchParams]);
 
-  const locationOptions = ['ALL', ...filterOptions.locations];
-  const priceOptions = ['ALL', ...filterOptions.prices];
-  const layoutOptions = ['ALL', ...filterOptions.layouts];
+  // Pre-index toàn bộ dữ liệu 1 lần duy nhất
+  const indexedProperties = useMemo<IndexedProperty[]>(() => {
+    return properties.map((item) => {
+      const titles = getTriLingualTitles(item.title);
+      const descRecord = getDescriptionRecord(item);
+      const locStr = getString(item.location);
+      const filterLocStr =
+        typeof descRecord.filter_location === 'string' ? descRecord.filter_location : '';
+
+      const rawBlob = [titles.vi, titles.en, titles.ja, locStr, filterLocStr]
+        .filter(Boolean)
+        .join(' | ')
+        .normalize('NFC')
+        .toLowerCase();
+
+      return {
+        raw: item,
+        titles,
+        searchBlob: rawBlob,
+        searchBlobAscii: stripVietnameseAccents(rawBlob),
+        savedLocTag: filterLocStr ? normalizeLabel(filterLocStr) : '',
+        fallbackLocBlob: normalizeLabel(JSON.stringify(item.location || '')),
+        savedPriceTag:
+          typeof descRecord.filter_price === 'string' && descRecord.filter_price.trim()
+            ? normalizeLabel(descRecord.filter_price)
+            : '',
+        yenPrice: getYenPrice(item, descRecord),
+        savedLayoutTag:
+          typeof descRecord.filter_layout === 'string' && descRecord.filter_layout.trim()
+            ? normalizeLabel(descRecord.filter_layout)
+            : '',
+        layoutNorm: normalizeLabel(getString(item.layout)),
+        structureNorm: normalizeLabel(getString(item.structure)),
+        thumb: Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : null,
+      };
+    });
+  }, [properties]);
+
+  const locationOptions = useMemo(
+    () => ['ALL', ...filterOptions.locations],
+    [filterOptions.locations]
+  );
+  const priceOptions = useMemo(
+    () => ['ALL', ...filterOptions.prices],
+    [filterOptions.prices]
+  );
+  const layoutOptions = useMemo(
+    () => ['ALL', ...filterOptions.layouts],
+    [filterOptions.layouts]
+  );
 
   const searchSuggestions = useMemo(() => {
-    if (!searchInput.trim()) return [];
-    return properties.filter((item) => matchesSearchKeyword(item, searchInput)).slice(0, 6);
-  }, [properties, searchInput]);
+    const cleanQuery = searchInput.normalize('NFC').trim().toLowerCase();
+    if (!cleanQuery) return [];
+    const asciiQuery = stripVietnameseAccents(cleanQuery);
+
+    return indexedProperties
+      .filter(
+        (item) =>
+          item.searchBlob.includes(cleanQuery) || item.searchBlobAscii.includes(asciiQuery)
+      )
+      .slice(0, 6);
+  }, [indexedProperties, searchInput]);
 
   const filteredAndSortedProperties = useMemo(() => {
-    const filtered = properties.filter((item) => {
-      const descRecord = getDescriptionRecord(item);
+    const cleanQuery = searchInput.normalize('NFC').trim().toLowerCase();
+    const asciiQuery = cleanQuery ? stripVietnameseAccents(cleanQuery) : '';
+    const normSelectedLoc = selectedLocation !== 'ALL' ? normalizeLabel(selectedLocation) : '';
+    const normSelectedPrice = selectedPrice !== 'ALL' ? normalizeLabel(selectedPrice) : '';
+    const normSelectedLayout = selectedLayout !== 'ALL' ? normalizeLabel(selectedLayout) : '';
 
-      if (searchInput.trim() !== '') {
-        if (!matchesSearchKeyword(item, searchInput)) return false;
-      }
-
-      if (selectedLocation !== 'ALL') {
-        const savedLocTag =
-          typeof descRecord.filter_location === 'string' ? descRecord.filter_location.trim() : '';
-
-        if (savedLocTag) {
-          if (normalizeLabel(savedLocTag) !== normalizeLabel(selectedLocation)) return false;
-        } else {
-          const allLocText = normalizeLabel(JSON.stringify(item.location || ''));
-          if (!allLocText.includes(normalizeLabel(selectedLocation))) return false;
+    const filtered = indexedProperties.filter((item) => {
+      if (cleanQuery) {
+        if (!item.searchBlob.includes(cleanQuery) && !item.searchBlobAscii.includes(asciiQuery)) {
+          return false;
         }
       }
 
-      if (selectedPrice !== 'ALL') {
-        if (!matchesPriceFilter(item, descRecord, selectedPrice)) return false;
+      if (normSelectedLoc) {
+        if (item.savedLocTag) {
+          if (item.savedLocTag !== normSelectedLoc) return false;
+        } else if (!item.fallbackLocBlob.includes(normSelectedLoc)) {
+          return false;
+        }
       }
 
-      if (selectedLayout !== 'ALL') {
-        const savedLayoutTag =
-          typeof descRecord.filter_layout === 'string' ? descRecord.filter_layout.trim() : '';
+      if (normSelectedPrice) {
+        if (!matchesPriceIndexed(item, normSelectedPrice)) return false;
+      }
 
-        if (savedLayoutTag) {
-          return normalizeLabel(savedLayoutTag) === normalizeLabel(selectedLayout);
+      if (normSelectedLayout) {
+        if (item.savedLayoutTag) {
+          return item.savedLayoutTag === normSelectedLayout;
         }
 
-        const layout = normalizeLabel(getString(item.layout));
-        const structure = normalizeLabel(getString(item.structure));
-        const target = normalizeLabel(selectedLayout);
-
-        if (target.includes('1k') || target.includes('1ldk')) {
-          return layout.includes('1k') || layout.includes('1ldk') || layout.includes('1dk');
-        }
-        if (target.includes('2ldk') || target.includes('3ldk')) {
+        if (normSelectedLayout.includes('1k') || normSelectedLayout.includes('1ldk')) {
           return (
-            layout.includes('2ldk') ||
-            layout.includes('3ldk') ||
-            layout.includes('4ldk') ||
-            layout.includes('2dk') ||
-            layout.includes('3dk')
+            item.layoutNorm.includes('1k') ||
+            item.layoutNorm.includes('1ldk') ||
+            item.layoutNorm.includes('1dk')
           );
         }
-        if (target.includes('kominka') || target.includes('traditional')) {
-          return layout.includes('kominka') || structure.includes('traditional');
+        if (normSelectedLayout.includes('2ldk') || normSelectedLayout.includes('3ldk')) {
+          return (
+            item.layoutNorm.includes('2ldk') ||
+            item.layoutNorm.includes('3ldk') ||
+            item.layoutNorm.includes('4ldk') ||
+            item.layoutNorm.includes('2dk') ||
+            item.layoutNorm.includes('3dk')
+          );
+        }
+        if (
+          normSelectedLayout.includes('kominka') ||
+          normSelectedLayout.includes('traditional')
+        ) {
+          return (
+            item.layoutNorm.includes('kominka') || item.structureNorm.includes('traditional')
+          );
         }
 
-        return layout.includes(target) || structure.includes(target);
+        return (
+          item.layoutNorm.includes(normSelectedLayout) ||
+          item.structureNorm.includes(normSelectedLayout)
+        );
       }
 
       return true;
@@ -559,12 +633,17 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
 
     if (selectedSort === 'default') return filtered;
 
-    return [...filtered].sort((a, b) => {
-      const priceA = getYenPrice(a, getDescriptionRecord(a));
-      const priceB = getYenPrice(b, getDescriptionRecord(b));
-      return selectedSort === 'price_asc' ? priceA - priceB : priceB - priceA;
-    });
-  }, [properties, searchInput, selectedLocation, selectedPrice, selectedLayout, selectedSort]);
+    return [...filtered].sort((a, b) =>
+      selectedSort === 'price_asc' ? a.yenPrice - b.yenPrice : b.yenPrice - a.yenPrice
+    );
+  }, [
+    indexedProperties,
+    searchInput,
+    selectedLocation,
+    selectedPrice,
+    selectedLayout,
+    selectedSort,
+  ]);
 
   const activeChips: { key: FilterKey; label: string; onRemove: () => void }[] = [];
   if (searchInput.trim() !== '') {
@@ -603,7 +682,7 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
 
   return (
     <section className="w-full space-y-8">
-      {/* 1. EDITORIAL HEADER — Nằm trực tiếp trên nền kem, cân đối 2 bên với Live Counter & Sort */}
+      {/* 1. EDITORIAL HEADER */}
       <div className="flex flex-col justify-between gap-5 border-b border-[#E5DFD6] pb-6 lg:flex-row lg:items-end">
         <div className="max-w-2xl space-y-2">
           <span className="inline-block text-[11px] font-bold uppercase tracking-[0.22em] text-[#A64237]">
@@ -615,7 +694,7 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
           <p className="text-sm leading-relaxed text-[#66605A]">{ui.subtitle}</p>
         </div>
 
-        {/* Cụm điều khiển kết quả & Sắp xếp gắn liền với tiêu đề */}
+        {/* Cụm điều khiển kết quả & Sắp xếp */}
         <div className="flex flex-wrap items-center justify-between gap-4 sm:justify-end">
           <div className="flex items-baseline gap-1.5 rounded-xl border border-[#E5DFD6] bg-white px-4 py-2.5 shadow-2xs">
             <span className="font-serif text-xl font-bold text-[#A64237]">
@@ -647,9 +726,9 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
         </div>
       </div>
 
-      {/* 2. UNIFIED SEARCH & FILTER CONSOLE — Gom toàn bộ tìm kiếm & bộ lọc vào 1 khối duy nhất */}
+      {/* 2. UNIFIED SEARCH & FILTER CONSOLE */}
       <div className="overflow-visible rounded-2xl border border-[#E5DFD6] bg-white shadow-[0_6px_20px_rgba(38,34,31,0.05)]">
-        {/* Tầng trên: Thanh tìm kiếm toàn chiều rộng (Full-width Search) */}
+        {/* Tầng trên: Thanh tìm kiếm toàn chiều rộng */}
         <div ref={searchBoxRef} className="relative border-b border-[#E5DFD6] p-4 sm:p-5">
           <div className="relative flex items-center">
             <span className="pointer-events-none absolute left-4 text-[#A64237]">
@@ -697,14 +776,8 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
 
               {searchSuggestions.length > 0 ? (
                 <ul className="max-h-80 divide-y divide-[#E5DFD6] overflow-y-auto">
-                  {searchSuggestions.map((item) => {
-                    const titles = getTriLingualTitles(item.title);
-                    const descRecord = getDescriptionRecord(item);
-                    const yen = getYenPrice(item, descRecord);
-                    const thumb =
-                      Array.isArray(item.images) && item.images.length > 0
-                        ? item.images[0]
-                        : null;
+                  {searchSuggestions.map((indexed) => {
+                    const { raw: item, titles, yenPrice, thumb } = indexed;
 
                     return (
                       <li key={item.id}>
@@ -714,11 +787,16 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
                           className="group flex cursor-pointer items-center gap-3.5 p-3.5 transition-colors duration-200 hover:bg-[#FAF8F5] focus-visible:bg-[#FAF8F5] focus-visible:outline-none"
                         >
                           {thumb ? (
-                            <img
-                              src={thumb}
-                              alt={titles.en || titles.vi || 'Property'}
-                              className="h-14 w-14 shrink-0 rounded-lg border border-[#E5DFD6] object-cover"
-                            />
+                            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-[#E5DFD6] bg-[#F2EFE9]">
+                              <Image
+                                src={thumb}
+                                alt={titles.en || titles.vi || 'Property'}
+                                fill
+                                sizes="56px"
+                                quality={65}
+                                className="object-cover"
+                              />
+                            </div>
                           ) : (
                             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-[#E5DFD6] bg-[#F2EFE9] text-[#A64237]">
                               <BuildingIcon className="h-6 w-6" />
@@ -743,7 +821,7 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
 
                           <div className="shrink-0 text-right">
                             <span className="font-serif block text-sm font-bold text-[#26221F]">
-                              {yen > 0 ? `¥${yen.toLocaleString('en-US')}` : ''}
+                              {yenPrice > 0 ? `¥${yenPrice.toLocaleString('en-US')}` : ''}
                             </span>
                             <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-[#A64237] group-hover:underline">
                               <span>{ui.viewDetail}</span>
@@ -764,7 +842,7 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
           )}
         </div>
 
-        {/* Tầng giữa: Lưới 2 cột cân bằng thị giác (Cột trái: Khu vực | Cột phải: Giá & Mặt bằng) */}
+        {/* Tầng giữa: Lưới 2 cột cân bằng */}
         <div className="grid grid-cols-1 divide-y divide-[#E5DFD6] bg-[#FAF8F5]/55 lg:grid-cols-12 lg:divide-x lg:divide-y-0">
           {/* Cột trái (6/12): KHU VỰC */}
           <div className="p-4 sm:p-5 lg:col-span-6">
@@ -797,7 +875,7 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
             </div>
           </div>
 
-          {/* Cột phải (6/12): KHOẢNG GIÁ + MẶT BẰNG xếp 2 tầng gọn gàng */}
+          {/* Cột phải (6/12): KHOẢNG GIÁ + MẶT BẰNG */}
           <div className="flex flex-col justify-between divide-y divide-[#E5DFD6] lg:col-span-6">
             {/* Khoảng giá */}
             <div className="p-4 sm:p-5">
@@ -872,7 +950,7 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
           </div>
         </div>
 
-        {/* Tầng đáy: Thanh Active Filter Chips nối liền kết quả bên dưới (chỉ hiện khi có bộ lọc) */}
+        {/* Tầng đáy: Thanh Active Filter Chips */}
         {hasFilters && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-b-2xl border-t border-[#E5DFD6] bg-[#F2EFE9]/75 px-4 py-3 sm:px-5">
             <div className="flex flex-wrap items-center gap-2">
@@ -904,11 +982,15 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
         )}
       </div>
 
-      {/* 3. LƯỚI BẤT ĐỘNG SẢN — Nối tiếp trực tiếp bên dưới khối Console */}
+      {/* 3. LƯỚI BẤT ĐỘNG SẢN */}
       <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-7">
         {filteredAndSortedProperties.length > 0 ? (
-          filteredAndSortedProperties.map((item) => (
-            <PropertyCard key={item.id} property={item} />
+          filteredAndSortedProperties.map((indexed, index) => (
+            <PropertyCard
+              key={indexed.raw.id}
+              property={indexed.raw}
+              priority={index < 3}
+            />
           ))
         ) : (
           <div className="col-span-full flex w-full flex-col items-center justify-center space-y-4 rounded-2xl border border-[#E5DFD6] bg-white p-14 text-center shadow-[0_4px_12px_rgba(38,34,31,0.05)]">
@@ -938,7 +1020,13 @@ function PropertyCatalogContent({ properties }: { properties: Property[] }) {
   );
 }
 
-export default function SanPhamSection({ properties }: { properties: Property[] }) {
+export default function SanPhamSection({
+  properties,
+  initialFilterOptions,
+}: {
+  properties: Property[];
+  initialFilterOptions?: FilterOptionsData;
+}) {
   const { t } = useLanguage();
   const catalogObj =
     t && typeof t === 'object' && 'catalog' in t
@@ -953,7 +1041,10 @@ export default function SanPhamSection({ properties }: { properties: Property[] 
         </div>
       }
     >
-      <PropertyCatalogContent properties={properties} />
+      <PropertyCatalogContent
+        properties={properties}
+        initialFilterOptions={initialFilterOptions}
+      />
     </Suspense>
   );
 }

@@ -1,13 +1,18 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
+import { memo, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import type { Property } from '@/lib/types';
 import { useLanguage } from '@/app/context/LanguageContext';
 
 interface PropertyCardProps {
   property: Property;
+  priority?: boolean;
 }
+
+const FALLBACK_IMAGE =
+  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=75';
 
 function MapPinIcon({ className }: { className?: string }) {
   return (
@@ -47,7 +52,7 @@ function ArrowRightIcon({ className }: { className?: string }) {
 
 function unwrapJson(val: unknown): unknown {
   let current: unknown = val;
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 6; i++) {
     if (typeof current === 'string') {
       const trimmed = current.trim();
       if (
@@ -71,7 +76,7 @@ function getCleanText(val: unknown, currentLang: string = 'en'): string {
   if (!val) return '';
   let current: unknown = val;
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 6; i++) {
     if (typeof current === 'string') {
       const trimmed = current.trim();
       if (
@@ -177,11 +182,15 @@ function getFormattedPrice(property: Property, currentLang: 'vi' | 'en' | 'ja'):
   }).format(jpyAmount);
 }
 
-function parseImages(val: unknown): string[] {
-  if (!val) return [];
-  let current: unknown = val;
+function parseFirstImage(val: unknown): string {
+  if (!val) return FALLBACK_IMAGE;
+  if (Array.isArray(val) && val.length > 0) {
+    const first = getCleanText(val[0]);
+    return first || FALLBACK_IMAGE;
+  }
 
-  for (let i = 0; i < 5; i++) {
+  let current: unknown = val;
+  for (let i = 0; i < 4; i++) {
     if (typeof current === 'string') {
       const trimmed = current.trim();
       if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
@@ -193,11 +202,12 @@ function parseImages(val: unknown): string[] {
         }
       } else if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
         const content = trimmed.slice(1, -1);
-        if (!content) return [];
-        return content
-          .split(',')
-          .map((s) => s.replace(/^"|"$/g, '').trim())
-          .filter(Boolean);
+        if (!content) return FALLBACK_IMAGE;
+        const first = content
+          .split(',')[0]
+          ?.replace(/^"|"$/g, '')
+          .trim();
+        return first || FALLBACK_IMAGE;
       } else {
         break;
       }
@@ -206,15 +216,15 @@ function parseImages(val: unknown): string[] {
     }
   }
 
-  if (Array.isArray(current)) {
-    return current.map((item) => getCleanText(item)).filter(Boolean);
+  if (Array.isArray(current) && current.length > 0) {
+    return getCleanText(current[0]) || FALLBACK_IMAGE;
   }
 
   if (typeof current === 'string' && current.trim()) {
-    return [current.trim()];
+    return current.trim();
   }
 
-  return [];
+  return FALLBACK_IMAGE;
 }
 
 const CARD_LABELS = {
@@ -270,40 +280,46 @@ function getLocalizedStatus(
   };
 }
 
-export default function PropertyCard({ property }: PropertyCardProps) {
+function PropertyCardComponent({ property, priority = false }: PropertyCardProps) {
   const { currentLang } = useLanguage();
   const labels = CARD_LABELS[currentLang] || CARD_LABELS.en;
 
   const title = getCleanText(property.title, currentLang) || labels.defaultTitle;
   const location = getCleanText(property.location, currentLang) || labels.defaultLoc;
   const formattedPrice = getFormattedPrice(property, currentLang);
-  const images = parseImages(property.images);
-  const { label: statusLabel, badgeClass } = getLocalizedStatus(property.status, labels);
+  const initialImage = parseFirstImage(property.images);
 
-  const mainImage =
-    images.length > 0 && images[0]
-      ? images[0]
-      : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80';
+  // Theo dõi URL ảnh lỗi để tự động reset khi initialImage thay đổi mà không cần useEffect
+  const [failedImage, setFailedImage] = useState<string | null>(null);
+  const imgSrc = failedImage === initialImage ? FALLBACK_IMAGE : initialImage;
+
+  const { label: statusLabel, badgeClass } = getLocalizedStatus(property.status, labels);
 
   return (
     <Link
       href={`/properties/${property.id}`}
       className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-[#E5DFD6] bg-white shadow-[0_4px_12px_rgba(38,34,31,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#A64237] hover:shadow-[0_10px_20px_rgba(38,34,31,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
     >
-      {/* Hình ảnh */}
+      {/* Hình ảnh được tối ưu kích thước & định dạng WebP/AVIF */}
       <div className="relative aspect-4/3 overflow-hidden bg-[#F2EFE9]">
-        <img
-          src={mainImage}
+        <Image
+          src={imgSrc}
           alt={title}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src =
-              'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80';
+          fill
+          priority={priority}
+          loading={priority ? 'eager' : 'lazy'}
+          quality={75}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
+          onError={() => {
+            if (imgSrc !== FALLBACK_IMAGE) {
+              setFailedImage(initialImage);
+            }
           }}
         />
         {/* Status Badge */}
         <div
-          className={`absolute top-3 left-3 rounded-lg border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider backdrop-blur-md shadow-xs ${badgeClass}`}
+          className={`absolute top-3 left-3 z-10 rounded-lg border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider backdrop-blur-md shadow-xs ${badgeClass}`}
         >
           {statusLabel}
         </div>
@@ -338,3 +354,6 @@ export default function PropertyCard({ property }: PropertyCardProps) {
     </Link>
   );
 }
+
+const PropertyCard = memo(PropertyCardComponent);
+export default PropertyCard;

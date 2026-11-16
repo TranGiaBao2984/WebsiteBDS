@@ -87,7 +87,9 @@ export default function TrangChuSection({ properties }: { properties: Property[]
       {/* Grid sản phẩm nổi bật */}
       <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
         {properties.length > 0 ? (
-          properties.map((item) => <PropertyCard key={item.id} property={item} />)
+          properties.map((item, index) => (
+            <PropertyCard key={item.id} property={item} priority={index < 3} />
+          ))
         ) : (
           <div className="col-span-full flex w-full flex-col items-center justify-center rounded-xl border border-[#E5DFD6] bg-white p-12 text-center shadow-[0_4px_12px_rgba(38,34,31,0.05)]">
             <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-[#E5DFD6] bg-[#F2EFE9] text-[#A64237]">

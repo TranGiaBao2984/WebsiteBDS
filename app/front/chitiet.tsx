@@ -230,23 +230,23 @@ function NearbyCategoryIcon({
   className?: string;
 }) {
   switch (category) {
-    case "station":
+    case 'station':
       return <TrainIcon className={className} />;
-    case "beach":
+    case 'beach':
       return <BeachIcon className={className} />;
-    case "supermarket":
+    case 'supermarket':
       return <ShoppingCartIcon className={className} />;
-    case "restaurant":
+    case 'restaurant':
       return <UtensilsIcon className={className} />;
-    case "convenience":
+    case 'convenience':
       return <StoreIcon className={className} />;
-    case "school":
+    case 'school':
       return <SchoolIcon className={className} />;
-    case "hospital":
+    case 'hospital':
       return <HospitalIcon className={className} />;
-    case "park":
+    case 'park':
       return <ParkIcon className={className} />;
-    case "airport":
+    case 'airport':
       return <AirportIcon className={className} />;
     default:
       return <MapPinIcon className={className} />;
@@ -268,6 +268,25 @@ function ZoomInIcon({ className }: { className?: string }) {
       <circle cx="11" cy="11" r="8" />
       <path d="m21 21-4.3-4.3" />
       <path d="M11 8v6" />
+      <path d="M8 11h6" />
+    </svg>
+  );
+}
+
+function ZoomOutIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
       <path d="M8 11h6" />
     </svg>
   );
@@ -645,6 +664,9 @@ const DETAIL_LABELS = {
     prevImg: 'Ảnh trước',
     nextImg: 'Ảnh tiếp theo',
     zoomHint: 'Bấm để phóng to',
+    zoomInBtn: 'Phóng to',
+    zoomOutBtn: 'Thu nhỏ',
+    closeLabel: 'Đóng',
     closeModal: 'Đóng chế độ xem lớn (ESC)',
     consultCta: 'Đăng ký tư vấn',
   },
@@ -675,7 +697,11 @@ const DETAIL_LABELS = {
     prevImg: 'Previous image',
     nextImg: 'Next image',
     zoomHint: 'Click to enlarge',
+    zoomInBtn: 'Zoom in',
+    zoomOutBtn: 'Zoom out',
+    closeLabel: 'Close',
     closeModal: 'Close fullscreen view (ESC)',
+    backdropHint: 'Click image to zoom • Click anywhere outside or press ESC to close',
     consultCta: 'Inquire Now',
   },
   ja: {
@@ -705,7 +731,11 @@ const DETAIL_LABELS = {
     prevImg: '前の画像',
     nextImg: '次の画像',
     zoomHint: 'クリックして拡大',
+    zoomInBtn: '拡大',
+    zoomOutBtn: '縮小',
+    closeLabel: '閉じる',
     closeModal: '拡大表示を閉じる (ESC)',
+    backdropHint: '画像クリックで拡大/縮小 • 周りの暗い部分またはESCで閉じます',
     consultCta: 'お問い合わせ',
   },
 };
@@ -715,7 +745,8 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeFloorPlanIndex, setActiveFloorPlanIndex] = useState(0);
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
-  const [headerOffset, setHeaderOffset] = useState(72);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomOrigin, setZoomOrigin] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
   const labels = DETAIL_LABELS[currentLang] || DETAIL_LABELS.en;
 
   const title = getCleanText(property.title, currentLang) || 'Property';
@@ -743,24 +774,29 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
   const mainImage = images[activeIndex] || images[0] || fallbackImage;
   const mainFloorPlanImage = floorPlanImages[activeFloorPlanIndex] || floorPlanImages[0] || '';
 
+  const openLightbox = (nextState: LightboxState) => {
+    setIsZoomed(false);
+    setZoomOrigin({ x: 50, y: 50 });
+    setLightbox(nextState);
+  };
+
+  const closeLightbox = () => {
+    setIsZoomed(false);
+    setLightbox(null);
+  };
+
   useEffect(() => {
     if (!lightbox) return;
 
-    const updateHeaderOffset = () => {
-      const headerEl = document.querySelector('header');
-      if (headerEl) {
-        setHeaderOffset(Math.ceil(headerEl.getBoundingClientRect().height));
-      }
-    };
-
-    updateHeaderOffset();
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        setIsZoomed(false);
         setLightbox(null);
       } else if (e.key === 'ArrowLeft' && lightbox.images.length > 1) {
+        setIsZoomed(false);
         setLightbox((prev) =>
           prev
             ? {
@@ -770,6 +806,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             : null
         );
       } else if (e.key === 'ArrowRight' && lightbox.images.length > 1) {
+        setIsZoomed(false);
         setLightbox((prev) =>
           prev
             ? {
@@ -781,11 +818,9 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
       }
     };
 
-    window.addEventListener('resize', updateHeaderOffset);
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       document.body.style.overflow = prevOverflow;
-      window.removeEventListener('resize', updateHeaderOffset);
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [lightbox]);
@@ -808,6 +843,33 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
 
   const scrollToContact = () => {
     document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleLightboxImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
+    e.stopPropagation();
+    if (!isZoomed) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      setZoomOrigin({
+        x: Math.min(100, Math.max(0, x)),
+        y: Math.min(100, Math.max(0, y)),
+      });
+      setIsZoomed(true);
+    } else {
+      setIsZoomed(false);
+    }
+  };
+
+  const handleLightboxImageMouseMove = (e: React.MouseEvent<HTMLImageElement>) => {
+    if (!isZoomed) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setZoomOrigin({
+      x: Math.min(100, Math.max(0, x)),
+      y: Math.min(100, Math.max(0, y)),
+    });
   };
 
   return (
@@ -853,7 +915,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             <button
               type="button"
               onClick={() =>
-                setLightbox({
+                openLightbox({
                   images: images.length > 0 ? images : [fallbackImage],
                   index: activeIndex,
                   title,
@@ -1027,7 +1089,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                 <button
                   type="button"
                   onClick={() =>
-                    setLightbox({
+                    openLightbox({
                       images: floorPlanImages,
                       index: activeFloorPlanIndex,
                       title: `${labels.floorPlanTitle} - ${title}`,
@@ -1047,7 +1109,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                   <button
                     type="button"
                     onClick={() =>
-                      setLightbox({
+                      openLightbox({
                         images: floorPlanImages,
                         index: activeFloorPlanIndex,
                         title: `${labels.floorPlanTitle} - ${title}`,
@@ -1251,7 +1313,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
         </div>
       </div>
 
-      {/* Lightbox phóng to ảnh / sơ đồ nhà ở */}
+      {/* Lightbox phóng to ảnh / sơ đồ nhà ở — Bấm vào ảnh để zoom 2.2x, bấm khoảng tối xung quanh để thoát */}
       {lightbox &&
         typeof document !== 'undefined' &&
         createPortal(
@@ -1259,49 +1321,87 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             role="dialog"
             aria-modal="true"
             aria-label={lightbox.title}
-            style={{ top: `${headerOffset}px` }}
-            className="fixed inset-x-0 bottom-0 z-40 flex flex-col justify-between bg-[#1E1B18]/92 p-4 backdrop-blur-md sm:p-6"
-            onClick={() => setLightbox(null)}
+            className="fixed inset-0 z-70 flex cursor-zoom-out flex-col justify-between bg-[#141210]/94 p-4 backdrop-blur-md select-none sm:p-6"
+            onClick={closeLightbox}
           >
+            {/* Top Bar */}
             <div
-              className="flex shrink-0 items-center justify-between gap-4 border-b border-white/15 pb-3 text-white"
+              className="mx-auto flex w-full max-w-7xl shrink-0 cursor-default items-center justify-between gap-4 border-b border-white/15 pb-3 text-white"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span className="shrink-0 rounded-md bg-[#A64237] px-2.5 py-1 text-xs font-bold text-white">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="shrink-0 rounded-full bg-[#A64237] px-3 py-1 text-xs font-bold tracking-wider text-white shadow-xs">
                   {lightbox.index + 1} / {lightbox.images.length}
                 </span>
-                <p className="truncate text-xs font-medium text-[#FAF8F5] sm:text-sm">
+                <p className="truncate text-xs font-medium text-[#FAF8F5]/90 sm:text-sm">
                   {lightbox.title}
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setLightbox(null)}
-                aria-label={labels.closeModal}
-                className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:border-[#A64237] hover:bg-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              >
-                <CloseIcon className="h-4 w-4" />
-                <span>ESC</span>
-              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                {/* Nút Zoom +/- nhanh */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setZoomOrigin({ x: 50, y: 50 });
+                    setIsZoomed((prev) => !prev);
+                  }}
+                  aria-label={isZoomed ? labels.zoomOutBtn : labels.zoomInBtn}
+                  className={`inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold shadow-sm backdrop-blur-md transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+                    isZoomed
+                      ? 'border-[#A64237] bg-[#A64237] text-white'
+                      : 'border-white/25 bg-white/12 text-[#FAF8F5] hover:border-[#A64237] hover:bg-[#A64237]'
+                  }`}
+                >
+                  {isZoomed ? (
+                    <ZoomOutIcon className="h-4 w-4" />
+                  ) : (
+                    <ZoomInIcon className="h-4 w-4" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {isZoomed ? labels.zoomOutBtn : labels.zoomInBtn}
+                  </span>
+                </button>
+
+                {/* Nút Đóng */}
+                <button
+                  type="button"
+                  onClick={closeLightbox}
+                  aria-label={labels.closeModal}
+                  className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-white/25 bg-white/12 px-4 py-2 text-xs font-semibold text-[#FAF8F5] shadow-sm backdrop-blur-md transition-all duration-200 hover:border-[#A64237] hover:bg-[#A64237] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                >
+                  <CloseIcon className="h-4 w-4" />
+                  <span>{labels.closeLabel}</span>
+                  <kbd className="hidden rounded bg-black/35 px-1.5 py-0.5 font-mono text-[10px] text-white/80 sm:inline-block">
+                    ESC
+                  </kbd>
+                </button>
+              </div>
             </div>
 
-            <div
-              className="relative my-3 flex min-h-0 flex-1 items-center justify-center overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
+            {/* Center Stage — Bấm vào ảnh để zoom 2.2x, bấm khoảng tối hai bên để đóng */}
+            <div className="relative my-2 flex min-h-0 flex-1 items-center justify-center overflow-hidden px-2 sm:px-14">
               <img
                 src={lightbox.images[lightbox.index] || fallbackImage}
                 alt={`${lightbox.title} ${lightbox.index + 1}`}
-                className="max-h-full max-w-full select-none rounded-xl object-contain shadow-2xl"
+                onClick={handleLightboxImageClick}
+                onMouseMove={handleLightboxImageMouseMove}
+                style={{
+                  transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
+                  transform: isZoomed ? 'scale(2.2)' : 'scale(1)',
+                }}
+                className={`max-h-full max-w-full w-auto h-auto select-none rounded-xl border border-white/15 object-contain shadow-2xl transition-transform duration-200 ease-out ${
+                  isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'
+                }`}
               />
 
-              {lightbox.images.length > 1 && (
+              {lightbox.images.length > 1 && !isZoomed && (
                 <>
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsZoomed(false);
                       setLightbox((prev) =>
                         prev
                           ? {
@@ -1309,16 +1409,18 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                               index: prev.index === 0 ? prev.images.length - 1 : prev.index - 1,
                             }
                           : null
-                      )
-                    }
+                      );
+                    }}
                     aria-label={labels.prevImg}
-                    className="absolute top-1/2 left-2 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-[#1E1B18]/80 text-white shadow-lg backdrop-blur-md transition-colors duration-200 hover:bg-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:left-4"
+                    className="absolute top-1/2 left-1 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-[#1E1B18]/85 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:scale-105 hover:border-[#A64237] hover:bg-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:left-4 sm:h-12 sm:w-12"
                   >
                     <ChevronLeftIcon className="h-6 w-6" />
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsZoomed(false);
                       setLightbox((prev) =>
                         prev
                           ? {
@@ -1326,14 +1428,46 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                               index: prev.index === prev.images.length - 1 ? 0 : prev.index + 1,
                             }
                           : null
-                      )
-                    }
+                      );
+                    }}
                     aria-label={labels.nextImg}
-                    className="absolute top-1/2 right-2 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-[#1E1B18]/80 text-white shadow-lg backdrop-blur-md transition-colors duration-200 hover:bg-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:right-4"
+                    className="absolute top-1/2 right-1 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-[#1E1B18]/85 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:scale-105 hover:border-[#A64237] hover:bg-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:right-4 sm:h-12 sm:w-12"
                   >
                     <ChevronRightIcon className="h-6 w-6" />
                   </button>
                 </>
+              )}
+            </div>
+
+            {/* Bottom Thumbnail Strip & Hint */}
+            <div
+              className="mx-auto flex w-full max-w-4xl shrink-0 cursor-default flex-col items-center gap-2 pt-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {lightbox.images.length > 1 && (
+                <div className="flex max-w-full items-center gap-2 overflow-x-auto rounded-xl border border-white/15 bg-black/45 p-1.5 backdrop-blur-md">
+                  {lightbox.images.map((img, idx) => {
+                    const isCurrent = idx === lightbox.index;
+                    return (
+                      <button
+                        key={`${img}-${idx}`}
+                        type="button"
+                        onClick={() => {
+                          setIsZoomed(false);
+                          setLightbox((prev) => (prev ? { ...prev, index: idx } : null));
+                        }}
+                        aria-label={`${idx + 1} / ${lightbox.images.length}`}
+                        className={`relative h-12 w-12 shrink-0 cursor-pointer overflow-hidden rounded-lg border-2 transition-all duration-200 ${
+                          isCurrent
+                            ? 'scale-105 border-[#A64237] opacity-100'
+                            : 'border-transparent opacity-55 hover:opacity-90'
+                        }`}
+                      >
+                        <img src={img} alt="" className="h-full w-full object-cover" />
+                      </button>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </div>,

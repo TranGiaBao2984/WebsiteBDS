@@ -1,12 +1,19 @@
 import { getProperties } from '@/app/back/properties';
+import { getFilterOptions } from '@/app/back/filter-options';
 import SanPhamSection from '@/app/front/properties';
 
 export default async function PropertiesPage() {
-  const properties = await getProperties();
+  const [properties, filterOptions] = await Promise.all([
+    getProperties(),
+    getFilterOptions(),
+  ]);
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-8 text-[#134E4A] sm:px-6 sm:py-12 lg:px-10">
-      <SanPhamSection properties={properties} />
+    <main className="w-full px-6 py-10 sm:px-10 lg:px-16 2xl:px-24">
+      <SanPhamSection
+        properties={properties}
+        initialFilterOptions={filterOptions}
+      />
     </main>
   );
 }

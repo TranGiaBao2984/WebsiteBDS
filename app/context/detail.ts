@@ -1,7 +1,7 @@
 import type { Language } from './index';
 
 // Nhãn riêng của trang chi tiết BĐS (/properties/[id]).
-// Kiểu Record<Language, ...> buộc cả 3 ngôn ngữ phải có đủ mọi khoá, thiếu khoá nào TypeScript báo ngay.
+// Kiểu Record<Language, ...> buộc cả 2 ngôn ngữ phải có đủ mọi khoá, thiếu khoá nào TypeScript báo ngay.
 // Các nhãn dùng chung với phần khác của web (Home, Properties) vẫn lấy từ dictionaries trong index.ts.
 
 export type DetailText = {
@@ -97,37 +97,6 @@ export const detailText: Record<Language, DetailText> = {
       landRights: '土地権利',
       zoning: '用途地域',
       access: '交通',
-    },
-  },
-  vi: {
-    noPhotos: 'Chưa có hình ảnh',
-    houseNote: '(nhà)',
-    landNote: '(đất)',
-    builtBadge: (y) => `Xây năm ${y}`,
-    inquireCta: 'TƯ VẤN VỀ BẤT ĐỘNG SẢN NÀY →',
-    whatsappMsg: 'Xin chào Mii, tôi quan tâm BĐS: ',
-    mailSubject: 'Tư vấn: ',
-    gallery: 'Thư viện ảnh',
-    photosCount: (n) => `${n} ảnh`,
-    details: 'Thông tin chi tiết',
-    floorPlan: 'Bản vẽ mặt bằng',
-    morePhotos: 'Thêm hình ảnh',
-    location: 'Vị trí',
-    viewOnMap: 'Xem trên bản đồ ↗',
-    similar: 'Bất động sản tương tự',
-    viewAll: 'Xem tất cả →',
-    fields: {
-      price: 'Giá',
-      buildingSize: 'Diện tích nhà',
-      landSize: 'Diện tích đất',
-      layout: 'Mặt bằng',
-      structure: 'Kết cấu',
-      yearBuilt: 'Năm xây',
-      status: 'Tình trạng',
-      parking: 'Chỗ đậu xe',
-      landRights: 'Quyền đất',
-      zoning: 'Quy hoạch',
-      access: 'Giao thông',
     },
   },
 };

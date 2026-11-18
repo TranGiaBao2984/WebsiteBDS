@@ -5,93 +5,47 @@ import { useLanguage } from "@/app/context/LanguageContext";
 import { SITE } from "@/lib/site";
 
 const PRIVACY_CONTENT = {
-  vi: {
-    badge: "BẢO VỆ DỮ LIỆU CÁ NHÂN • APPI NHẬT BẢN & NGHỊ ĐỊNH 13/2023/NĐ-CP",
-    title: "Chính sách Bảo mật & Xử lý Dữ liệu Cá nhân",
-    updated: "Cập nhật lần cuối: Tháng 11/2026",
-    intro:
-      "Chúng tôi tôn trọng quyền riêng tư và cam kết bảo vệ dữ liệu cá nhân của khách hàng tuân thủ Luật Bảo vệ Thông tin Cá nhân Nhật Bản (APPI), Nghị định 13/2023/NĐ-CP của Chính phủ Việt Nam và các quy định pháp luật hiện hành.",
-    sections: [
-      {
-        heading: "1. Đơn vị quản lý và xử lý dữ liệu cá nhân",
-        items: [
-          `Đơn vị phụ trách: ${SITE.company} — ${SITE.brand} ${SITE.subBrand} (Đại diện tư vấn: Mii Shintani / 新谷 美依).`,
-          `Địa chỉ văn phòng tại Nhật Bản: ${SITE.postalCode} ${SITE.addressJa} (${SITE.addressEn}).`,
-          `Đầu mối tiếp nhận yêu cầu về dữ liệu cá nhân: ${SITE.email} | Hotline: ${SITE.hotline}.`,
-        ],
-      },
-      {
-        heading: "2. Phân loại dữ liệu cá nhân được thu thập",
-        items: [
-          "Dữ liệu cá nhân cơ bản: Họ và tên, địa chỉ Email, số điện thoại / WhatsApp / LINE, và nội dung yêu cầu tư vấn bất động sản do bạn chủ động cung cấp qua biểu mẫu liên hệ.",
-          "Dữ liệu cá nhân nhạy cảm: Website KHÔNG thu thập, lưu trữ hay xử lý bất kỳ dữ liệu cá nhân nhạy cảm nào (số My Number, CCCD/hộ chiếu, tài khoản ngân hàng, hồ sơ y tế, tôn giáo...).",
-        ],
-      },
-      {
-        heading: "3. Mục đích sử dụng và giới hạn cung cấp cho bên thứ ba",
-        items: [
-          "Liên hệ phản hồi câu hỏi, cung cấp thông tin chi tiết bất động sản tại Nhật Bản, dự toán chi phí mua bán/thuê nhà và sắp xếp lịch xem nhà theo đúng yêu cầu của bạn.",
-          "Dữ liệu tuyệt đối không được bán, cho thuê hoặc chia sẻ cho bên thứ ba phục vụ mục đích tiếp thị ngoài phạm vi tư vấn bất động sản mà bạn đã đồng ý.",
-        ],
-      },
-      {
-        heading: "4. Lưu trữ đám mây quốc tế & Biện pháp bảo mật",
-        items: [
-          "Thông tin được lưu trữ trên hạ tầng cơ sở dữ liệu đám mây quốc tế đạt chuẩn bảo mật, áp dụng mã hóa đường truyền HTTPS/TLS và cơ chế kiểm soát truy cập nghiêm ngặt (Row-Level Security) chỉ dành cho quản trị viên được ủy quyền.",
-          "Dữ liệu chỉ được lưu giữ trong thời gian cần thiết để hoàn tất quá trình tư vấn giao dịch hoặc cho đến khi bạn yêu cầu xóa bỏ.",
-        ],
-      },
-      {
-        heading: "5. Quyền của chủ thể dữ liệu (Xem, Trích xuất, Chỉnh sửa & Xóa)",
-        items: [
-          "Theo Luật APPI Nhật Bản và Nghị định 13/2023/NĐ-CP, bạn có quyền được thông báo, đồng ý hoặc rút lại sự đồng ý, yêu cầu truy cập xem, trích xuất bản sao, chỉnh sửa hoặc xóa vĩnh viễn dữ liệu cá nhân của mình.",
-          `Để thực hiện các quyền trên, vui lòng gửi yêu cầu tới email ${SITE.email}. Chúng tôi sẽ xác minh danh tính và xử lý yêu cầu trong vòng 72 giờ làm việc.`,
-        ],
-      },
-    ],
-    backHome: "← Quay lại trang chủ",
-  },
   en: {
-    badge: "PERSONAL DATA PROTECTION • JAPAN APPI & DECREE 13/2023/ND-CP",
-    title: "Privacy & Personal Data Processing Policy",
+    badge: "PERSONAL DATA PROTECTION • JAPAN APPI COMPLIANT",
+    title: "Privacy Policy",
     updated: "Last updated: November 2026",
     intro:
-      "We respect your privacy and are committed to safeguarding your personal information in compliance with Japan's Act on the Protection of Personal Information (APPI), Vietnam's Decree 13/2023/ND-CP, and applicable data protection laws.",
+      "We respect your privacy and are committed to safeguarding your personal information in strict compliance with Japan's Act on the Protection of Personal Information (APPI) and applicable Japanese regulations.",
     sections: [
       {
         heading: "1. Personal Information Handling Business Operator",
         items: [
-          `Entity: ${SITE.company} — ${SITE.brand} ${SITE.subBrand} (Advisor: Mii Shintani / 新谷 美依).`,
-          `Office Address (Japan): ${SITE.postalCode} ${SITE.addressEn}.`,
-          `Privacy Inquiry Desk: ${SITE.email} | Mobile: ${SITE.hotline}.`,
+          `Operator: ${SITE.company} — ${SITE.brand} ${SITE.subBrand} (Advisor: Mii Shintani / 新谷 美依).`,
+          `Office Address: ${SITE.postalCode} ${SITE.addressEn}.`,
+          `Privacy Inquiry Desk: ${SITE.email} | Tel: ${SITE.hotline}.`,
         ],
       },
       {
-        heading: "2. Categories of Personal Data Collected",
+        heading: "2. Categories of Personal Information Collected",
         items: [
-          "Basic Personal Data: Full name, email address, phone/WhatsApp/LINE contact, and property inquiry details voluntarily submitted through our consultation form.",
-          "Sensitive Personal Data: We DO NOT collect or process any sensitive personal information (My Number, government IDs, bank records, health data, etc.) through this website.",
+          "Basic Information: Full name, email address, phone/WhatsApp/LINE contact, and real estate inquiry details voluntarily provided via our contact form.",
+          "Special Care-Required Personal Information: We DO NOT collect or process any sensitive information (My Number, passport/ID numbers, bank account details, medical history, etc.) through this website.",
         ],
       },
       {
         heading: "3. Purpose of Use & Restriction on Third-Party Provision",
         items: [
-          "To respond to your property inquiries, share relevant real estate listings in Japan, estimate transaction/rental costs, and coordinate property viewings.",
-          "We never sell, rent, or disclose your personal data to third parties for marketing purposes without your explicit consent.",
+          "To respond to your property inquiries, introduce suitable real estate listings in Japan, provide transaction/rental cost estimates, and arrange property viewings.",
+          "Except as required by Japanese law, we will never sell, rent, or provide your personal information to any third party without your prior consent.",
         ],
       },
       {
-        heading: "4. Cross-Border Cloud Storage & Security Measures",
+        heading: "4. Security Control Measures & Retention",
         items: [
-          "Submissions are transmitted via encrypted HTTPS/TLS connections and stored in secure international cloud infrastructure protected by strict Row-Level Security (RLS) restricted solely to authorized personnel.",
-          "Personal data is retained only for as long as necessary to fulfill your consultation request or until you request deletion.",
+          "All communications are encrypted via HTTPS/TLS and stored in access-controlled cloud environments protected by Row-Level Security (RLS) restricted exclusively to authorized personnel.",
+          "Personal information is retained only for as long as necessary to fulfill your real estate consultation or until you request deletion.",
         ],
       },
       {
-        heading: "5. Your Rights (Disclosure, Correction, Suspension & Deletion)",
+        heading: "5. Requests for Disclosure, Correction, Suspension & Deletion",
         items: [
-          "Under Japan's APPI and Decree 13/2023/ND-CP, you have the right to request disclosure/export of your personal records, correction of inaccuracies, withdrawal of consent, or permanent deletion.",
-          `To exercise any of these rights, please contact ${SITE.email}. We will verify your identity and respond within 72 business hours.`,
+          "Pursuant to Japan's APPI, you have the right to request disclosure, correction, addition, suspension of use, or deletion of your retained personal data.",
+          `To submit a request, please email ${SITE.email}. Upon verifying your identity, we will respond promptly within 72 business hours.`,
         ],
       },
     ],
@@ -127,9 +81,9 @@ const PRIVACY_CONTENT = {
         ],
       },
       {
-        heading: "4. 安全管理措置およびクラウド環境での保管",
+        heading: "4. 安全管理措置および保管期間",
         items: [
-          "通信の暗号化（HTTPS/TLS）および厳格なアクセス制御（Row-Level Security）を備えた国際基準のクラウドサーバーにて安全に管理し、不正アクセスや漏えいの防止に努めます。",
+          "通信の暗号化（HTTPS/TLS）および厳格なアクセス制御（Row-Level Security）を備えたクラウド環境にて安全に管理し、不正アクセスや漏えいの防止に努めます。",
           "個人情報はご相談対応の完了に必要な期間、またはお客様から削除のご請求があるまで適切に保管いたします。",
         ],
       },
@@ -147,7 +101,8 @@ const PRIVACY_CONTENT = {
 
 export default function PrivacyPolicyPage() {
   const { currentLang } = useLanguage();
-  const content = PRIVACY_CONTENT[currentLang] || PRIVACY_CONTENT.en;
+  const content =
+    PRIVACY_CONTENT[currentLang === "ja" ? "ja" : "en"] || PRIVACY_CONTENT.ja;
 
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-10 text-[#26221F] sm:px-6 sm:py-14">

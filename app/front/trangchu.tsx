@@ -60,8 +60,8 @@ export default function TrangChuSection({ properties }: { properties: Property[]
       <div className="relative overflow-hidden rounded-2xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.05)] sm:p-8 lg:p-10">
         <div className="relative flex flex-col justify-between gap-6 text-center sm:flex-row sm:items-end sm:text-left">
           <div className="space-y-2.5">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#E5DFD6] bg-[#F2EFE9] px-3.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[#A64237]">
-              <BuildingIcon className="h-3.5 w-3.5 text-[#A64237]" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#E5DFD6] bg-[#F2EFE9] px-3.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[#B8D200]">
+              <BuildingIcon className="h-3.5 w-3.5 text-[#B8D200]" />
               <span>{t.home.badge}</span>
             </span>
 
@@ -76,7 +76,7 @@ export default function TrangChuSection({ properties }: { properties: Property[]
 
           <Link
             href="/properties"
-            className="group inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 self-center rounded-lg bg-[#A64237] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#8C352C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 sm:self-end motion-reduce:transform-none motion-reduce:transition-none"
+            className="group inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 self-center rounded-lg bg-[#B8D200] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[#26221F] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#9FB600] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2 sm:self-end motion-reduce:transform-none motion-reduce:transition-none"
           >
             <span>{t.home.viewAll}</span>
             <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
@@ -92,7 +92,7 @@ export default function TrangChuSection({ properties }: { properties: Property[]
           ))
         ) : (
           <div className="col-span-full flex w-full flex-col items-center justify-center rounded-xl border border-[#E5DFD6] bg-white p-12 text-center shadow-[0_4px_12px_rgba(38,34,31,0.05)]">
-            <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-[#E5DFD6] bg-[#F2EFE9] text-[#A64237]">
+            <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-[#E5DFD6] bg-[#F2EFE9] text-[#B8D200]">
               <BuildingIcon className="h-6 w-6" />
             </span>
             <p className="font-serif text-base font-semibold text-[#26221F]">
@@ -106,7 +106,7 @@ export default function TrangChuSection({ properties }: { properties: Property[]
       <div className="pt-2 text-center">
         <Link
           href="/properties"
-          className="group inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#E5DFD6] bg-white px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[#26221F] shadow-2xs transition-all duration-200 hover:border-[#A64237] hover:bg-[#A64237] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2"
+          className="group inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#E5DFD6] bg-white px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[#26221F] shadow-2xs transition-all duration-200 hover:border-[#B8D200] hover:bg-[#B8D200] hover:text-[#26221F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2"
         >
           <span>{t.home.exploreMore}</span>
           <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />

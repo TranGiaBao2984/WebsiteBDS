@@ -391,7 +391,7 @@ function getCleanText(val: unknown, currentLang: string = 'en'): string {
       const firstNonEmpty = Object.values(record).find(
         (v) => typeof v === 'string' && v.trim().length > 0
       );
-      current = record[currentLang] || record.en || record.vi || record.ja || firstNonEmpty || '';
+      current = record[currentLang] || record.en || record.ja || firstNonEmpty || '';
     } else {
       break;
     }
@@ -438,43 +438,21 @@ function toPositiveNumber(val: unknown): number {
   return Number.isFinite(num) && num > 0 ? num : 0;
 }
 
-function getFormattedPrice(property: Property, currentLang: 'vi' | 'en' | 'ja'): string {
+function getFormattedPrice(property: Property, currentLang: 'en' | 'ja'): string {
   const descObj = unwrapJson(property.description);
-  let priceVi = toPositiveNumber(property.price_vnd);
   let priceEn = 0;
   let priceJa = toPositiveNumber(property.price_yen) || toPositiveNumber(property.price);
 
   if (typeof descObj === 'object' && descObj !== null && !Array.isArray(descObj)) {
     const record = descObj as Record<string, unknown>;
-    const savedVi = toPositiveNumber(record.price_vi);
     const savedEn = toPositiveNumber(record.price_en);
     const savedJa = toPositiveNumber(record.price_ja);
 
-    if (savedVi > 0) priceVi = savedVi;
     if (savedEn > 0) priceEn = savedEn;
     if (savedJa > 0) priceJa = savedJa;
   }
 
-  const JPY_TO_VND = 170;
   const JPY_TO_USD = 1 / 150;
-  const USD_TO_VND = 25500;
-
-  if (currentLang === 'vi') {
-    const vndAmount =
-      priceVi > 0
-        ? priceVi
-        : priceJa > 0
-        ? Math.round(priceJa * JPY_TO_VND)
-        : priceEn > 0
-        ? Math.round(priceEn * USD_TO_VND)
-        : 0;
-
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      maximumFractionDigits: 0,
-    }).format(vndAmount);
-  }
 
   if (currentLang === 'en') {
     const usdAmount =
@@ -482,8 +460,6 @@ function getFormattedPrice(property: Property, currentLang: 'vi' | 'en' | 'ja'):
         ? priceEn
         : priceJa > 0
         ? Math.round(priceJa * JPY_TO_USD)
-        : priceVi > 0
-        ? Math.round(priceVi / USD_TO_VND)
         : 0;
 
     return new Intl.NumberFormat('en-US', {
@@ -498,8 +474,6 @@ function getFormattedPrice(property: Property, currentLang: 'vi' | 'en' | 'ja'):
       ? priceJa
       : priceEn > 0
       ? Math.round(priceEn / JPY_TO_USD)
-      : priceVi > 0
-      ? Math.round(priceVi / JPY_TO_VND)
       : 0;
 
   return new Intl.NumberFormat('ja-JP', {
@@ -578,7 +552,7 @@ function getSavedMapAddress(property: Property): string {
 function buildGoogleMapsData(
   rawMapAddress: string,
   fallbackLocation: string,
-  currentLang: 'vi' | 'en' | 'ja'
+  currentLang: 'en' | 'ja'
 ) {
   const target = rawMapAddress || fallbackLocation || 'Tokyo, Japan';
   const isUrl = /^https?:\/\//i.test(target);
@@ -618,37 +592,6 @@ function buildGoogleMapsData(
 }
 
 const DETAIL_LABELS = {
-  vi: {
-    defaultType: 'CĂN HỘ',
-    bedrooms: 'PHÒNG NGỦ',
-    specsTitle: 'Thông số bất động sản',
-    area: 'Diện tích sử dụng',
-    buildingSize: 'Diện tích sàn',
-    landSize: 'Diện tích đất',
-    layout: 'Bố cục phòng',
-    structure: 'Kết cấu',
-    yearBuilt: 'Năm xây dựng',
-    landRights: 'Quyền sở hữu',
-    access: 'Vị trí ga / Giao thông',
-    parking: 'Chỗ đậu xe',
-    zoning: 'Quy hoạch đất',
-    bedroomsCount: 'Số phòng ngủ',
-    bathroomsCount: 'Số phòng tắm',
-    floorPlanTitle: 'Sơ đồ nhà ở',
-    noFloorPlan: 'Chưa có hình ảnh sơ đồ nhà ở.',
-    descTitle: 'Mô tả chi tiết',
-    noDesc: 'Chưa có mô tả chi tiết.',
-    nearbyTitle: 'Tiện ích xung quanh',
-    mapTitle: 'Vị trí trên bản đồ',
-    openGoogleMaps: 'Mở trên Google Maps',
-    similarTitle: 'Bất động sản tương tự',
-    prevImg: 'Ảnh trước',
-    nextImg: 'Ảnh tiếp theo',
-    zoomHint: 'Bấm để phóng to',
-    closeLabel: 'Đóng',
-    closeModal: 'Đóng chế độ xem lớn (ESC)',
-    consultCta: 'Đăng ký tư vấn',
-  },
   en: {
     defaultType: 'APARTMENT',
     bedrooms: 'BEDROOMS',
@@ -678,7 +621,6 @@ const DETAIL_LABELS = {
     zoomHint: 'Click to enlarge',
     closeLabel: 'Close',
     closeModal: 'Close fullscreen view (ESC)',
-    backdropHint: 'Click image to zoom, click & hold to drag • Click outside or press ESC to close',
     consultCta: 'Inquire Now',
   },
   ja: {
@@ -710,7 +652,6 @@ const DETAIL_LABELS = {
     zoomHint: 'クリックして拡大',
     closeLabel: '閉じる',
     closeModal: '拡大表示を閉じる (ESC)',
-    backdropHint: '画像クリックで拡大、長押しドラッグで移動 • 周りの暗い部分またはESCで閉じます',
     consultCta: 'お問い合わせ',
   },
 };
@@ -719,11 +660,11 @@ const ZOOM_SCALE = 2.2;
 
 export default function ChiTietSection({ property, similarProperties = [] }: ChiTietSectionProps) {
   const { currentLang } = useLanguage();
+  const lang = currentLang === 'ja' ? 'ja' : 'en';
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeFloorPlanIndex, setActiveFloorPlanIndex] = useState(0);
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
 
-  // State zoom + click-and-hold drag
   const [isZoomed, setIsZoomed] = useState(false);
   const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -734,10 +675,10 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
   const hasDraggedRef = useRef(false);
   const suppressBackdropCloseRef = useRef(false);
 
-  const labels = DETAIL_LABELS[currentLang] || DETAIL_LABELS.en;
+  const labels = DETAIL_LABELS[lang];
 
-  const title = getCleanText(property.title, currentLang) || 'Property';
-  const location = getCleanText(property.location, currentLang) || 'Japan';
+  const title = getCleanText(property.title, lang) || 'Property';
+  const location = getCleanText(property.location, lang) || 'Japan';
   const mapFallbackLocation =
     getCleanText(property.location, 'ja') ||
     getCleanText(property.location, 'en') ||
@@ -746,13 +687,13 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
   const { embedUrl, externalUrl, displayAddress } = buildGoogleMapsData(
     rawMapAddress,
     mapFallbackLocation,
-    currentLang
+    lang
   );
 
-  const propertyType = getCleanText(property.property_type, currentLang) || labels.defaultType;
-  const description = getCleanText(property.description, currentLang) || labels.noDesc;
-  const nearbyItems = parseNearbyItems(property, currentLang);
-  const formattedPrice = getFormattedPrice(property, currentLang);
+  const propertyType = getCleanText(property.property_type, lang) || labels.defaultType;
+  const description = getCleanText(property.description, lang) || labels.noDesc;
+  const nearbyItems = parseNearbyItems(property, lang);
+  const formattedPrice = getFormattedPrice(property, lang);
   const images = parseImages(property.images);
   const floorPlanImages = parseFloorPlanImages(property);
 
@@ -818,7 +759,6 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
     };
   }, [lightbox]);
 
-  // Theo dõi mousemove / mouseup toàn cục khi đang giữ chuột kéo ảnh
   useEffect(() => {
     if (!isDragging) return;
 
@@ -842,7 +782,6 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
 
     const handleWindowMouseUp = () => {
       setIsDragging(false);
-      // Ngăn click sự kiện nổi lên backdrop nếu người dùng kéo chuột ra ngoài viền ảnh rồi mới thả
       if (hasDraggedRef.current) {
         suppressBackdropCloseRef.current = true;
         requestAnimationFrame(() => {
@@ -880,7 +819,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
   };
 
   const handleLightboxImageMouseDown = (e: React.MouseEvent<HTMLImageElement>) => {
-    if (e.button !== 0) return; // Chỉ xử lý chuột trái
+    if (e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -896,7 +835,6 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
   const handleLightboxImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
     e.stopPropagation();
 
-    // Nếu vừa giữ chuột kéo xong thì chỉ kết thúc thao tác kéo, không thu nhỏ lại
     if (hasDraggedRef.current) {
       hasDraggedRef.current = false;
       return;
@@ -904,7 +842,6 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
 
     if (!isZoomed) {
       const rect = e.currentTarget.getBoundingClientRect();
-      // Căn điểm vừa click vào giữa khung nhìn khi phóng to
       const offsetFromCenterX = e.clientX - (rect.left + rect.width / 2);
       const offsetFromCenterY = e.clientY - (rect.top + rect.height / 2);
 
@@ -928,14 +865,14 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
 
   return (
     <div className="space-y-10 pb-24 lg:pb-0">
-      {/* Japandi Warm Minimalist Property Header */}
+      {/* Property Header */}
       <div className="relative overflow-hidden rounded-2xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.05)] sm:p-8">
         <div className="relative space-y-4">
           <div className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#948D86]">
             <span className="rounded-md border border-[#E5DFD6] bg-[#F2EFE9] px-2.5 py-1 text-[#26221F]">
               {propertyType}
             </span>
-            <span className="text-[#A64237]">•</span>
+            <span className="text-[#B8D200]">•</span>
             <span className="rounded-md border border-[#E5DFD6] bg-[#F2EFE9] px-2.5 py-1 text-[#26221F]">
               {property.bedrooms || 1} {labels.bedrooms}
             </span>
@@ -947,12 +884,12 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
 
           <div className="flex flex-col justify-between gap-4 border-t border-[#E5DFD6] pt-4 sm:flex-row sm:items-center">
             <div className="flex items-center gap-2 text-sm font-medium text-[#66605A]">
-              <MapPinIcon className="h-4 w-4 shrink-0 text-[#A64237]" />
+              <MapPinIcon className="h-4 w-4 shrink-0 text-[#B8D200]" />
               <span>{location}</span>
             </div>
 
             <div className="sm:text-right">
-              <div className="font-serif text-2xl font-bold text-[#A64237] sm:text-3xl">
+              <div className="font-serif text-2xl font-bold text-[#B8D200] sm:text-3xl">
                 {formattedPrice}
               </div>
             </div>
@@ -960,11 +897,9 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
         </div>
       </div>
 
-      {/* Grid hình ảnh & Form tư vấn */}
+      {/* Gallery & Inquiry Grid */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        {/* Cột trái: Ảnh & Chi tiết */}
         <div className="space-y-6 lg:col-span-8">
-          {/* Khung ảnh lớn */}
           <div className="group relative flex aspect-16/10 items-center justify-center overflow-hidden rounded-2xl border border-[#E5DFD6] bg-[#F2EFE9] shadow-[0_4px_12px_rgba(38,34,31,0.05)]">
             <button
               type="button"
@@ -976,7 +911,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                 })
               }
               aria-label={`${labels.zoomHint} - ${title}`}
-              className="flex h-full w-full cursor-zoom-in items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#A64237]"
+              className="flex h-full w-full cursor-zoom-in items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#B8D200]"
             >
               <img
                 src={mainImage}
@@ -999,7 +934,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                   type="button"
                   onClick={handlePrevImage}
                   aria-label={labels.prevImg}
-                  className="absolute top-1/2 left-3 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-[#1E1B18]/75 text-white shadow-md backdrop-blur-md transition-all duration-200 hover:bg-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  className="absolute top-1/2 left-3 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-[#1E1B18]/75 text-white shadow-md backdrop-blur-md transition-all duration-200 hover:bg-[#B8D200] hover:text-[#26221F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
                   <ChevronLeftIcon className="h-5 w-5" />
                 </button>
@@ -1008,7 +943,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                   type="button"
                   onClick={handleNextImage}
                   aria-label={labels.nextImg}
-                  className="absolute top-1/2 right-3 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-[#1E1B18]/75 text-white shadow-md backdrop-blur-md transition-all duration-200 hover:bg-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  className="absolute top-1/2 right-3 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-[#1E1B18]/75 text-white shadow-md backdrop-blur-md transition-all duration-200 hover:bg-[#B8D200] hover:text-[#26221F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
                   <ChevronRightIcon className="h-5 w-5" />
                 </button>
@@ -1020,7 +955,6 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             )}
           </div>
 
-          {/* Danh sách ảnh thu nhỏ bên dưới */}
           {images.length > 1 && (
             <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
               {images.map((img, idx) => {
@@ -1030,12 +964,12 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                     key={idx}
                     type="button"
                     onClick={() => setActiveIndex(idx)}
-                    aria-label={`Xem ảnh ${idx + 1}`}
+                    aria-label={`${title} ${idx + 1}`}
                     aria-pressed={isSelected}
-                    className={`flex aspect-4/3 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 bg-[#F2EFE9] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
+                    className={`flex aspect-4/3 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 bg-[#F2EFE9] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] ${
                       isSelected
-                        ? 'border-[#A64237] opacity-100 ring-2 ring-[#A64237]/20'
-                        : 'border-[#E5DFD6] opacity-80 hover:border-[#A64237]/70 hover:opacity-100'
+                        ? 'border-[#B8D200] opacity-100 ring-2 ring-[#B8D200]/25'
+                        : 'border-[#E5DFD6] opacity-80 hover:border-[#B8D200]/70 hover:opacity-100'
                     }`}
                   >
                     <img
@@ -1052,7 +986,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             </div>
           )}
 
-          {/* Thông số kỹ thuật đầy đủ 12 trường */}
+          {/* Specifications */}
           <div className="space-y-5 rounded-xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.04)]">
             <h2 className="font-serif border-b border-[#E5DFD6] pb-3 text-lg font-bold text-[#26221F]">
               {labels.specsTitle}
@@ -1133,7 +1067,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             </div>
           </div>
 
-          {/* Khung Sơ đồ nhà ở */}
+          {/* Floor Plan */}
           <div className="space-y-4 rounded-xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.04)]">
             <div className="flex items-center justify-between gap-2 border-b border-[#E5DFD6] pb-3">
               <h2 className="font-serif text-lg font-bold text-[#26221F]">
@@ -1149,7 +1083,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                       title: `${labels.floorPlanTitle} - ${title}`,
                     })
                   }
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-md text-xs font-bold text-[#A64237] transition-colors duration-200 hover:text-[#8C352C] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237]"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-md text-xs font-bold text-[#B8D200] transition-colors duration-200 hover:text-[#9FB600] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200]"
                 >
                   <ZoomInIcon className="h-3.5 w-3.5" />
                   <span>{labels.zoomHint}</span>
@@ -1170,7 +1104,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                       })
                     }
                     aria-label={`${labels.zoomHint} - ${labels.floorPlanTitle}`}
-                    className="flex h-full w-full cursor-zoom-in items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#A64237]"
+                    className="flex h-full w-full cursor-zoom-in items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#B8D200]"
                   >
                     <img
                       src={mainFloorPlanImage}
@@ -1188,7 +1122,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                         type="button"
                         onClick={handlePrevFloorPlan}
                         aria-label={labels.prevImg}
-                        className="absolute top-1/2 left-3 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-[#1E1B18]/75 text-white shadow-md backdrop-blur-md transition-all duration-200 hover:bg-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                        className="absolute top-1/2 left-3 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-[#1E1B18]/75 text-white shadow-md backdrop-blur-md transition-all duration-200 hover:bg-[#B8D200] hover:text-[#26221F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                       >
                         <ChevronLeftIcon className="h-5 w-5" />
                       </button>
@@ -1197,7 +1131,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                         type="button"
                         onClick={handleNextFloorPlan}
                         aria-label={labels.nextImg}
-                        className="absolute top-1/2 right-3 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-[#1E1B18]/75 text-white shadow-md backdrop-blur-md transition-all duration-200 hover:bg-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                        className="absolute top-1/2 right-3 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-[#1E1B18]/75 text-white shadow-md backdrop-blur-md transition-all duration-200 hover:bg-[#B8D200] hover:text-[#26221F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                       >
                         <ChevronRightIcon className="h-5 w-5" />
                       </button>
@@ -1220,10 +1154,10 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                           onClick={() => setActiveFloorPlanIndex(idx)}
                           aria-label={`${labels.floorPlanTitle} ${idx + 1}`}
                           aria-pressed={isSelected}
-                          className={`flex aspect-4/3 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 bg-[#F2EFE9] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
+                          className={`flex aspect-4/3 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 bg-[#F2EFE9] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] ${
                             isSelected
-                              ? 'border-[#A64237] opacity-100 ring-2 ring-[#A64237]/20'
-                              : 'border-[#E5DFD6] opacity-80 hover:border-[#A64237]/70 hover:opacity-100'
+                              ? 'border-[#B8D200] opacity-100 ring-2 ring-[#B8D200]/25'
+                              : 'border-[#E5DFD6] opacity-80 hover:border-[#B8D200]/70 hover:opacity-100'
                           }`}
                         >
                           <img
@@ -1247,7 +1181,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             )}
           </div>
 
-          {/* Mô tả chi tiết */}
+          {/* Description */}
           <div className="space-y-4 rounded-xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.04)]">
             <h2 className="font-serif border-b border-[#E5DFD6] pb-3 text-lg font-bold text-[#26221F]">
               {labels.descTitle}
@@ -1257,7 +1191,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             </p>
           </div>
 
-          {/* Tiện ích xung quanh (Nearby) */}
+          {/* Nearby */}
           {nearbyItems.length > 0 && (
             <div className="space-y-4 rounded-xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.04)]">
               <h2 className="font-serif border-b border-[#E5DFD6] pb-3 text-lg font-bold text-[#26221F]">
@@ -1271,7 +1205,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                     className="flex items-center justify-between gap-4 py-3 first:pt-1 last:pb-1"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#E5DFD6] bg-[#FAF8F5] text-[#A64237]">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#E5DFD6] bg-[#FAF8F5] text-[#B8D200]">
                         <NearbyCategoryIcon category={item.category} className="h-4 w-4" />
                       </span>
                       <span className="truncate text-sm font-medium text-[#26221F]">
@@ -1290,7 +1224,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             </div>
           )}
 
-          {/* Khung Vị trí trên bản đồ (Google Maps) */}
+          {/* Map */}
           <div className="space-y-4 rounded-xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.04)]">
             <div className="flex flex-col justify-between gap-3 border-b border-[#E5DFD6] pb-3 sm:flex-row sm:items-center">
               <div>
@@ -1299,7 +1233,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                 </h2>
                 {displayAddress && (
                   <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-[#66605A] sm:text-sm">
-                    <MapPinIcon className="h-4 w-4 shrink-0 text-[#A64237]" />
+                    <MapPinIcon className="h-4 w-4 shrink-0 text-[#B8D200]" />
                     <span>{displayAddress}</span>
                   </p>
                 )}
@@ -1309,7 +1243,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                 href={externalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex cursor-pointer items-center gap-1.5 self-start rounded-lg border border-[#E5DFD6] bg-[#FAF8F5] px-4 py-2 text-xs font-semibold text-[#26221F] transition-all duration-200 hover:border-[#A64237] hover:bg-[#A64237] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 sm:self-auto"
+                className="inline-flex cursor-pointer items-center gap-1.5 self-start rounded-lg border border-[#E5DFD6] bg-[#FAF8F5] px-4 py-2 text-xs font-semibold text-[#26221F] transition-all duration-200 hover:border-[#B8D200] hover:bg-[#B8D200] hover:text-[#26221F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2 sm:self-auto"
               >
                 <span>{labels.openGoogleMaps}</span>
                 <ExternalLinkIcon className="h-3.5 w-3.5" />
@@ -1328,7 +1262,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
           </div>
         </div>
 
-        {/* Cột phải: Form tư vấn */}
+        {/* Inquiry Form */}
         <div className="lg:col-span-4">
           <div className="sticky top-28">
             <InquiryForm propertyId={property.id} propertyTitle={title} />
@@ -1336,7 +1270,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
         </div>
       </div>
 
-      {/* Bất động sản tương tự */}
+      {/* Similar Properties */}
       {similarProperties.length > 0 && (
         <div className="space-y-6 border-t border-[#E5DFD6] pt-8">
           <h2 className="font-serif text-2xl font-bold text-[#26221F]">{labels.similarTitle}</h2>
@@ -1348,26 +1282,26 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
         </div>
       )}
 
-      {/* Thanh CTA cố định đáy màn hình trên Mobile */}
+      {/* Mobile Sticky Bottom CTA */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#E5DFD6] bg-[#FAF8F5]/95 px-4 py-3 shadow-[0_-4px_16px_rgba(38,34,31,0.08)] backdrop-blur-md lg:hidden">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-[11px] font-medium text-[#66605A]">{title}</p>
-            <p className="font-serif truncate text-base font-bold text-[#A64237] sm:text-lg">
+            <p className="font-serif truncate text-base font-bold text-[#B8D200] sm:text-lg">
               {formattedPrice}
             </p>
           </div>
           <button
             type="button"
             onClick={scrollToContact}
-            className="shrink-0 cursor-pointer rounded-lg bg-[#A64237] px-5 py-2.5 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#8C352C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 sm:text-sm"
+            className="shrink-0 cursor-pointer rounded-lg bg-[#B8D200] px-5 py-2.5 text-xs font-semibold text-[#26221F] shadow-sm transition-all duration-200 hover:bg-[#9FB600] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2 sm:text-sm"
           >
             {labels.consultCta}
           </button>
         </div>
       </div>
 
-      {/* Lightbox phóng to ảnh: Click ảnh để zoom, nhấn giữ chuột & kéo để xem từng góc, bấm vùng tối xung quanh để thoát */}
+      {/* Lightbox */}
       {lightbox &&
         typeof document !== 'undefined' &&
         createPortal(
@@ -1378,13 +1312,12 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             className="fixed inset-0 z-70 flex cursor-zoom-out flex-col justify-between bg-[#141210]/94 p-4 backdrop-blur-md select-none sm:p-6"
             onClick={handleBackdropClick}
           >
-            {/* Top Bar */}
             <div
               className="mx-auto flex w-full max-w-7xl shrink-0 cursor-default items-center justify-between gap-4 border-b border-white/15 pb-3 text-white"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex min-w-0 items-center gap-3">
-                <span className="shrink-0 rounded-full bg-[#A64237] px-3 py-1 text-xs font-bold tracking-wider text-white shadow-xs">
+                <span className="shrink-0 rounded-full bg-[#B8D200] px-3 py-1 text-xs font-bold tracking-wider text-[#26221F] shadow-xs">
                   {lightbox.index + 1} / {lightbox.images.length}
                 </span>
                 <p className="truncate text-xs font-medium text-[#FAF8F5]/90 sm:text-sm">
@@ -1396,7 +1329,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                 type="button"
                 onClick={closeLightbox}
                 aria-label={labels.closeModal}
-                className="inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-white/25 bg-white/12 px-4 py-2 text-xs font-semibold text-[#FAF8F5] shadow-sm backdrop-blur-md transition-all duration-200 hover:border-[#A64237] hover:bg-[#A64237] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-white/25 bg-white/12 px-4 py-2 text-xs font-semibold text-[#FAF8F5] shadow-sm backdrop-blur-md transition-all duration-200 hover:border-[#B8D200] hover:bg-[#B8D200] hover:text-[#26221F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 <CloseIcon className="h-4 w-4" />
                 <span>{labels.closeLabel}</span>
@@ -1406,7 +1339,6 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
               </button>
             </div>
 
-            {/* Center Stage */}
             <div className="relative my-2 flex min-h-0 flex-1 items-center justify-center overflow-hidden px-2 sm:px-14">
               <img
                 ref={imgRef}
@@ -1447,7 +1379,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                       );
                     }}
                     aria-label={labels.prevImg}
-                    className="absolute top-1/2 left-1 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-[#1E1B18]/85 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:scale-105 hover:border-[#A64237] hover:bg-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:left-4 sm:h-12 sm:w-12"
+                    className="absolute top-1/2 left-1 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-[#1E1B18]/85 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:scale-105 hover:border-[#B8D200] hover:bg-[#B8D200] hover:text-[#26221F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:left-4 sm:h-12 sm:w-12"
                   >
                     <ChevronLeftIcon className="h-6 w-6" />
                   </button>
@@ -1466,7 +1398,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                       );
                     }}
                     aria-label={labels.nextImg}
-                    className="absolute top-1/2 right-1 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-[#1E1B18]/85 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:scale-105 hover:border-[#A64237] hover:bg-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:right-4 sm:h-12 sm:w-12"
+                    className="absolute top-1/2 right-1 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-[#1E1B18]/85 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:scale-105 hover:border-[#B8D200] hover:bg-[#B8D200] hover:text-[#26221F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:right-4 sm:h-12 sm:w-12"
                   >
                     <ChevronRightIcon className="h-6 w-6" />
                   </button>
@@ -1474,7 +1406,6 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
               )}
             </div>
 
-            {/* Bottom Thumbnail Strip & Hint */}
             <div
               className="mx-auto flex w-full max-w-4xl shrink-0 cursor-default flex-col items-center gap-2 pt-1"
               onClick={(e) => e.stopPropagation()}
@@ -1494,7 +1425,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                         aria-label={`${idx + 1} / ${lightbox.images.length}`}
                         className={`relative h-12 w-12 shrink-0 cursor-pointer overflow-hidden rounded-lg border-2 transition-all duration-200 ${
                           isCurrent
-                            ? 'scale-105 border-[#A64237] opacity-100'
+                            ? 'scale-105 border-[#B8D200] opacity-100'
                             : 'border-transparent opacity-55 hover:opacity-90'
                         }`}
                       >
@@ -1504,8 +1435,6 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                   })}
                 </div>
               )}
-
-              
             </div>
           </div>,
           document.body

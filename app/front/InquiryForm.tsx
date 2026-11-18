@@ -11,30 +11,6 @@ interface InquiryFormProps {
 }
 
 const INQUIRY_LABELS = {
-  vi: {
-    heading: "Đăng ký Tư vấn BĐS",
-    subPrefix: "Gửi yêu cầu thông tin về:",
-    generalSub:
-      "Để lại thông tin để nhận tư vấn trực tiếp từ Mii Shintani (RE AGENT by Re iDea).",
-    fullName: "Họ và tên *",
-    fullNamePlaceholder: "Nguyễn Văn A / Yamada Taro",
-    email: "Email *",
-    emailPlaceholder: "example@email.com",
-    phone: "Số điện thoại *",
-    phonePlaceholder: "+81 70-9017-1920",
-    message: "Lời nhắn tư vấn",
-    messagePlaceholder:
-      "Tôi muốn hẹn lịch xem nhà thực tế / Nhận báo giá tổng chi phí sang tên...",
-    consentPrefix:
-      "Tôi đồng ý cho Mii Shintani thu thập và xử lý thông tin liên hệ trên để tư vấn bất động sản theo ",
-    consentLink: "Chính sách bảo mật",
-    consentSuffix: " (Nghị định 13/2023/NĐ-CP). *",
-    submit: "Liên Hệ Ngay Với Mii Shintani",
-    submitting: "Đang gửi thông tin...",
-    successMsg:
-      "Cảm ơn bạn! Mii đã nhận thông tin và gửi email xác nhận. Chúng tôi sẽ phản hồi trong 24h.",
-    errorMsg: "Gửi yêu cầu thất bại. Vui lòng thử lại.",
-  },
   en: {
     heading: "Interested in this property?",
     subPrefix: "Requesting details for:",
@@ -144,7 +120,7 @@ export default function InquiryForm({
   propertyTitle,
 }: InquiryFormProps) {
   const { currentLang } = useLanguage();
-  const labels = INQUIRY_LABELS[currentLang] || INQUIRY_LABELS.en;
+  const labels = INQUIRY_LABELS[currentLang === "ja" ? "ja" : "en"];
   const uid = useId();
 
   const formLoadedAtRef = useRef<number>(0);
@@ -194,7 +170,7 @@ export default function InquiryForm({
   };
 
   const inputClassName =
-    "w-full rounded-lg border border-[#E5DFD6] bg-[#FAF8F5] px-4 py-3 text-base text-[#26221F] placeholder:text-[#948D86] transition-all duration-200 focus:border-[#A64237] focus:bg-white focus:outline-none focus:ring-3 focus:ring-[#A64237]/15 sm:text-sm";
+    "w-full rounded-lg border border-[#E5DFD6] bg-[#FAF8F5] px-4 py-3 text-base text-[#26221F] placeholder:text-[#948D86] transition-all duration-200 focus:border-[#B8D200] focus:bg-white focus:outline-none focus:ring-3 focus:ring-[#B8D200]/20 sm:text-sm";
 
   return (
     <div
@@ -209,7 +185,7 @@ export default function InquiryForm({
           {propertyTitle ? (
             <>
               {labels.subPrefix}{" "}
-              <span className="font-semibold text-[#A64237]">
+              <span className="font-semibold text-[#B8D200]">
                 {propertyTitle}
               </span>
             </>
@@ -237,7 +213,7 @@ export default function InquiryForm({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Trường bẫy bot ẩn (Honeypot) - người dùng thật không nhìn thấy */}
+          {/* Honeypot */}
           <div className="sr-only" aria-hidden="true">
             <label htmlFor={`${uid}-website`}>Website</label>
             <input
@@ -321,14 +297,14 @@ export default function InquiryForm({
             />
           </div>
 
-          {/* Checkbox đồng ý chủ động theo Nghị định 13/2023/NĐ-CP */}
+          {/* Privacy Consent Checkbox */}
           <div className="flex items-start gap-2.5 rounded-xl border border-[#E5DFD6] bg-[#FAF8F5] p-3">
             <input
               id={`${uid}-consent`}
               type="checkbox"
               name="consent"
               required
-              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-[#E5DFD6] accent-[#A64237] focus:ring-[#A64237]"
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-[#E5DFD6] accent-[#B8D200] focus:ring-[#B8D200]"
             />
             <label
               htmlFor={`${uid}-consent`}
@@ -338,7 +314,7 @@ export default function InquiryForm({
               <Link
                 href="/privacy"
                 target="_blank"
-                className="font-semibold text-[#A64237] underline underline-offset-2 hover:text-[#8C352C]"
+                className="font-semibold text-[#B8D200] underline underline-offset-2 hover:text-[#9FB600]"
               >
                 {labels.consentLink}
               </Link>
@@ -349,13 +325,13 @@ export default function InquiryForm({
           <button
             type="submit"
             disabled={loading}
-            className="group inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#A64237] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#8C352C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-55 sm:text-sm motion-reduce:transform-none motion-reduce:transition-none"
+            className="group inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#B8D200] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-[#26221F] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#9FB600] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-55 sm:text-sm motion-reduce:transform-none motion-reduce:transition-none"
           >
             {loading ? (
               <>
                 <span
                   aria-hidden="true"
-                  className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                  className="h-4 w-4 animate-spin rounded-full border-2 border-[#26221F]/30 border-t-[#26221F]"
                 />
                 <span>{labels.submitting}</span>
               </>

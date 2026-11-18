@@ -10,14 +10,9 @@ import Image from 'next/image';
 const LANGUAGES: { code: Language; label: string }[] = [
   { code: 'en', label: 'English' },
   { code: 'ja', label: '日本語' },
-  { code: 'vi', label: 'Tiếng Việt' },
 ];
 
 const TOPBAR_LABELS: Record<Language, { intro: string; services: string }> = {
-  vi: {
-    intro: 'RE AGENT by Re iDea — Hỗ trợ khách hàng quốc tế tìm nhà tại Nhật Bản',
-    services: 'Cho thuê / Mua bán / Hỗ trợ định cư',
-  },
   en: {
     intro: 'RE AGENT by Re iDea — Helping Overseas Clients Find Homes in Japan',
     services: 'Rental / Sales / Relocation Support',
@@ -104,7 +99,6 @@ export default function Header() {
   const closeMenu = () => setMenuOpen(false);
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
 
-  // Tự động cuộn xuống phần form liên hệ nếu đã đứng ở trang /about
   const handleCtaClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (pathname === '/about') {
       e.preventDefault();
@@ -123,7 +117,7 @@ export default function Header() {
 
   return (
     <>
-      {/* Top Bar — Nền than ấm đồng bộ bảng màu Japandi */}
+      {/* Top Bar */}
       <div className="hidden bg-[#1E1B18] text-[#FAF8F5] lg:block">
         <div className={`${CONTAINER} flex h-9 items-center justify-between gap-6 whitespace-nowrap text-xs font-medium tracking-wide`}>
           <p className="text-[#FAF8F5]/90">{topBar.intro}</p>
@@ -143,7 +137,7 @@ export default function Header() {
             >
               WhatsApp
             </a>
-            <span className="text-[#A64237]">•</span>
+            <span className="text-[#B8D200]">•</span>
             <a
               href={SITE.instagramHref}
               target="_blank"
@@ -159,10 +153,9 @@ export default function Header() {
       {/* Main Warm Minimalist Navbar */}
       <header className="sticky top-0 z-50 border-b border-[#E5DFD6] bg-[#FAF8F5]/90 shadow-[0_1px_2px_rgba(38,34,31,0.04)] backdrop-blur-md">
         <div className={`${CONTAINER} flex items-center justify-between gap-4 whitespace-nowrap py-3`}>
-          {/* Logo tối ưu kích thước tải */}
           <Link
             href="/"
-            className="group flex shrink-0 cursor-pointer items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237]"
+            className="group flex shrink-0 cursor-pointer items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200]"
           >
             <Image
               src="/logo_mii.png"
@@ -184,9 +177,9 @@ export default function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`relative shrink-0 cursor-pointer rounded py-1.5 text-base transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
+                  className={`relative shrink-0 cursor-pointer rounded py-1.5 text-base transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] ${
                     active
-                      ? 'font-bold text-[#A64237] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:bg-[#A64237]'
+                      ? 'font-bold text-[#B8D200] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:bg-[#B8D200]'
                       : 'font-medium text-[#66605A] hover:text-[#26221F]'
                   }`}
                 >
@@ -196,7 +189,7 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Switcher 3 Ngôn ngữ (Desktop Pill) */}
+          {/* Switcher 2 Ngôn ngữ (Desktop Pill) */}
           <div className="hidden shrink-0 items-center gap-1 rounded-lg border border-[#E5DFD6] bg-white p-1 text-xs font-semibold shadow-2xs lg:flex">
             {LANGUAGES.map((lang) => {
               const selected = currentLang === lang.code;
@@ -205,9 +198,9 @@ export default function Header() {
                   key={lang.code}
                   type="button"
                   onClick={() => setLanguage(lang.code)}
-                  className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
+                  className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] ${
                     selected
-                      ? 'bg-[#A64237] text-white shadow-xs'
+                      ? 'bg-[#B8D200] text-[#26221F] shadow-xs'
                       : 'text-[#66605A] hover:bg-[#F2EFE9] hover:text-[#26221F]'
                   }`}
                 >
@@ -221,9 +214,9 @@ export default function Header() {
           <div className="hidden items-center gap-5 lg:flex">
             <a
               href={SITE.hotlineHref}
-              className="flex shrink-0 cursor-pointer items-center gap-2.5 rounded-lg py-1 text-sm font-bold text-[#26221F] transition-colors duration-200 hover:text-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237]"
+              className="flex shrink-0 cursor-pointer items-center gap-2.5 rounded-lg py-1 text-sm font-bold text-[#26221F] transition-colors duration-200 hover:text-[#B8D200] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200]"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E5DFD6] bg-white text-[#A64237] shadow-2xs">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E5DFD6] bg-white text-[#B8D200] shadow-2xs">
                 <PhoneIcon className="h-4 w-4" />
               </span>
               <span>{SITE.hotline}</span>
@@ -232,7 +225,7 @@ export default function Header() {
             <Link
               href={SITE.ctaHref}
               onClick={handleCtaClick}
-              className="inline-flex shrink-0 cursor-pointer items-center rounded-lg bg-[#A64237] px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#8C352C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+              className="inline-flex shrink-0 cursor-pointer items-center rounded-lg bg-[#B8D200] px-6 py-3 text-sm font-semibold text-[#26221F] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#9FB600] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
             >
               {t.header.getConsultation}
             </Link>
@@ -242,7 +235,7 @@ export default function Header() {
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
-            className="cursor-pointer rounded-lg border border-[#E5DFD6] bg-white p-2 text-[#26221F] transition-colors duration-200 hover:bg-[#F2EFE9] hover:text-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] lg:hidden"
+            className="cursor-pointer rounded-lg border border-[#E5DFD6] bg-white p-2 text-[#26221F] transition-colors duration-200 hover:bg-[#F2EFE9] hover:text-[#B8D200] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] lg:hidden"
             aria-label="Open Menu"
           >
             <MenuIcon className="h-6 w-6" />
@@ -269,7 +262,7 @@ export default function Header() {
                   type="button"
                   onClick={closeMenu}
                   aria-label="Close Menu"
-                  className="cursor-pointer rounded-lg border border-[#E5DFD6] bg-white p-2 text-[#26221F] transition-colors duration-200 hover:bg-[#F2EFE9] hover:text-[#A64237] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237]"
+                  className="cursor-pointer rounded-lg border border-[#E5DFD6] bg-white p-2 text-[#26221F] transition-colors duration-200 hover:bg-[#F2EFE9] hover:text-[#B8D200] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200]"
                 >
                   <CloseIcon className="h-5 w-5" />
                 </button>
@@ -283,10 +276,10 @@ export default function Header() {
                       key={link.href}
                       href={link.href}
                       onClick={closeMenu}
-                      className={`block cursor-pointer rounded-lg px-3 py-2.5 text-base transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
+                      className={`block cursor-pointer rounded-lg px-3 py-2.5 text-base transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] ${
                         active
-                          ? 'bg-white font-bold text-[#A64237] ring-1 ring-[#E5DFD6]'
-                          : 'font-medium text-[#26221F] hover:bg-[#F2EFE9] hover:text-[#A64237]'
+                          ? 'bg-white font-bold text-[#B8D200] ring-1 ring-[#E5DFD6]'
+                          : 'font-medium text-[#26221F] hover:bg-[#F2EFE9] hover:text-[#B8D200]'
                       }`}
                     >
                       {link.name}
@@ -295,7 +288,7 @@ export default function Header() {
                 })}
               </nav>
 
-              {/* Switcher 3 Ngôn ngữ (Mobile) */}
+              {/* Switcher 2 Ngôn ngữ (Mobile) */}
               <div className="border-t border-[#E5DFD6] pt-4">
                 <p className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-[#948D86]">
                   {t.header.language}
@@ -306,9 +299,9 @@ export default function Header() {
                       key={lang.code}
                       type="button"
                       onClick={() => setLanguage(lang.code)}
-                      className={`cursor-pointer rounded-lg px-3 py-1.5 font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
+                      className={`cursor-pointer rounded-lg px-3 py-1.5 font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] ${
                         currentLang === lang.code
-                          ? 'bg-[#A64237] font-bold text-white shadow-xs'
+                          ? 'bg-[#B8D200] font-bold text-[#26221F] shadow-xs'
                           : 'border border-[#E5DFD6] bg-white text-[#26221F] hover:bg-[#F2EFE9]'
                       }`}
                     >
@@ -318,13 +311,13 @@ export default function Header() {
                 </div>
               </div>
 
-              {/* Liên hệ nhanh Mobile */}
+              {/* Mobile Quick Contact */}
               <div className="space-y-2 rounded-xl border border-[#E5DFD6] bg-white p-4 text-xs text-[#66605A]">
                 <p className="font-bold text-[#26221F]">{SITE.company}</p>
                 <p>{topBar.services}</p>
                 <a
                   href={SITE.hotlineHref}
-                  className="block cursor-pointer pt-1 font-bold text-[#A64237] hover:underline"
+                  className="block cursor-pointer pt-1 font-bold text-[#B8D200] hover:underline"
                 >
                   Mobile: {SITE.hotline}
                 </a>
@@ -334,7 +327,7 @@ export default function Header() {
                 >
                   {SITE.email}
                 </a>
-                <div className="flex gap-4 pt-1.5 font-semibold text-[#A64237]">
+                <div className="flex gap-4 pt-1.5 font-semibold text-[#B8D200]">
                   <a
                     href={SITE.whatsappHref}
                     target="_blank"
@@ -362,7 +355,7 @@ export default function Header() {
                   closeMenu();
                   handleCtaClick(e);
                 }}
-                className="block w-full cursor-pointer rounded-lg bg-[#A64237] py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition-all duration-200 hover:bg-[#8C352C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2"
+                className="block w-full cursor-pointer rounded-lg bg-[#B8D200] py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-[#26221F] shadow-sm transition-all duration-200 hover:bg-[#9FB600] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2"
               >
                 {t.header.getConsultation}
               </Link>

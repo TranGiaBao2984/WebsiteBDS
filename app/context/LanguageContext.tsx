@@ -7,7 +7,7 @@ const STORAGE_KEY = 'app_lang';
 const listeners = new Set<() => void>();
 
 function isLanguage(value: string | null): value is Language {
-  return value === 'en' || value === 'ja' || value === 'vi';
+  return value === 'en' || value === 'ja';
 }
 
 function getSnapshot(): Language {
@@ -15,18 +15,17 @@ function getSnapshot(): Language {
     const saved = localStorage.getItem(STORAGE_KEY);
     return isLanguage(saved) ? saved : 'en';
   } catch {
-    return 'en'; // Safari chế độ riêng tư có thể chặn localStorage
+    return 'en';
   }
 }
 
-// Server và lượt hydrate đầu tiên luôn dùng tiếng Anh
 function getServerSnapshot(): Language {
   return 'en';
 }
 
 function subscribe(callback: () => void) {
   listeners.add(callback);
-  window.addEventListener('storage', callback); // đồng bộ giữa các tab
+  window.addEventListener('storage', callback);
   return () => {
     listeners.delete(callback);
     window.removeEventListener('storage', callback);
@@ -37,7 +36,7 @@ function setLanguage(lang: Language) {
   try {
     localStorage.setItem(STORAGE_KEY, lang);
   } catch {
-    /* bỏ qua nếu bị chặn */
+    /* ignore if blocked */
   }
   document.cookie = `NEXT_LOCALE=${lang}; path=/; max-age=31536000`;
   document.documentElement.lang = lang;

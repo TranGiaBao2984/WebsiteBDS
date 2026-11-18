@@ -97,7 +97,7 @@ function getCleanText(val: unknown, currentLang: string = 'en'): string {
       const firstNonEmpty = Object.values(record).find(
         (v) => typeof v === 'string' && v.trim().length > 0
       );
-      current = record[currentLang] || record.en || record.vi || record.ja || firstNonEmpty || '';
+      current = record[currentLang] || record.en || record.ja || firstNonEmpty || '';
     } else {
       break;
     }
@@ -111,43 +111,21 @@ function toPositiveNumber(val: unknown): number {
   return Number.isFinite(num) && num > 0 ? num : 0;
 }
 
-function getFormattedPrice(property: Property, currentLang: 'vi' | 'en' | 'ja'): string {
+function getFormattedPrice(property: Property, currentLang: 'en' | 'ja'): string {
   const descObj = unwrapJson(property.description);
-  let priceVi = toPositiveNumber(property.price_vnd);
   let priceEn = 0;
   let priceJa = toPositiveNumber(property.price_yen) || toPositiveNumber(property.price);
 
   if (typeof descObj === 'object' && descObj !== null && !Array.isArray(descObj)) {
     const record = descObj as Record<string, unknown>;
-    const savedVi = toPositiveNumber(record.price_vi);
     const savedEn = toPositiveNumber(record.price_en);
     const savedJa = toPositiveNumber(record.price_ja);
 
-    if (savedVi > 0) priceVi = savedVi;
     if (savedEn > 0) priceEn = savedEn;
     if (savedJa > 0) priceJa = savedJa;
   }
 
-  const JPY_TO_VND = 170;
   const JPY_TO_USD = 1 / 150;
-  const USD_TO_VND = 25500;
-
-  if (currentLang === 'vi') {
-    const vndAmount =
-      priceVi > 0
-        ? priceVi
-        : priceJa > 0
-        ? Math.round(priceJa * JPY_TO_VND)
-        : priceEn > 0
-        ? Math.round(priceEn * USD_TO_VND)
-        : 0;
-
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      maximumFractionDigits: 0,
-    }).format(vndAmount);
-  }
 
   if (currentLang === 'en') {
     const usdAmount =
@@ -155,8 +133,6 @@ function getFormattedPrice(property: Property, currentLang: 'vi' | 'en' | 'ja'):
         ? priceEn
         : priceJa > 0
         ? Math.round(priceJa * JPY_TO_USD)
-        : priceVi > 0
-        ? Math.round(priceVi / USD_TO_VND)
         : 0;
 
     return new Intl.NumberFormat('en-US', {
@@ -171,8 +147,6 @@ function getFormattedPrice(property: Property, currentLang: 'vi' | 'en' | 'ja'):
       ? priceJa
       : priceEn > 0
       ? Math.round(priceEn / JPY_TO_USD)
-      : priceVi > 0
-      ? Math.round(priceVi / JPY_TO_VND)
       : 0;
 
   return new Intl.NumberFormat('ja-JP', {
@@ -228,15 +202,6 @@ function parseFirstImage(val: unknown): string {
 }
 
 const CARD_LABELS = {
-  vi: {
-    price: 'Giá bán',
-    details: 'Chi tiết',
-    defaultTitle: 'Bất động sản',
-    defaultLoc: 'Nhật Bản',
-    statusAvailable: 'Còn trống',
-    statusSold: 'Đã bán',
-    statusReserved: 'Đang giao dịch',
-  },
   en: {
     price: 'Price',
     details: 'Details',
@@ -265,7 +230,7 @@ function getLocalizedStatus(
   if (normalized === 'SOLD' || normalized === 'CLOSED') {
     return {
       label: labels.statusSold,
-      badgeClass: 'bg-[#A64237]/95 text-white border-white/20',
+      badgeClass: 'bg-[#B8D200]/95 text-[#26221F] border-[#26221F]/15',
     };
   }
   if (normalized === 'RESERVED' || normalized === 'PENDING') {
@@ -282,14 +247,14 @@ function getLocalizedStatus(
 
 function PropertyCardComponent({ property, priority = false }: PropertyCardProps) {
   const { currentLang } = useLanguage();
-  const labels = CARD_LABELS[currentLang] || CARD_LABELS.en;
+  const lang = currentLang === 'ja' ? 'ja' : 'en';
+  const labels = CARD_LABELS[lang];
 
-  const title = getCleanText(property.title, currentLang) || labels.defaultTitle;
-  const location = getCleanText(property.location, currentLang) || labels.defaultLoc;
-  const formattedPrice = getFormattedPrice(property, currentLang);
+  const title = getCleanText(property.title, lang) || labels.defaultTitle;
+  const location = getCleanText(property.location, lang) || labels.defaultLoc;
+  const formattedPrice = getFormattedPrice(property, lang);
   const initialImage = parseFirstImage(property.images);
 
-  // Theo dõi URL ảnh lỗi để tự động reset khi initialImage thay đổi mà không cần useEffect
   const [failedImage, setFailedImage] = useState<string | null>(null);
   const imgSrc = failedImage === initialImage ? FALLBACK_IMAGE : initialImage;
 
@@ -298,9 +263,8 @@ function PropertyCardComponent({ property, priority = false }: PropertyCardProps
   return (
     <Link
       href={`/properties/${property.id}`}
-      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-[#E5DFD6] bg-white shadow-[0_4px_12px_rgba(38,34,31,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#A64237] hover:shadow-[0_10px_20px_rgba(38,34,31,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-[#E5DFD6] bg-white shadow-[0_4px_12px_rgba(38,34,31,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#B8D200] hover:shadow-[0_10px_20px_rgba(38,34,31,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
     >
-      {/* Hình ảnh được tối ưu kích thước & định dạng WebP/AVIF */}
       <div className="relative aspect-4/3 overflow-hidden bg-[#F2EFE9]">
         <Image
           src={imgSrc}
@@ -317,7 +281,6 @@ function PropertyCardComponent({ property, priority = false }: PropertyCardProps
             }
           }}
         />
-        {/* Status Badge */}
         <div
           className={`absolute top-3 left-3 z-10 rounded-lg border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider backdrop-blur-md shadow-xs ${badgeClass}`}
         >
@@ -325,14 +288,13 @@ function PropertyCardComponent({ property, priority = false }: PropertyCardProps
         </div>
       </div>
 
-      {/* Nội dung */}
       <div className="flex grow flex-col justify-between space-y-4 p-6">
         <div>
           <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#948D86]">
-            <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-[#A64237]" />
+            <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-[#B8D200]" />
             <span className="truncate">{location}</span>
           </div>
-          <h3 className="font-serif line-clamp-2 text-base font-bold leading-snug text-[#26221F] transition-colors duration-200 group-hover:text-[#A64237]">
+          <h3 className="font-serif line-clamp-2 text-base font-bold leading-snug text-[#26221F] transition-colors duration-200 group-hover:text-[#B8D200]">
             {title}
           </h3>
         </div>
@@ -340,12 +302,12 @@ function PropertyCardComponent({ property, priority = false }: PropertyCardProps
         <div className="flex items-center justify-between gap-3 border-t border-[#E5DFD6] pt-4">
           <div className="min-w-0">
             <span className="block text-xs font-medium text-[#948D86]">{labels.price}</span>
-            <span className="font-serif block truncate text-lg font-bold text-[#A64237]">
+            <span className="font-serif block truncate text-lg font-bold text-[#B8D200]">
               {formattedPrice}
             </span>
           </div>
 
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#FAF8F5] px-3.5 py-2 text-xs font-semibold text-[#26221F] ring-1 ring-[#E5DFD6] transition-all duration-200 group-hover:bg-[#A64237] group-hover:text-white group-hover:ring-[#A64237]">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#FAF8F5] px-3.5 py-2 text-xs font-semibold text-[#26221F] ring-1 ring-[#E5DFD6] transition-all duration-200 group-hover:bg-[#B8D200] group-hover:text-[#26221F] group-hover:ring-[#B8D200]">
             <span>{labels.details}</span>
             <ArrowRightIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
           </span>

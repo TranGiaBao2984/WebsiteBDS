@@ -19,10 +19,9 @@ type SortOption = 'default' | 'price_asc' | 'price_desc';
 interface IndexedProperty {
   raw: Property;
   titles: {
-    vi: string;
     en: string;
     ja: string;
-    uniqueList: { lang: 'VI' | 'EN' | 'JA'; text: string }[];
+    uniqueList: { lang: 'EN' | 'JA'; text: string }[];
   };
   searchBlob: string;
   searchBlobAscii: string;
@@ -51,30 +50,10 @@ const LEGACY_LAYOUT_MAP: Record<string, string> = {
 };
 
 const CATALOG_UI_LABELS = {
-  vi: {
-    eyebrow: 'DANH MỤC BẤT ĐỘNG SẢN NHẬT BẢN',
-    subtitle: 'Tìm kiếm căn hộ, nhà ở và bất động sản chọn lọc theo khu vực, ngân sách và loại mặt bằng.',
-    placeholder: 'Nhập tên bất động sản, ga tàu hoặc khu vực (Việt / Anh / Nhật)...',
-    clearSearch: 'Xóa từ khóa',
-    suggestionsHeader: 'Gợi ý phù hợp nhất',
-    viewDetail: 'Xem chi tiết',
-    noSuggestions: 'Không có bất động sản nào khớp từ khóa này',
-    activeFiltersLabel: 'Đang lọc theo:',
-    keywordPrefix: 'Từ khóa',
-    locationPrefix: 'Khu vực',
-    pricePrefix: 'Giá',
-    layoutPrefix: 'Mặt bằng',
-    clearAll: 'Xóa tất cả',
-    sortLabel: 'Sắp xếp:',
-    sortDefault: 'Mới nhất',
-    sortPriceAsc: 'Giá: Thấp → Cao',
-    sortPriceDesc: 'Giá: Cao → Thấp',
-    emptyHint: 'Thử bỏ bớt điều kiện lọc hoặc đổi từ khóa tìm kiếm khác để xem thêm lựa chọn.',
-  },
   en: {
     eyebrow: 'JAPAN PROPERTY PORTFOLIO',
     subtitle: 'Explore curated apartments, residences, and traditional homes by prefecture, budget, and layout.',
-    placeholder: 'Search by property name, station, or area (EN / JA / VI)...',
+    placeholder: 'Search by property name, station, or area (EN / JA)...',
     clearSearch: 'Clear search',
     suggestionsHeader: 'Top Matching Properties',
     viewDetail: 'View details',
@@ -94,7 +73,7 @@ const CATALOG_UI_LABELS = {
   ja: {
     eyebrow: '日本不動産物件一覧',
     subtitle: 'エリア・ご予算・間取りから、ご希望に合う厳選物件をお探しいただけます。',
-    placeholder: '物件名・駅名・エリアで検索（日本語 / 英語 / ベトナム語）...',
+    placeholder: '物件名・駅名・エリアで検索（日本語 / 英語）...',
     clearSearch: '検索をクリア',
     suggestionsHeader: '一致する物件候補',
     viewDetail: '詳細を見る',
@@ -278,46 +257,42 @@ function getString(val: unknown): string {
   if (typeof val === 'function') return (val as () => string)();
   if (typeof val === 'object' && val !== null) {
     const record = val as Record<string, unknown>;
-    return getString(record.vi || record.en || record.ja || '');
+    return getString(record.en || record.ja || '');
   }
   return String(val);
 }
 
-function getTriLingualTitles(val: unknown): {
-  vi: string;
+function getBiLingualTitles(val: unknown): {
   en: string;
   ja: string;
-  uniqueList: { lang: 'VI' | 'EN' | 'JA'; text: string }[];
+  uniqueList: { lang: 'EN' | 'JA'; text: string }[];
 } {
   const unwrapped = unwrapJson(val);
 
   if (typeof unwrapped === 'string') {
     const clean = unwrapped.trim();
     return {
-      vi: clean,
       en: clean,
       ja: clean,
-      uniqueList: clean ? [{ lang: 'VI', text: clean }] : [],
+      uniqueList: clean ? [{ lang: 'EN', text: clean }] : [],
     };
   }
 
   if (typeof unwrapped === 'object' && unwrapped !== null) {
     const record = unwrapped as Record<string, unknown>;
-    const vi = typeof record.vi === 'string' ? record.vi.trim() : '';
     const en = typeof record.en === 'string' ? record.en.trim() : '';
     const ja = typeof record.ja === 'string' ? record.ja.trim() : '';
 
-    const rawEntries: { lang: 'VI' | 'EN' | 'JA'; text: string }[] = [
-      { lang: 'VI', text: vi },
+    const rawEntries: { lang: 'EN' | 'JA'; text: string }[] = [
       { lang: 'EN', text: en },
       { lang: 'JA', text: ja },
     ];
 
     const uniqueList = rawEntries.filter((entry) => entry.text.length > 0);
-    return { vi, en, ja, uniqueList };
+    return { en, ja, uniqueList };
   }
 
-  return { vi: '', en: '', ja: '', uniqueList: [] };
+  return { en: '', ja: '', uniqueList: [] };
 }
 
 function getDescriptionRecord(property: Property): Record<string, unknown> {
@@ -337,12 +312,10 @@ function normalizeLabel(str: string): string {
     .toLowerCase();
 }
 
-function stripVietnameseAccents(str: string): string {
+function stripAccents(str: string): string {
   return str
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
     .toLowerCase();
 }
 
@@ -401,7 +374,7 @@ function PropertyCatalogContent({
   initialFilterOptions?: FilterOptionsData;
 }) {
   const { t, currentLang } = useLanguage();
-  const ui = CATALOG_UI_LABELS[currentLang] || CATALOG_UI_LABELS.en;
+  const ui = CATALOG_UI_LABELS[currentLang === 'ja' ? 'ja' : 'en'];
   const catalogObj =
     t && typeof t === 'object' && 'catalog' in t
       ? (t as Record<string, Record<string, string>>).catalog
@@ -472,7 +445,6 @@ function PropertyCatalogContent({
     [pathname, router, searchParams]
   );
 
-  // Debounce đồng bộ từ khóa tìm kiếm lên URL mà không dùng ref
   useEffect(() => {
     const currentParamQ = (searchParams.get('q') || '').normalize('NFC');
     const trimmedInput = searchInput.trim().normalize('NFC');
@@ -502,16 +474,15 @@ function PropertyCatalogContent({
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }, [pathname, router, searchParams]);
 
-  // Pre-index toàn bộ dữ liệu 1 lần duy nhất
   const indexedProperties = useMemo<IndexedProperty[]>(() => {
     return properties.map((item) => {
-      const titles = getTriLingualTitles(item.title);
+      const titles = getBiLingualTitles(item.title);
       const descRecord = getDescriptionRecord(item);
       const locStr = getString(item.location);
       const filterLocStr =
         typeof descRecord.filter_location === 'string' ? descRecord.filter_location : '';
 
-      const rawBlob = [titles.vi, titles.en, titles.ja, locStr, filterLocStr]
+      const rawBlob = [titles.en, titles.ja, locStr, filterLocStr]
         .filter(Boolean)
         .join(' | ')
         .normalize('NFC')
@@ -521,7 +492,7 @@ function PropertyCatalogContent({
         raw: item,
         titles,
         searchBlob: rawBlob,
-        searchBlobAscii: stripVietnameseAccents(rawBlob),
+        searchBlobAscii: stripAccents(rawBlob),
         savedLocTag: filterLocStr ? normalizeLabel(filterLocStr) : '',
         fallbackLocBlob: normalizeLabel(JSON.stringify(item.location || '')),
         savedPriceTag:
@@ -556,7 +527,7 @@ function PropertyCatalogContent({
   const searchSuggestions = useMemo(() => {
     const cleanQuery = searchInput.normalize('NFC').trim().toLowerCase();
     if (!cleanQuery) return [];
-    const asciiQuery = stripVietnameseAccents(cleanQuery);
+    const asciiQuery = stripAccents(cleanQuery);
 
     return indexedProperties
       .filter(
@@ -568,7 +539,7 @@ function PropertyCatalogContent({
 
   const filteredAndSortedProperties = useMemo(() => {
     const cleanQuery = searchInput.normalize('NFC').trim().toLowerCase();
-    const asciiQuery = cleanQuery ? stripVietnameseAccents(cleanQuery) : '';
+    const asciiQuery = cleanQuery ? stripAccents(cleanQuery) : '';
     const normSelectedLoc = selectedLocation !== 'ALL' ? normalizeLabel(selectedLocation) : '';
     const normSelectedPrice = selectedPrice !== 'ALL' ? normalizeLabel(selectedPrice) : '';
     const normSelectedLayout = selectedLayout !== 'ALL' ? normalizeLabel(selectedLayout) : '';
@@ -685,23 +656,22 @@ function PropertyCatalogContent({
       {/* 1. EDITORIAL HEADER */}
       <div className="flex flex-col justify-between gap-5 border-b border-[#E5DFD6] pb-6 lg:flex-row lg:items-end">
         <div className="max-w-2xl space-y-2">
-          <span className="inline-block text-[11px] font-bold uppercase tracking-[0.22em] text-[#A64237]">
+          <span className="inline-block text-[11px] font-bold uppercase tracking-[0.22em] text-[#B8D200]">
             {ui.eyebrow}
           </span>
           <h1 className="font-serif text-3xl font-bold tracking-tight text-[#26221F] sm:text-4xl">
-            {getString(catalogObj?.title) || 'Tất Cả Bất Động Sản'}
+            {getString(catalogObj?.title) || 'All Properties'}
           </h1>
           <p className="text-sm leading-relaxed text-[#66605A]">{ui.subtitle}</p>
         </div>
 
-        {/* Cụm điều khiển kết quả & Sắp xếp */}
         <div className="flex flex-wrap items-center justify-between gap-4 sm:justify-end">
           <div className="flex items-baseline gap-1.5 rounded-xl border border-[#E5DFD6] bg-white px-4 py-2.5 shadow-2xs">
-            <span className="font-serif text-xl font-bold text-[#A64237]">
+            <span className="font-serif text-xl font-bold text-[#B8D200]">
               {filteredAndSortedProperties.length}
             </span>
             <span className="text-xs font-medium text-[#66605A]">
-              {getString(catalogObj?.properties) || 'bất động sản'}
+              {getString(catalogObj?.properties) || 'properties'}
             </span>
           </div>
 
@@ -728,15 +698,14 @@ function PropertyCatalogContent({
 
       {/* 2. UNIFIED SEARCH & FILTER CONSOLE */}
       <div className="overflow-visible rounded-2xl border border-[#E5DFD6] bg-white shadow-[0_6px_20px_rgba(38,34,31,0.05)]">
-        {/* Tầng trên: Thanh tìm kiếm toàn chiều rộng */}
         <div ref={searchBoxRef} className="relative border-b border-[#E5DFD6] p-4 sm:p-5">
           <div className="relative flex items-center">
-            <span className="pointer-events-none absolute left-4 text-[#A64237]">
+            <span className="pointer-events-none absolute left-4 text-[#B8D200]">
               <SearchIcon className="h-4.5 w-4.5" />
             </span>
 
             <input
-              id="property-trilingual-search"
+              id="property-bilingual-search"
               type="text"
               value={searchInput}
               onFocus={() => setShowDropdown(true)}
@@ -747,7 +716,7 @@ function PropertyCatalogContent({
                 }
               }}
               placeholder={ui.placeholder}
-              className="w-full rounded-xl border border-[#E5DFD6] bg-[#FAF8F5] py-3.5 pr-11 pl-11 text-sm text-[#26221F] placeholder:text-[#948D86] transition-all duration-200 focus:border-[#A64237] focus:bg-white focus:outline-none focus:ring-3 focus:ring-[#A64237]/15"
+              className="w-full rounded-xl border border-[#E5DFD6] bg-[#FAF8F5] py-3.5 pr-11 pl-11 text-sm text-[#26221F] placeholder:text-[#948D86] transition-all duration-200 focus:border-[#B8D200] focus:bg-white focus:outline-none focus:ring-3 focus:ring-[#B8D200]/20"
             />
 
             {searchInput && (
@@ -755,18 +724,18 @@ function PropertyCatalogContent({
                 type="button"
                 onClick={() => handleSearchChange('')}
                 aria-label={ui.clearSearch}
-                className="absolute right-3 cursor-pointer rounded-lg p-1.5 text-[#66605A] transition-colors duration-200 hover:bg-[#F2EFE9] hover:text-[#26221F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237]"
+                className="absolute right-3 cursor-pointer rounded-lg p-1.5 text-[#66605A] transition-colors duration-200 hover:bg-[#F2EFE9] hover:text-[#26221F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200]"
               >
                 <CloseIcon className="h-4 w-4" />
               </button>
             )}
           </div>
 
-          {/* Dropdown gợi ý trực tiếp 3 ngôn ngữ */}
+          {/* Bilingual search suggestions dropdown */}
           {showDropdown && searchInput.trim() !== '' && (
             <div className="absolute right-4 left-4 z-30 mt-2 overflow-hidden rounded-xl border border-[#E5DFD6] bg-white shadow-[0_14px_30px_rgba(38,34,31,0.14)] sm:right-5 sm:left-5">
               <div className="flex items-center justify-between border-b border-[#E5DFD6] bg-[#FAF8F5] px-4 py-2.5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#A64237]">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#B8D200]">
                   {ui.suggestionsHeader}
                 </span>
                 <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-[#26221F] ring-1 ring-[#E5DFD6]">
@@ -790,7 +759,7 @@ function PropertyCatalogContent({
                             <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-[#E5DFD6] bg-[#F2EFE9]">
                               <Image
                                 src={thumb}
-                                alt={titles.en || titles.vi || 'Property'}
+                                alt={titles.en || titles.ja || 'Property'}
                                 fill
                                 sizes="56px"
                                 quality={65}
@@ -798,7 +767,7 @@ function PropertyCatalogContent({
                               />
                             </div>
                           ) : (
-                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-[#E5DFD6] bg-[#F2EFE9] text-[#A64237]">
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-[#E5DFD6] bg-[#F2EFE9] text-[#B8D200]">
                               <BuildingIcon className="h-6 w-6" />
                             </div>
                           )}
@@ -809,10 +778,10 @@ function PropertyCatalogContent({
                                 key={`${item.id}-${entry.lang}`}
                                 className="flex items-baseline gap-1.5 text-xs"
                               >
-                                <span className="inline-block shrink-0 rounded border border-[#E5DFD6] bg-[#FAF8F5] px-1.5 py-0.5 text-[10px] font-bold text-[#A64237]">
+                                <span className="inline-block shrink-0 rounded border border-[#E5DFD6] bg-[#FAF8F5] px-1.5 py-0.5 text-[10px] font-bold text-[#B8D200]">
                                   {entry.lang}
                                 </span>
-                                <span className="truncate font-medium text-[#26221F] transition-colors group-hover:text-[#A64237]">
+                                <span className="truncate font-medium text-[#26221F] transition-colors group-hover:text-[#B8D200]">
                                   {entry.text}
                                 </span>
                               </div>
@@ -823,7 +792,7 @@ function PropertyCatalogContent({
                             <span className="font-serif block text-sm font-bold text-[#26221F]">
                               {yenPrice > 0 ? `¥${yenPrice.toLocaleString('en-US')}` : ''}
                             </span>
-                            <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-[#A64237] group-hover:underline">
+                            <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-[#B8D200] group-hover:underline">
                               <span>{ui.viewDetail}</span>
                               <ArrowRightIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
                             </span>
@@ -842,13 +811,12 @@ function PropertyCatalogContent({
           )}
         </div>
 
-        {/* Tầng giữa: Lưới 2 cột cân bằng */}
         <div className="grid grid-cols-1 divide-y divide-[#E5DFD6] bg-[#FAF8F5]/55 lg:grid-cols-12 lg:divide-x lg:divide-y-0">
-          {/* Cột trái (6/12): KHU VỰC */}
+          {/* Location */}
           <div className="p-4 sm:p-5 lg:col-span-6">
             <div className="mb-3 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#26221F]">
-              <MapPinIcon className="h-3.5 w-3.5 text-[#A64237]" />
-              <span>{getString(catalogObj?.locationLabel) || 'Khu vực'}</span>
+              <MapPinIcon className="h-3.5 w-3.5 text-[#B8D200]" />
+              <span>{getString(catalogObj?.locationLabel) || 'Location'}</span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {locationOptions.map((loc) => {
@@ -862,26 +830,25 @@ function PropertyCatalogContent({
                     type="button"
                     onClick={() => setFilter('location', loc)}
                     aria-pressed={isActive}
-                    className={`cursor-pointer rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
+                    className={`cursor-pointer rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] ${
                       isActive
-                        ? 'border-[#A64237] bg-[#A64237] text-white shadow-xs'
-                        : 'border-[#E5DFD6] bg-white text-[#26221F] hover:border-[#A64237] hover:text-[#A64237]'
+                        ? 'border-[#B8D200] bg-[#B8D200] text-[#26221F] shadow-xs'
+                        : 'border-[#E5DFD6] bg-white text-[#26221F] hover:border-[#B8D200] hover:text-[#B8D200]'
                     }`}
                   >
-                    {loc === 'ALL' ? getString(catalogObj?.allLocations) || 'Tất cả' : loc}
+                    {loc === 'ALL' ? getString(catalogObj?.allLocations) || 'All' : loc}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Cột phải (6/12): KHOẢNG GIÁ + MẶT BẰNG */}
+          {/* Price & Layout */}
           <div className="flex flex-col justify-between divide-y divide-[#E5DFD6] lg:col-span-6">
-            {/* Khoảng giá */}
             <div className="p-4 sm:p-5">
               <div className="mb-2.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#26221F]">
-                <TagIcon className="h-3.5 w-3.5 text-[#A64237]" />
-                <span>{getString(catalogObj?.priceLabel) || 'Khoảng giá'}</span>
+                <TagIcon className="h-3.5 w-3.5 text-[#B8D200]" />
+                <span>{getString(catalogObj?.priceLabel) || 'Price Range'}</span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {priceOptions.map((priceLabel) => {
@@ -895,14 +862,14 @@ function PropertyCatalogContent({
                       type="button"
                       onClick={() => setFilter('price', priceLabel)}
                       aria-pressed={isActive}
-                      className={`cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
+                      className={`cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] ${
                         isActive
-                          ? 'border-[#A64237] bg-[#A64237] text-white shadow-xs'
-                          : 'border-[#E5DFD6] bg-white text-[#26221F] hover:border-[#A64237] hover:text-[#A64237]'
+                          ? 'border-[#B8D200] bg-[#B8D200] text-[#26221F] shadow-xs'
+                          : 'border-[#E5DFD6] bg-white text-[#26221F] hover:border-[#B8D200] hover:text-[#B8D200]'
                       }`}
                     >
                       {priceLabel === 'ALL'
-                        ? getString(catalogObj?.allPrices) || 'Tất cả'
+                        ? getString(catalogObj?.allPrices) || 'All'
                         : priceLabel}
                     </button>
                   );
@@ -910,11 +877,10 @@ function PropertyCatalogContent({
               </div>
             </div>
 
-            {/* Mặt bằng */}
             <div className="p-4 sm:p-5">
               <div className="mb-2.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#26221F]">
-                <LayoutGridIcon className="h-3.5 w-3.5 text-[#A64237]" />
-                <span>{getString(catalogObj?.layoutLabel) || 'Mặt bằng'}</span>
+                <LayoutGridIcon className="h-3.5 w-3.5 text-[#B8D200]" />
+                <span>{getString(catalogObj?.layoutLabel) || 'Layout'}</span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {layoutOptions.map((layoutLabel) => {
@@ -924,7 +890,7 @@ function PropertyCatalogContent({
                       : normalizeLabel(selectedLayout) === normalizeLabel(layoutLabel);
                   const displayLabel =
                     layoutLabel === 'ALL'
-                      ? getString(catalogObj?.allLayouts) || 'Tất cả'
+                      ? getString(catalogObj?.allLayouts) || 'All'
                       : layoutLabel.toUpperCase().includes('KOMINKA')
                         ? getString(catalogObj?.kominka) || layoutLabel
                         : layoutLabel;
@@ -935,10 +901,10 @@ function PropertyCatalogContent({
                       type="button"
                       onClick={() => setFilter('layout', layoutLabel)}
                       aria-pressed={isActive}
-                      className={`cursor-pointer rounded-lg border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] ${
+                      className={`cursor-pointer rounded-lg border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] ${
                         isActive
-                          ? 'border-[#A64237] bg-[#A64237] text-white shadow-xs'
-                          : 'border-[#E5DFD6] bg-white text-[#26221F] hover:border-[#A64237] hover:text-[#A64237]'
+                          ? 'border-[#B8D200] bg-[#B8D200] text-[#26221F] shadow-xs'
+                          : 'border-[#E5DFD6] bg-white text-[#26221F] hover:border-[#B8D200] hover:text-[#B8D200]'
                       }`}
                     >
                       {displayLabel}
@@ -950,7 +916,7 @@ function PropertyCatalogContent({
           </div>
         </div>
 
-        {/* Tầng đáy: Thanh Active Filter Chips */}
+        {/* Active Filter Chips */}
         {hasFilters && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-b-2xl border-t border-[#E5DFD6] bg-[#F2EFE9]/75 px-4 py-3 sm:px-5">
             <div className="flex flex-wrap items-center gap-2">
@@ -962,7 +928,7 @@ function PropertyCatalogContent({
                   key={chip.key}
                   type="button"
                   onClick={chip.onRemove}
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#A64237]/30 bg-white px-3 py-1 text-xs font-semibold text-[#A64237] shadow-2xs transition-colors duration-200 hover:border-[#A64237] hover:bg-[#A64237] hover:text-white"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#B8D200]/50 bg-white px-3 py-1 text-xs font-semibold text-[#26221F] shadow-2xs transition-colors duration-200 hover:border-[#B8D200] hover:bg-[#B8D200] hover:text-[#26221F]"
                 >
                   <span>{chip.label}</span>
                   <CloseIcon className="h-3 w-3" />
@@ -973,7 +939,7 @@ function PropertyCatalogContent({
             <button
               type="button"
               onClick={clearFilters}
-              className="inline-flex cursor-pointer items-center gap-1 text-xs font-bold text-[#A64237] transition-colors duration-200 hover:text-[#8C352C] hover:underline"
+              className="inline-flex cursor-pointer items-center gap-1 text-xs font-bold text-[#B8D200] transition-colors duration-200 hover:text-[#9FB600] hover:underline"
             >
               <CloseIcon className="h-3.5 w-3.5" />
               <span>{ui.clearAll}</span>
@@ -982,7 +948,7 @@ function PropertyCatalogContent({
         )}
       </div>
 
-      {/* 3. LƯỚI BẤT ĐỘNG SẢN */}
+      {/* 3. PROPERTY GRID */}
       <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-7">
         {filteredAndSortedProperties.length > 0 ? (
           filteredAndSortedProperties.map((indexed, index) => (
@@ -994,12 +960,12 @@ function PropertyCatalogContent({
           ))
         ) : (
           <div className="col-span-full flex w-full flex-col items-center justify-center space-y-4 rounded-2xl border border-[#E5DFD6] bg-white p-14 text-center shadow-[0_4px_12px_rgba(38,34,31,0.05)]">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-[#E5DFD6] bg-[#F2EFE9] text-[#A64237]">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-[#E5DFD6] bg-[#F2EFE9] text-[#B8D200]">
               <BuildingIcon className="h-7 w-7" />
             </span>
             <div className="space-y-1">
               <p className="font-serif text-lg font-bold text-[#26221F]">
-                {getString(catalogObj?.noResults) || 'Không tìm thấy kết quả phù hợp'}
+                {getString(catalogObj?.noResults) || 'No matching properties found'}
               </p>
               <p className="text-xs text-[#66605A]">{ui.emptyHint}</p>
             </div>
@@ -1007,10 +973,10 @@ function PropertyCatalogContent({
               <button
                 type="button"
                 onClick={clearFilters}
-                className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-[#A64237] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#8C352C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A64237] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+                className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-[#B8D200] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[#26221F] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#9FB600] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
               >
                 <CloseIcon className="h-4 w-4" />
-                <span>{getString(catalogObj?.clearFilter) || 'Xóa bộ lọc'}</span>
+                <span>{getString(catalogObj?.clearFilter) || 'Clear filters'}</span>
               </button>
             )}
           </div>
@@ -1037,7 +1003,7 @@ export default function SanPhamSection({
     <Suspense
       fallback={
         <div className="py-12 text-center text-xs font-medium text-[#66605A]">
-          {getString(catalogObj?.loading) || 'Đang tải...'}
+          {getString(catalogObj?.loading) || 'Loading...'}
         </div>
       }
     >

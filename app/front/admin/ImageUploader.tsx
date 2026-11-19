@@ -4,6 +4,7 @@
 import { useId, useState } from 'react';
 import { createSupabaseBrowser } from '@/lib/supabase-browser';
 import { IMAGE_BUCKET } from '@/lib/storage';
+import type { ImageCaption } from '@/lib/types';
 
 const MAX_SIDE = 1600;
 const WEBP_QUALITY = 0.82;
@@ -187,6 +188,23 @@ function AlertCircleIcon({ className }: { className?: string }) {
   );
 }
 
+function StarIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
+
 const SMALL_BTN =
   'flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-white/20 bg-[#134E4A]/85 text-white backdrop-blur-md transition-all duration-200 hover:bg-[#0F766E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-40';
 
@@ -196,6 +214,8 @@ export default function ImageUploader({
   value,
   onChange,
   max,
+  captions,
+  onCaptionChange,
   error,
   onBusyChange,
 }: {
@@ -203,7 +223,11 @@ export default function ImageUploader({
   hint?: string;
   value: string[];
   onChange: (next: string[]) => void;
-  max: number;
+  /** Số ảnh tối đa. Bỏ trống = không giới hạn. */
+  max?: number;
+  /** Ghi chú song ngữ của từng ảnh, key = URL ảnh. Bỏ trống = ẩn ô ghi chú. */
+  captions?: Record<string, ImageCaption>;
+  onCaptionChange?: (url: string, caption: ImageCaption) => void;
   error?: string;
   onBusyChange?: (busy: boolean) => void;
 }) {
@@ -213,7 +237,10 @@ export default function ImageUploader({
   const [problems, setProblems] = useState<string[]>([]);
   const [urlText, setUrlText] = useState('');
 
-  const full = value.length >= max;
+  // max không truyền (hoặc Infinity) = không giới hạn số ảnh
+  const limit = typeof max === 'number' && Number.isFinite(max) ? max : null;
+  const single = limit === 1;
+  const full = limit !== null && value.length >= limit;
 
   const setBusyBoth = (b: boolean) => {
     setBusy(b);
@@ -222,7 +249,9 @@ export default function ImageUploader({
 
   const handleFiles = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0 || busy) return;
-    const files = Array.from(fileList).slice(0, max - value.length);
+    const allFiles = Array.from(fileList);
+    const files =
+      limit === null ? allFiles : allFiles.slice(0, Math.max(0, limit - value.length));
     const errs: string[] = [];
 
     setProblems([]);
@@ -242,8 +271,8 @@ export default function ImageUploader({
       }
     }
 
-    if (fileList.length > files.length) {
-      errs.push(`Chỉ nhận tối đa ${max} ảnh, các ảnh dư đã bị bỏ qua.`);
+    if (limit !== null && allFiles.length > files.length) {
+      errs.push(`Chỉ nhận tối đa ${limit} ảnh, các ảnh dư đã bị bỏ qua.`);
     }
     setProblems(errs);
     setProgress('');
@@ -259,6 +288,14 @@ export default function ImageUploader({
   };
 
   const remove = (index: number) => onChange(value.filter((_, i) => i !== index));
+
+  // Đưa ảnh được chọn lên vị trí đầu tiên (ảnh bìa)
+  const setCover = (index: number) => move(index, 0);
+
+  const updateCaption = (url: string, lang: 'en' | 'ja', text: string) => {
+    const current = captions?.[url] ?? { en: '', ja: '' };
+    onCaptionChange?.(url, { ...current, [lang]: text });
+  };
 
   const addUrl = () => {
     const u = urlText.trim();
@@ -284,71 +321,120 @@ export default function ImageUploader({
           {hint && <p className="mt-0.5 text-xs text-[#475569]">{hint}</p>}
         </div>
         <span className="rounded-full border border-[#99F6E4] bg-white px-2.5 py-0.5 text-xs font-bold text-[#0F766E]">
-          {value.length}/{max}
+          {limit === null ? `${value.length} ảnh` : `${value.length}/${limit}`}
         </span>
       </div>
 
       {value.length > 0 && (
         <ul
           className={`grid gap-3.5 ${
-            max === 1 ? 'grid-cols-1 sm:max-w-xs' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+            single
+              ? 'grid-cols-1 sm:max-w-xs'
+              : onCaptionChange
+              ? 'grid-cols-2 sm:grid-cols-3'
+              : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
           }`}
         >
-          {value.map((url, i) => (
-            <li
-              key={`${url}-${i}`}
-              className="group relative overflow-hidden rounded-xl border border-[#99F6E4] bg-[#E8F0F3]/60 shadow-xs"
-            >
-              <img
-                src={url}
-                alt={`${label} ${i + 1}`}
-                loading="lazy"
-                className="aspect-4/3 w-full object-cover"
-              />
+          {value.map((url, i) => {
+            const caption = captions?.[url];
 
-              {max > 1 && i === 0 && (
-                <span className="absolute top-2 left-2 rounded-md border border-white/20 bg-[#0F766E] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
-                  Ảnh bìa
-                </span>
-              )}
+            return (
+              <li
+                key={`${url}-${i}`}
+                className="group overflow-hidden rounded-xl border border-[#99F6E4] bg-[#E8F0F3]/60 shadow-xs"
+              >
+                <div className="relative">
+                  <img
+                    src={url}
+                    alt={`${label} ${i + 1}`}
+                    loading="lazy"
+                    className="aspect-4/3 w-full object-cover"
+                  />
 
-              <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-1.5">
-                {max > 1 ? (
-                  <div className="flex gap-1.5">
+                  {!single && i === 0 && (
+                    <span className="absolute top-2 left-2 rounded-md border border-white/20 bg-[#0F766E] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
+                      Ảnh bìa
+                    </span>
+                  )}
+
+                  {!single && i > 0 && (
                     <button
                       type="button"
-                      aria-label="Chuyển sang trái"
-                      disabled={busy || i === 0}
-                      onClick={() => move(i, i - 1)}
-                      className={SMALL_BTN}
+                      aria-label="Đặt làm ảnh bìa"
+                      title="Đặt làm ảnh bìa (đưa lên vị trí đầu tiên)"
+                      disabled={busy}
+                      onClick={() => setCover(i)}
+                      className="absolute top-2 left-2 inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/20 bg-[#134E4A]/85 px-2 py-0.5 text-[11px] font-semibold text-white shadow-xs backdrop-blur-md transition-all duration-200 hover:bg-[#0F766E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      <ChevronLeftIcon className="h-4 w-4" />
+                      <StarIcon className="h-3 w-3" />
+                      <span>Đặt làm bìa</span>
                     </button>
+                  )}
+
+                  <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-1.5">
+                    {!single ? (
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          aria-label="Chuyển sang trái"
+                          disabled={busy || i === 0}
+                          onClick={() => move(i, i - 1)}
+                          className={SMALL_BTN}
+                        >
+                          <ChevronLeftIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Chuyển sang phải"
+                          disabled={busy || i === value.length - 1}
+                          onClick={() => move(i, i + 1)}
+                          className={SMALL_BTN}
+                        >
+                          <ChevronRightIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span />
+                    )}
                     <button
                       type="button"
-                      aria-label="Chuyển sang phải"
-                      disabled={busy || i === value.length - 1}
-                      onClick={() => move(i, i + 1)}
-                      className={SMALL_BTN}
+                      aria-label="Xoá ảnh"
+                      disabled={busy}
+                      onClick={() => remove(i)}
+                      className={`${SMALL_BTN} hover:bg-rose-600`}
                     >
-                      <ChevronRightIcon className="h-4 w-4" />
+                      <CloseIcon className="h-4 w-4" />
                     </button>
                   </div>
-                ) : (
-                  <span />
+                </div>
+
+                {onCaptionChange && (
+                  <div className="space-y-1.5 border-t border-[#99F6E4]/70 bg-white/85 p-2">
+                    {(['en', 'ja'] as const).map((lang) => (
+                      <div key={lang} className="flex items-center gap-1.5">
+                        <span className="w-5 shrink-0 text-[10px] font-bold uppercase text-[#0F766E]">
+                          {lang}
+                        </span>
+                        <input
+                          type="text"
+                          value={caption?.[lang] ?? ''}
+                          disabled={busy}
+                          onChange={(e) => updateCaption(url, lang, e.target.value)}
+                          onKeyDown={(e) => {
+                            // Tránh Enter làm submit cả form
+                            if (e.key === 'Enter') e.preventDefault();
+                          }}
+                          placeholder={lang === 'en' ? 'Living room' : 'リビング'}
+                          aria-label={`Ghi chú ${lang === 'en' ? 'tiếng Anh' : 'tiếng Nhật'} cho ảnh ${i + 1}`}
+                          className="min-w-0 flex-1 rounded-md border border-[#E2E8F0] bg-white px-2 py-1.5 text-xs text-[#134E4A] placeholder:text-[#475569]/55 transition-all duration-200 focus:border-[#0F766E] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/15 disabled:opacity-50"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 )}
-                <button
-                  type="button"
-                  aria-label="Xoá ảnh"
-                  disabled={busy}
-                  onClick={() => remove(i)}
-                  className={`${SMALL_BTN} hover:bg-rose-600`}
-                >
-                  <CloseIcon className="h-4 w-4" />
-                </button>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
 
@@ -373,7 +459,7 @@ export default function ImageUploader({
               <span>
                 {full
                   ? 'Đã đủ số ảnh'
-                  : max === 1
+                  : single
                   ? 'Chọn ảnh'
                   : 'Chọn ảnh (chọn được nhiều ảnh)'}
               </span>
@@ -384,7 +470,7 @@ export default function ImageUploader({
           id={`${uid}-file`}
           type="file"
           accept="image/jpeg,image/png,image/webp"
-          multiple={max > 1}
+          multiple={!single}
           disabled={busy || full}
           className="sr-only"
           onChange={(e) => {

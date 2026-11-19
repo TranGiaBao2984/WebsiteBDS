@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '@/app/context/LanguageContext';
-import type { NearbyCategory, Property } from '@/lib/types';
+import type { ImageCaptions, NearbyCategory, Property } from '@/lib/types';
 import PropertyCard from './PropertyCard';
 import InquiryForm from './InquiryForm';
 
@@ -400,6 +400,29 @@ function getCleanText(val: unknown, currentLang: string = 'en'): string {
   return typeof current === 'string' ? current : String(current || '');
 }
 
+const JAPANESE_CHAR_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf]/;
+
+function getLocalizedSpecText(val: unknown, lang: 'en' | 'ja'): string | null {
+  const raw = getCleanText(val, lang).trim();
+  if (!raw) return null;
+
+  if (raw.includes(' / ')) {
+    const parts = raw
+      .split(' / ')
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    const jaParts = parts.filter((part) => JAPANESE_CHAR_REGEX.test(part));
+    const enParts = parts.filter((part) => !JAPANESE_CHAR_REGEX.test(part));
+
+    if (jaParts.length > 0 && enParts.length > 0) {
+      return lang === 'ja' ? jaParts.join(' / ') : enParts.join(' / ');
+    }
+  }
+
+  return raw;
+}
+
 function parseNearbyItems(property: Property, currentLang: string): ResolvedNearbyItem[] {
   let rawList: unknown = property.nearby;
 
@@ -440,8 +463,11 @@ function toPositiveNumber(val: unknown): number {
 
 function getFormattedPrice(property: Property, currentLang: 'en' | 'ja'): string {
   const descObj = unwrapJson(property.description);
-  let priceEn = 0;
-  let priceJa = toPositiveNumber(property.price_yen) || toPositiveNumber(property.price);
+  const colYen = toPositiveNumber(property.price_yen);
+  const colUsd = toPositiveNumber(property.price);
+
+  let priceJa = colYen;
+  let priceEn = colUsd > 0 && colUsd !== colYen ? colUsd : 0;
 
   if (typeof descObj === 'object' && descObj !== null && !Array.isArray(descObj)) {
     const record = descObj as Record<string, unknown>;
@@ -538,6 +564,34 @@ function parseFloorPlanImages(property: Property): string[] {
   return parseImages(property.floor_plan);
 }
 
+// Đọc ghi chú ảnh (description.image_captions, key = URL ảnh)
+function parseImageCaptions(property: Property): ImageCaptions {
+  const descObj = unwrapJson(property.description);
+  if (typeof descObj !== 'object' || descObj === null || Array.isArray(descObj)) return {};
+
+  const raw = unwrapJson((descObj as Record<string, unknown>).image_captions);
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
+
+  const result: ImageCaptions = {};
+  for (const [url, value] of Object.entries(raw as Record<string, unknown>)) {
+    const rec = unwrapJson(value);
+    if (typeof rec !== 'object' || rec === null || Array.isArray(rec)) continue;
+    const r = rec as Record<string, unknown>;
+    const en = typeof r.en === 'string' ? r.en : '';
+    const ja = typeof r.ja === 'string' ? r.ja : '';
+    if (en.trim() || ja.trim()) result[url] = { en, ja };
+  }
+  return result;
+}
+
+// Ưu tiên ghi chú đúng ngôn ngữ đang chọn, thiếu thì dùng ngôn ngữ còn lại
+function pickCaption(entry: ImageCaptions[string] | undefined, lang: 'en' | 'ja'): string {
+  if (!entry) return '';
+  const primary = (lang === 'ja' ? entry.ja : entry.en).trim();
+  if (primary) return primary;
+  return (lang === 'ja' ? entry.en : entry.ja).trim();
+}
+
 function getSavedMapAddress(property: Property): string {
   const descObj = unwrapJson(property.description);
   if (typeof descObj === 'object' && descObj !== null && !Array.isArray(descObj)) {
@@ -593,7 +647,7 @@ function buildGoogleMapsData(
 
 const DETAIL_LABELS = {
   en: {
-    defaultType: 'APARTMENT',
+    defaultType: 'PROPERTY',
     bedrooms: 'BEDROOMS',
     specsTitle: 'Property Specifications',
     area: 'Usable Area',
@@ -609,9 +663,7 @@ const DETAIL_LABELS = {
     bedroomsCount: 'Bedrooms',
     bathroomsCount: 'Bathrooms',
     floorPlanTitle: 'Floor Plan',
-    noFloorPlan: 'No floor plan images available.',
     descTitle: 'Detailed Description',
-    noDesc: 'No detailed description available.',
     nearbyTitle: 'Nearby',
     mapTitle: 'Location on Map',
     openGoogleMaps: 'Open in Google Maps',
@@ -624,7 +676,7 @@ const DETAIL_LABELS = {
     consultCta: 'Inquire Now',
   },
   ja: {
-    defaultType: 'マンション',
+    defaultType: '物件',
     bedrooms: 'ベッドルーム',
     specsTitle: '物件概要・仕様',
     area: '専有面積',
@@ -640,9 +692,7 @@ const DETAIL_LABELS = {
     bedroomsCount: '寝室数',
     bathroomsCount: '浴室数',
     floorPlanTitle: '間取り図',
-    noFloorPlan: '間取り図の画像はまだ登録されていません。',
     descTitle: '物件詳細説明',
-    noDesc: '詳細説明はまだ登録されていません。',
     nearbyTitle: '周辺施設・アクセス',
     mapTitle: '地図・周辺マップ',
     openGoogleMaps: 'Googleマップで開く',
@@ -691,16 +741,70 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
   );
 
   const propertyType = getCleanText(property.property_type, lang) || labels.defaultType;
-  const description = getCleanText(property.description, lang) || labels.noDesc;
+  const description = getCleanText(property.description, lang).trim();
   const nearbyItems = parseNearbyItems(property, lang);
   const formattedPrice = getFormattedPrice(property, lang);
   const images = parseImages(property.images);
   const floorPlanImages = parseFloorPlanImages(property);
 
+  // Chỉ giữ lại các thông số kỹ thuật có dữ liệu và hiển thị đúng ngôn ngữ (EN hoặc JA)
+  const compactSpecs = [
+    {
+      label: labels.area,
+      value:
+        property.area_sqm && Number(property.area_sqm) > 0
+          ? `${property.area_sqm} m²`
+          : null,
+    },
+    { label: labels.buildingSize, value: getLocalizedSpecText(property.building_size, lang) },
+    { label: labels.landSize, value: getLocalizedSpecText(property.land_size, lang) },
+    { label: labels.layout, value: getLocalizedSpecText(property.layout, lang) },
+    { label: labels.structure, value: getLocalizedSpecText(property.structure, lang) },
+    {
+      label: labels.yearBuilt,
+      value:
+        property.year_built && Number(property.year_built) > 0
+          ? String(property.year_built)
+          : null,
+    },
+    { label: labels.parking, value: getLocalizedSpecText(property.parking, lang) },
+    {
+      label: labels.bedroomsCount,
+      value:
+        typeof property.bedrooms === 'number' && property.bedrooms > 0
+          ? String(property.bedrooms)
+          : null,
+    },
+    {
+      label: labels.bathroomsCount,
+      value:
+        typeof property.bathrooms === 'number' && property.bathrooms > 0
+          ? String(property.bathrooms)
+          : null,
+    },
+  ].filter((item): item is { label: string; value: string } => Boolean(item.value));
+
+  const wideSpecs = [
+    { label: labels.landRights, value: getLocalizedSpecText(property.land_rights, lang) },
+    { label: labels.access, value: getLocalizedSpecText(property.access, lang) },
+    { label: labels.zoning, value: getLocalizedSpecText(property.zoning, lang) },
+  ].filter((item): item is { label: string; value: string } => Boolean(item.value));
+
+  const hasAnySpecs = compactSpecs.length > 0 || wideSpecs.length > 0;
+
   const fallbackImage =
     'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80';
   const mainImage = images[activeIndex] || images[0] || fallbackImage;
   const mainFloorPlanImage = floorPlanImages[activeFloorPlanIndex] || floorPlanImages[0] || '';
+
+  const imageCaptions = parseImageCaptions(property);
+  const getCaption = (url: string) => (url ? pickCaption(imageCaptions[url], lang) : '');
+  const mainCaption = getCaption(mainImage);
+  const floorPlanCaption = getCaption(mainFloorPlanImage);
+  const lightboxCaption = lightbox ? getCaption(lightbox.images[lightbox.index] || '') : '';
+  const lightboxHasCaptions = lightbox
+    ? lightbox.images.some((url) => Boolean(getCaption(url)))
+    : false;
 
   const resetZoom = () => {
     setIsZoomed(false);
@@ -872,10 +976,14 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             <span className="rounded-md border border-[#E5DFD6] bg-[#F2EFE9] px-2.5 py-1 text-[#26221F]">
               {propertyType}
             </span>
-            <span className="text-[#B8D200]">•</span>
-            <span className="rounded-md border border-[#E5DFD6] bg-[#F2EFE9] px-2.5 py-1 text-[#26221F]">
-              {property.bedrooms || 1} {labels.bedrooms}
-            </span>
+            {typeof property.bedrooms === 'number' && property.bedrooms > 0 && (
+              <>
+                <span className="text-[#B8D200]">•</span>
+                <span className="rounded-md border border-[#E5DFD6] bg-[#F2EFE9] px-2.5 py-1 text-[#26221F]">
+                  {property.bedrooms} {labels.bedrooms}
+                </span>
+              </>
+            )}
           </div>
 
           <h1 className="font-serif text-2xl font-bold leading-tight text-[#26221F] sm:text-3xl lg:text-4xl">
@@ -953,6 +1061,12 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                 </div>
               </>
             )}
+
+            {mainCaption && (
+              <div className="pointer-events-none absolute bottom-3 left-3 max-w-[70%] rounded-lg border border-white/15 bg-[#1E1B18]/75 px-3 py-1.5 text-xs leading-snug font-medium text-white backdrop-blur-md sm:text-sm">
+                {mainCaption}
+              </div>
+            )}
           </div>
 
           {images.length > 1 && (
@@ -986,94 +1100,46 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             </div>
           )}
 
-          {/* Specifications */}
-          <div className="space-y-5 rounded-xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.04)]">
-            <h2 className="font-serif border-b border-[#E5DFD6] pb-3 text-lg font-bold text-[#26221F]">
-              {labels.specsTitle}
-            </h2>
-            <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 sm:text-sm lg:grid-cols-3">
-              <div className="rounded-lg bg-[#F2EFE9] p-3.5">
-                <span className="mb-1 block text-xs font-medium text-[#948D86]">{labels.area}</span>
-                <span className="font-bold text-[#26221F]">
-                  {property.area_sqm ? `${property.area_sqm} m²` : '--'}
-                </span>
-              </div>
-              <div className="rounded-lg bg-[#F2EFE9] p-3.5">
-                <span className="mb-1 block text-xs font-medium text-[#948D86]">
-                  {labels.buildingSize}
-                </span>
-                <span className="font-bold text-[#26221F]">{property.building_size || '--'}</span>
-              </div>
-              <div className="rounded-lg bg-[#F2EFE9] p-3.5">
-                <span className="mb-1 block text-xs font-medium text-[#948D86]">
-                  {labels.landSize}
-                </span>
-                <span className="font-bold text-[#26221F]">{property.land_size || '--'}</span>
-              </div>
-              <div className="rounded-lg bg-[#F2EFE9] p-3.5">
-                <span className="mb-1 block text-xs font-medium text-[#948D86]">
-                  {labels.layout}
-                </span>
-                <span className="font-bold text-[#26221F]">{property.layout || '--'}</span>
-              </div>
-              <div className="rounded-lg bg-[#F2EFE9] p-3.5">
-                <span className="mb-1 block text-xs font-medium text-[#948D86]">
-                  {labels.structure}
-                </span>
-                <span className="font-bold text-[#26221F]">{property.structure || '--'}</span>
-              </div>
-              <div className="rounded-lg bg-[#F2EFE9] p-3.5">
-                <span className="mb-1 block text-xs font-medium text-[#948D86]">
-                  {labels.yearBuilt}
-                </span>
-                <span className="font-bold text-[#26221F]">{property.year_built || '--'}</span>
-              </div>
-              <div className="rounded-lg bg-[#F2EFE9] p-3.5">
-                <span className="mb-1 block text-xs font-medium text-[#948D86]">
-                  {labels.parking}
-                </span>
-                <span className="font-bold text-[#26221F]">{property.parking || '--'}</span>
-              </div>
-              <div className="rounded-lg bg-[#F2EFE9] p-3.5">
-                <span className="mb-1 block text-xs font-medium text-[#948D86]">
-                  {labels.bedroomsCount}
-                </span>
-                <span className="font-bold text-[#26221F]">{property.bedrooms ?? '--'}</span>
-              </div>
-              <div className="rounded-lg bg-[#F2EFE9] p-3.5">
-                <span className="mb-1 block text-xs font-medium text-[#948D86]">
-                  {labels.bathroomsCount}
-                </span>
-                <span className="font-bold text-[#26221F]">{property.bathrooms ?? '--'}</span>
-              </div>
-              <div className="mt-1 border-t border-[#E5DFD6] pt-3 sm:col-span-2 lg:col-span-3">
-                <span className="mb-1 block text-xs font-medium text-[#948D86]">
-                  {labels.landRights}
-                </span>
-                <span className="font-bold text-[#26221F]">{property.land_rights || '--'}</span>
-              </div>
-              <div className="border-t border-[#E5DFD6] pt-3 sm:col-span-2 lg:col-span-3">
-                <span className="mb-1 block text-xs font-medium text-[#948D86]">
-                  {labels.access}
-                </span>
-                <span className="font-bold text-[#26221F]">{property.access || '--'}</span>
-              </div>
-              <div className="border-t border-[#E5DFD6] pt-3 sm:col-span-2 lg:col-span-3">
-                <span className="mb-1 block text-xs font-medium text-[#948D86]">
-                  {labels.zoning}
-                </span>
-                <span className="font-bold text-[#26221F]">{property.zoning || '--'}</span>
+          {/* Specifications (Chỉ hiển thị các trường có dữ liệu và đúng ngôn ngữ) */}
+          {hasAnySpecs && (
+            <div className="space-y-5 rounded-xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.04)]">
+              <h2 className="font-serif border-b border-[#E5DFD6] pb-3 text-lg font-bold text-[#26221F]">
+                {labels.specsTitle}
+              </h2>
+              <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 sm:text-sm lg:grid-cols-3">
+                {compactSpecs.map((spec) => (
+                  <div key={spec.label} className="rounded-lg bg-[#F2EFE9] p-3.5">
+                    <span className="mb-1 block text-xs font-medium text-[#948D86]">
+                      {spec.label}
+                    </span>
+                    <span className="font-bold text-[#26221F]">{spec.value}</span>
+                  </div>
+                ))}
+
+                {wideSpecs.map((spec, idx) => (
+                  <div
+                    key={spec.label}
+                    className={`${
+                      idx === 0 && compactSpecs.length > 0 ? 'mt-1' : ''
+                    } border-t border-[#E5DFD6] pt-3 sm:col-span-2 lg:col-span-3`}
+                  >
+                    <span className="mb-1 block text-xs font-medium text-[#948D86]">
+                      {spec.label}
+                    </span>
+                    <span className="font-bold text-[#26221F]">{spec.value}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Floor Plan */}
-          <div className="space-y-4 rounded-xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.04)]">
-            <div className="flex items-center justify-between gap-2 border-b border-[#E5DFD6] pb-3">
-              <h2 className="font-serif text-lg font-bold text-[#26221F]">
-                {labels.floorPlanTitle}
-              </h2>
-              {floorPlanImages.length > 0 && (
+          {/* Floor Plan (Chỉ hiển thị khi có ảnh mặt bằng) */}
+          {floorPlanImages.length > 0 && (
+            <div className="space-y-4 rounded-xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.04)]">
+              <div className="flex items-center justify-between gap-2 border-b border-[#E5DFD6] pb-3">
+                <h2 className="font-serif text-lg font-bold text-[#26221F]">
+                  {labels.floorPlanTitle}
+                </h2>
                 <button
                   type="button"
                   onClick={() =>
@@ -1088,10 +1154,8 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                   <ZoomInIcon className="h-3.5 w-3.5" />
                   <span>{labels.zoomHint}</span>
                 </button>
-              )}
-            </div>
+              </div>
 
-            {floorPlanImages.length > 0 ? (
               <div className="space-y-4">
                 <div className="group relative flex aspect-16/10 items-center justify-center overflow-hidden rounded-xl border border-[#E5DFD6] bg-[#F2EFE9]">
                   <button
@@ -1141,6 +1205,12 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                       </div>
                     </>
                   )}
+
+                  {floorPlanCaption && (
+                    <div className="pointer-events-none absolute bottom-3 left-3 max-w-[70%] rounded-lg border border-white/15 bg-[#1E1B18]/75 px-3 py-1.5 text-xs leading-snug font-medium text-white backdrop-blur-md sm:text-sm">
+                      {floorPlanCaption}
+                    </div>
+                  )}
                 </div>
 
                 {floorPlanImages.length > 1 && (
@@ -1174,22 +1244,20 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-[#E5DFD6] bg-[#FAF8F5] py-8 text-center text-xs font-medium text-[#948D86] sm:text-sm">
-                {labels.noFloorPlan}
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Description */}
-          <div className="space-y-4 rounded-xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.04)]">
-            <h2 className="font-serif border-b border-[#E5DFD6] pb-3 text-lg font-bold text-[#26221F]">
-              {labels.descTitle}
-            </h2>
-            <p className="max-w-prose whitespace-pre-line text-[15px] leading-7 text-[#66605A] sm:text-base">
-              {description}
-            </p>
-          </div>
+          {/* Description (Chỉ hiển thị khi có nội dung mô tả) */}
+          {description.length > 0 && (
+            <div className="space-y-4 rounded-xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.04)]">
+              <h2 className="font-serif border-b border-[#E5DFD6] pb-3 text-lg font-bold text-[#26221F]">
+                {labels.descTitle}
+              </h2>
+              <p className="max-w-prose whitespace-pre-line text-[15px] leading-7 text-[#66605A] sm:text-base">
+                {description}
+              </p>
+            </div>
+          )}
 
           {/* Nearby */}
           {nearbyItems.length > 0 && (
@@ -1410,6 +1478,12 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
               className="mx-auto flex w-full max-w-4xl shrink-0 cursor-default flex-col items-center gap-2 pt-1"
               onClick={(e) => e.stopPropagation()}
             >
+              {lightboxHasCaptions && (
+                <p className="min-h-6 max-w-full px-2 text-center text-sm leading-snug font-medium text-[#FAF8F5] sm:text-base">
+                  {lightboxCaption}
+                </p>
+              )}
+
               {lightbox.images.length > 1 && (
                 <div className="flex max-w-full items-center gap-2 overflow-x-auto rounded-xl border border-white/15 bg-black/45 p-1.5 backdrop-blur-md">
                   {lightbox.images.map((img, idx) => {

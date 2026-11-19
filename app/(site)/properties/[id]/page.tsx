@@ -11,7 +11,7 @@ function resolveMetaText(val: unknown): string {
     if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
       try {
         const parsed = JSON.parse(trimmed) as Record<string, unknown>;
-        return String(parsed.en || parsed.vi || parsed.ja || '');
+        return String(parsed.en || parsed.ja || '');
       } catch {
         return trimmed;
       }
@@ -20,7 +20,7 @@ function resolveMetaText(val: unknown): string {
   }
   if (typeof val === 'object') {
     const rec = val as Record<string, unknown>;
-    return String(rec.en || rec.vi || rec.ja || '');
+    return String(rec.en || rec.ja || '');
   }
   return String(val);
 }
@@ -104,7 +104,7 @@ export default function PropertyDetailPage({
               className="h-7 w-7 animate-spin rounded-full border-2 border-[#A64237]/25 border-t-[#A64237]"
             />
             <span className="text-sm font-medium text-[#66605A]">
-              Đang tải thông tin bất động sản...
+              Loading property details...
             </span>
           </div>
         }

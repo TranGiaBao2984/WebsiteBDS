@@ -40,7 +40,7 @@ Future work must not present the site as a complete Japan-wide portal, and must 
 
 - Name: Mii Shintani (新谷 美依), Global Property Advisor
 - Practice: RE AGENT by Re iDea, 株式会社 Re iDea
-- Slogan: People. Homes. A Brighter Tomorrow.
+- Slogan: Happy to find your dream home in Japan.
 - Public line: Helping Overseas Clients Find Homes in Japan
 - Office: 〒192-0031, 東京都八王子市小宮町1076-5 ジュネス石川102号室 (Jeunesse Ishikawa 102, 1076-5 Komiyamachi, Hachioji-shi, Tokyo)
 - Mobile: 070-9017-1920 · Tel: 042-656-8521 · Fax: 042-656-8520

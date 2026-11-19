@@ -8,7 +8,13 @@ import {
   DEFAULT_FILTER_OPTIONS,
   type FilterOptionsData,
 } from "@/lib/filter-constants";
-import type { NearbyCategory, NearbyItem, Property } from "@/lib/types";
+import type {
+  ImageCaption,
+  ImageCaptions,
+  NearbyCategory,
+  NearbyItem,
+  Property,
+} from "@/lib/types";
 import ImageUploader from "./ImageUploader";
 
 interface PropertyFormProps {
@@ -21,13 +27,13 @@ interface NearbyDraftItem {
   id: string;
   category: NearbyCategory;
   isMultilingual: boolean;
-  nameVi: string;
   nameEn: string;
   nameJa: string;
-  distanceVi: string;
   distanceEn: string;
   distanceJa: string;
 }
+
+const JPY_TO_USD = 1 / 150;
 
 const NEARBY_CATEGORY_OPTIONS: {
   value: NearbyCategory;
@@ -131,7 +137,7 @@ function unwrapJson(val: unknown): unknown {
   return current;
 }
 
-function getLangText(val: unknown, lang: "vi" | "en" | "ja"): string {
+function getLangText(val: unknown, lang: "en" | "ja"): string {
   if (!val) return "";
   const unwrapped = unwrapJson(val);
 
@@ -150,7 +156,7 @@ function getLangText(val: unknown, lang: "vi" | "en" | "ja"): string {
   }
 
   if (typeof unwrapped === "string") {
-    return lang === "vi" ? unwrapped : "";
+    return lang === "en" ? unwrapped : "";
   }
 
   return "";
@@ -182,50 +188,42 @@ function parseSavedNearby(property?: Property): NearbyDraftItem[] {
       const nameVal = unwrapJson(rec.name);
       const distVal = unwrapJson(rec.distance);
 
-      let nameVi = "";
       let nameEn = "";
       let nameJa = "";
       let hasMultiName = false;
 
       if (typeof nameVal === "object" && nameVal !== null && !Array.isArray(nameVal)) {
         const nRec = nameVal as Record<string, unknown>;
-        nameVi = typeof nRec.vi === "string" ? nRec.vi : "";
         nameEn = typeof nRec.en === "string" ? nRec.en : "";
         nameJa = typeof nRec.ja === "string" ? nRec.ja : "";
-        const nonEmpty = [nameVi, nameEn, nameJa].filter(Boolean);
+        const nonEmpty = [nameEn, nameJa].filter(Boolean);
         hasMultiName = new Set(nonEmpty).size > 1;
         if (!hasMultiName && nonEmpty.length > 0) {
           const shared = nonEmpty[0];
-          nameVi = shared;
           nameEn = shared;
           nameJa = shared;
         }
       } else if (typeof nameVal === "string") {
-        nameVi = nameVal;
         nameEn = nameVal;
         nameJa = nameVal;
       }
 
-      let distanceVi = "";
       let distanceEn = "";
       let distanceJa = "";
       let hasMultiDist = false;
 
       if (typeof distVal === "object" && distVal !== null && !Array.isArray(distVal)) {
         const dRec = distVal as Record<string, unknown>;
-        distanceVi = typeof dRec.vi === "string" ? dRec.vi : "";
         distanceEn = typeof dRec.en === "string" ? dRec.en : "";
         distanceJa = typeof dRec.ja === "string" ? dRec.ja : "";
-        const nonEmpty = [distanceVi, distanceEn, distanceJa].filter(Boolean);
+        const nonEmpty = [distanceEn, distanceJa].filter(Boolean);
         hasMultiDist = new Set(nonEmpty).size > 1;
         if (!hasMultiDist && nonEmpty.length > 0) {
           const shared = nonEmpty[0];
-          distanceVi = shared;
           distanceEn = shared;
           distanceJa = shared;
         }
       } else if (typeof distVal === "string") {
-        distanceVi = distVal;
         distanceEn = distVal;
         distanceJa = distVal;
       }
@@ -234,10 +232,8 @@ function parseSavedNearby(property?: Property): NearbyDraftItem[] {
         id: typeof rec.id === "string" && rec.id ? rec.id : `nearby-init-${index}`,
         category: validCat,
         isMultilingual: hasMultiName || hasMultiDist,
-        nameVi,
         nameEn,
         nameJa,
-        distanceVi,
         distanceEn,
         distanceJa,
       };
@@ -245,7 +241,7 @@ function parseSavedNearby(property?: Property): NearbyDraftItem[] {
     .filter((item): item is NearbyDraftItem => item !== null);
 }
 
-function getSavedPrice(property: Property | undefined, lang: "vi" | "en" | "ja"): number | "" {
+function getSavedPrice(property: Property | undefined, lang: "en" | "ja"): string {
   if (!property) return "";
   const descObj = unwrapJson(property.description);
 
@@ -253,16 +249,22 @@ function getSavedPrice(property: Property | undefined, lang: "vi" | "en" | "ja")
     const record = descObj as Record<string, unknown>;
     const key = `price_${lang}`;
     if (typeof record[key] === "number" && record[key] > 0) {
-      return record[key];
+      return String(record[key]);
     }
   }
 
   if (lang === "ja") {
-    const jaVal = property.price_yen || property.price;
-    return jaVal && jaVal > 0 ? jaVal : "";
+    const jaVal = Number(property.price_yen || 0);
+    return jaVal > 0 ? String(jaVal) : "";
   }
-  if (lang === "vi") {
-    return property.price_vnd && property.price_vnd > 0 ? property.price_vnd : "";
+
+  if (lang === "en") {
+    const enVal = Number(property.price || 0);
+    if (enVal > 0 && enVal !== Number(property.price_yen || 0)) {
+      return String(enVal);
+    }
+    const jaVal = Number(property.price_yen || 0);
+    return jaVal > 0 ? String(Math.round(jaVal * JPY_TO_USD)) : "";
   }
 
   return "";
@@ -297,7 +299,7 @@ function getSavedFilterField(
   }
 
   if (field === "filter_price") {
-    const jaPrice = Number(property.price_yen || property.price || 0);
+    const jaPrice = Number(property.price_yen || 0);
     return detectPriceBucket(jaPrice, DEFAULT_FILTER_OPTIONS.prices);
   }
 
@@ -348,6 +350,27 @@ function parseFloorPlanImages(property?: Property): string[] {
   if (fromUrl.length > 0) return fromUrl;
 
   return parseImages(property.floor_plan);
+}
+
+// Đọc ghi chú ảnh đã lưu trong description.image_captions (key = URL ảnh)
+function parseImageCaptions(property?: Property): ImageCaptions {
+  if (!property) return {};
+  const descObj = unwrapJson(property.description);
+  if (typeof descObj !== "object" || descObj === null || Array.isArray(descObj)) return {};
+
+  const raw = unwrapJson((descObj as Record<string, unknown>).image_captions);
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+
+  const result: ImageCaptions = {};
+  for (const [url, value] of Object.entries(raw as Record<string, unknown>)) {
+    const rec = unwrapJson(value);
+    if (typeof rec !== "object" || rec === null || Array.isArray(rec)) continue;
+    const r = rec as Record<string, unknown>;
+    const en = typeof r.en === "string" ? r.en : "";
+    const ja = typeof r.ja === "string" ? r.ja : "";
+    if (en || ja) result[url] = { en, ja };
+  }
+  return result;
 }
 
 function MapPinIcon({ className }: { className?: string }) {
@@ -566,6 +589,17 @@ export default function PropertyForm({ property }: PropertyFormProps) {
   );
   const [uploadingFloorPlan, setUploadingFloorPlan] = useState(false);
 
+  const [imageCaptions, setImageCaptions] = useState<ImageCaptions>(() =>
+    parseImageCaptions(property)
+  );
+  const handleImageCaptionChange = (url: string, caption: ImageCaption) => {
+    setImageCaptions((prev) => ({ ...prev, [url]: caption }));
+  };
+
+  const [priceJa, setPriceJa] = useState<string>(() => getSavedPrice(property, "ja"));
+  const [priceEn, setPriceEn] = useState<string>(() => getSavedPrice(property, "en"));
+  const [isUsdManual, setIsUsdManual] = useState<boolean>(false);
+
   const [nearbyItems, setNearbyItems] = useState<NearbyDraftItem[]>(() =>
     parseSavedNearby(property)
   );
@@ -619,6 +653,23 @@ export default function PropertyForm({ property }: PropertyFormProps) {
     });
   };
 
+  const handlePriceJaChange = (rawVal: string) => {
+    setPriceJa(rawVal);
+    const numJa = Number(rawVal) || 0;
+    const detected = detectPriceBucket(numJa, filterOptions.prices);
+    if (detected) setFilterPrice(detected);
+
+    if (!isUsdManual) {
+      setPriceEn(numJa > 0 ? String(Math.round(numJa * JPY_TO_USD)) : "");
+    }
+  };
+
+  const handleSyncUsdFromJpy = () => {
+    const numJa = Number(priceJa) || 0;
+    setIsUsdManual(false);
+    setPriceEn(numJa > 0 ? String(Math.round(numJa * JPY_TO_USD)) : "");
+  };
+
   const handleAddNearbyItem = (category: NearbyCategory = "station") => {
     nearbySeqRef.current += 1;
     const preset = NEARBY_CATEGORY_OPTIONS.find((item) => item.value === category);
@@ -628,10 +679,8 @@ export default function PropertyForm({ property }: PropertyFormProps) {
         id: `nearby-${uid}-${nearbySeqRef.current}`,
         category,
         isMultilingual: false,
-        nameVi: preset?.sampleName || "",
         nameEn: preset?.sampleName || "",
         nameJa: preset?.sampleName || "",
-        distanceVi: preset?.sampleDistance || "",
         distanceEn: preset?.sampleDistance || "",
         distanceJa: preset?.sampleDistance || "",
       },
@@ -743,105 +792,96 @@ export default function PropertyForm({ property }: PropertyFormProps) {
     const oldImages = parseImages(property?.images);
     const finalImages = images.length > 0 ? images : oldImages;
 
-    if (!isEdit && finalImages.length === 0) {
-      const msg = "Vui lòng tải lên ít nhất 1 hình ảnh BĐS.";
-      setImageError(msg);
-      showBanner("error", msg);
-      return;
-    }
-
     const formData = new FormData(e.currentTarget);
-    const titleVi = (formData.get("titleVi") as string).trim();
-    const titleEn = (formData.get("titleEn") as string).trim();
-    const titleJa = (formData.get("titleJa") as string).trim();
+    const titleEn = ((formData.get("titleEn") as string) || "").trim();
+    const titleJa = ((formData.get("titleJa") as string) || "").trim();
 
-    if (!titleVi && !titleEn && !titleJa) {
-      showBanner("error", "Vui lòng nhập Tên Bất động sản cho ít nhất 1 ngôn ngữ.");
+    if (!titleEn && !titleJa) {
+      showBanner("error", "Vui lòng nhập Tên Bất động sản cho ít nhất 1 ngôn ngữ (EN hoặc JA).");
       return;
     }
 
-    const propertyTypeVi = (formData.get("propertyTypeVi") as string).trim();
-    const propertyTypeEn = (formData.get("propertyTypeEn") as string).trim();
-    const propertyTypeJa = (formData.get("propertyTypeJa") as string).trim();
+    const propertyTypeEn = ((formData.get("propertyTypeEn") as string) || "").trim();
+    const propertyTypeJa = ((formData.get("propertyTypeJa") as string) || "").trim();
 
-    if (!propertyTypeVi && !propertyTypeEn && !propertyTypeJa) {
-      showBanner("error", "Vui lòng nhập Loại BĐS cho ít nhất 1 ngôn ngữ.");
+    if (!propertyTypeEn && !propertyTypeJa) {
+      showBanner("error", "Vui lòng nhập Loại BĐS cho ít nhất 1 ngôn ngữ (EN hoặc JA).");
       return;
     }
 
-    const priceVi = Number(formData.get("priceVi")) || 0;
-    const priceEn = Number(formData.get("priceEn")) || 0;
-    const priceJa = Number(formData.get("priceJa")) || 0;
+    const numJa = Number(priceJa) || 0;
+    const numEn = Number(priceEn) || 0;
 
-    if (!priceVi && !priceEn && !priceJa) {
-      showBanner("error", "Vui lòng nhập Giá bán cho ít nhất 1 ngôn ngữ.");
+    if (!numJa && !numEn) {
+      showBanner("error", "Vui lòng nhập Giá bán (JPY hoặc USD).");
       return;
     }
 
     setLoading(true);
 
+    const resolvedPriceJa = numJa > 0 ? numJa : Math.round(numEn / JPY_TO_USD);
+    const resolvedPriceEn = numEn > 0 ? numEn : Math.round(resolvedPriceJa * JPY_TO_USD);
     const resolvedPriceFilter =
-      filterPrice || detectPriceBucket(priceJa, filterOptions.prices);
+      filterPrice || detectPriceBucket(resolvedPriceJa, filterOptions.prices);
 
     const serializedNearby: NearbyItem[] = nearbyItems
       .map((item): NearbyItem | null => {
-        const nVi = item.nameVi.trim();
         const nEn = item.nameEn.trim();
         const nJa = item.nameJa.trim();
-        const dVi = item.distanceVi.trim();
         const dEn = item.distanceEn.trim();
         const dJa = item.distanceJa.trim();
 
-        if (!nVi && !nEn && !nJa && !dVi && !dEn && !dJa) return null;
+        if (!nEn && !nJa && !dEn && !dJa) return null;
 
         return {
           id: item.id,
           category: item.category,
           name: item.isMultilingual
-            ? { vi: nVi || nEn || nJa, en: nEn || nVi || nJa, ja: nJa || nEn || nVi }
-            : nVi || nEn || nJa,
+            ? { en: nEn || nJa, ja: nJa || nEn }
+            : nEn || nJa,
           distance: item.isMultilingual
-            ? { vi: dVi || dEn || dJa, en: dEn || dVi || dJa, ja: dJa || dEn || dVi }
-            : dVi || dEn || dJa,
+            ? { en: dEn || dJa, ja: dJa || dEn }
+            : dEn || dJa,
         };
       })
       .filter((item): item is NearbyItem => item !== null);
 
+    const rawAreaSqm = ((formData.get("areaSqm") as string) || "").trim();
+    const rawYearBuilt = ((formData.get("yearBuilt") as string) || "").trim();
+    const rawBedrooms = ((formData.get("bedrooms") as string) || "").trim();
+    const rawBathrooms = ((formData.get("bathrooms") as string) || "").trim();
+
     const inputData = {
       id: property?.id,
-      titleVi,
       titleEn,
       titleJa,
-      descriptionVi: (formData.get("descriptionVi") as string) || "",
       descriptionEn: (formData.get("descriptionEn") as string) || "",
       descriptionJa: (formData.get("descriptionJa") as string) || "",
-      locationVi: (formData.get("addressVi") as string) || "",
       locationEn: (formData.get("addressEn") as string) || "",
       locationJa: (formData.get("addressJa") as string) || "",
       mapAddress: ((formData.get("mapAddress") as string) || "").trim(),
       filterLocation,
       filterPrice: resolvedPriceFilter,
       filterLayout,
-      propertyTypeVi,
       propertyTypeEn,
       propertyTypeJa,
-      priceVi,
-      priceEn,
-      priceJa,
-      areaSqm: Number(formData.get("areaSqm")),
-      buildingSize: formData.get("buildingSize") as string,
-      landSize: formData.get("landSize") as string,
-      layout: formData.get("layout") as string,
-      structure: formData.get("structure") as string,
-      yearBuilt: Number(formData.get("yearBuilt")),
-      parking: formData.get("parking") as string,
-      landRights: formData.get("landRights") as string,
-      zoning: formData.get("zoning") as string,
-      access: formData.get("access") as string,
-      bedrooms: Number(formData.get("bedrooms")),
-      bathrooms: Number(formData.get("bathrooms")),
+      priceEn: resolvedPriceEn,
+      priceJa: resolvedPriceJa,
+      areaSqm: rawAreaSqm ? Number(rawAreaSqm) : null,
+      buildingSize: ((formData.get("buildingSize") as string) || "").trim() || null,
+      landSize: ((formData.get("landSize") as string) || "").trim() || null,
+      layout: ((formData.get("layout") as string) || "").trim() || null,
+      structure: ((formData.get("structure") as string) || "").trim() || null,
+      yearBuilt: rawYearBuilt ? Number(rawYearBuilt) : null,
+      parking: ((formData.get("parking") as string) || "").trim() || null,
+      landRights: ((formData.get("landRights") as string) || "").trim() || null,
+      zoning: ((formData.get("zoning") as string) || "").trim() || null,
+      access: ((formData.get("access") as string) || "").trim() || null,
+      bedrooms: rawBedrooms ? Number(rawBedrooms) : null,
+      bathrooms: rawBathrooms ? Number(rawBathrooms) : null,
       images: finalImages,
       floorPlanImages,
+      imageCaptions,
       nearby: serializedNearby,
     };
 
@@ -1052,38 +1092,22 @@ export default function PropertyForm({ property }: PropertyFormProps) {
         className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-[#14B8A6]/10 blur-3xl"
       />
 
-      {/* 1. Thông tin cơ bản (3 ngôn ngữ) */}
+      {/* 1. Thông tin cơ bản (2 ngôn ngữ: EN & JA) */}
       <div className="relative space-y-5">
         <div className="flex items-center gap-3 border-b border-[#E8F0F3] pb-3">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#0F766E] text-xs font-bold text-white">
             1
           </span>
           <h2 className="font-serif text-lg font-bold text-[#134E4A] sm:text-xl">
-            Thông tin cơ bản (Đa ngôn ngữ)
+            Thông tin cơ bản (English & 日本語)
           </h2>
         </div>
 
-        {/* Tên BĐS 3 ngôn ngữ */}
+        {/* Tên BĐS 2 ngôn ngữ */}
         <div className="space-y-3.5 rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
           <span className="block text-xs font-bold uppercase tracking-wider text-[#134E4A]">
-            Tên Bất động sản (3 ngôn ngữ) *
+            Tên Bất động sản (EN & JA) *
           </span>
-          <div>
-            <label
-              htmlFor={`${uid}-titleVi`}
-              className="mb-1 block text-xs font-bold text-[#0F766E]"
-            >
-              Tiếng Việt (VI)
-            </label>
-            <input
-              id={`${uid}-titleVi`}
-              type="text"
-              name="titleVi"
-              defaultValue={getLangText(property?.title, "vi")}
-              placeholder="Căn hộ chung cư cao cấp Shinjuku 2LDK gần ga"
-              className={inputClassName}
-            />
-          </div>
           <div>
             <label
               htmlFor={`${uid}-titleEn`}
@@ -1096,7 +1120,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               type="text"
               name="titleEn"
               defaultValue={getLangText(property?.title, "en")}
-              placeholder="Luxury Shinjuku 2LDK Apartment near Station"
+              placeholder="2-Story Log House with Wooden Deck in Daimon, Nagawa"
               className={inputClassName}
             />
           </div>
@@ -1112,31 +1136,43 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               type="text"
               name="titleJa"
               defaultValue={getLangText(property?.title, "ja")}
-              placeholder="新宿駅徒歩圏内 高級2LDKマンション"
+              placeholder="長野県長和町大門 ウッドデッキ付き2階建ログハウス"
               className={inputClassName}
             />
           </div>
         </div>
 
-        {/* Giá bán 3 ngôn ngữ */}
+        {/* Giá bán JPY & Tự động quy đổi sang USD */}
         <div className="space-y-3.5 rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
-          <span className="block text-xs font-bold uppercase tracking-wider text-[#134E4A]">
-            Giá bán theo từng ngôn ngữ (3 ngôn ngữ) *
-          </span>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="block text-xs font-bold uppercase tracking-wider text-[#134E4A]">
+              Giá bán (JPY → tự quy đổi sang USD, 1 USD = 150 JPY) *
+            </span>
+            {isUsdManual && (
+              <button
+                type="button"
+                onClick={handleSyncUsdFromJpy}
+                className="cursor-pointer rounded-md border border-[#0F766E]/40 bg-white px-2.5 py-1 text-[11px] font-semibold text-[#0F766E] hover:bg-[#F0FDFA]"
+              >
+                Tính lại USD từ JPY (÷150)
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label
-                htmlFor={`${uid}-priceVi`}
+                htmlFor={`${uid}-priceJa`}
                 className="mb-1 block text-xs font-bold text-[#0F766E]"
               >
-                Tiếng Việt (VNĐ - ₫)
+                日本語 (JPY - ¥)
               </label>
               <input
-                id={`${uid}-priceVi`}
+                id={`${uid}-priceJa`}
                 type="number"
-                name="priceVi"
-                defaultValue={getSavedPrice(property, "vi")}
-                placeholder="7500000000"
+                name="priceJa"
+                value={priceJa}
+                onChange={(e) => handlePriceJaChange(e.target.value)}
+                placeholder="6800000"
                 className={inputClassName}
               />
             </div>
@@ -1151,57 +1187,24 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                 id={`${uid}-priceEn`}
                 type="number"
                 name="priceEn"
-                defaultValue={getSavedPrice(property, "en")}
-                placeholder="300000"
-                className={inputClassName}
-              />
-            </div>
-            <div>
-              <label
-                htmlFor={`${uid}-priceJa`}
-                className="mb-1 block text-xs font-bold text-[#0F766E]"
-              >
-                日本語 (JPY - ¥)
-              </label>
-              <input
-                id={`${uid}-priceJa`}
-                type="number"
-                name="priceJa"
-                defaultValue={getSavedPrice(property, "ja")}
+                value={priceEn}
                 onChange={(e) => {
-                  const val = Number(e.target.value) || 0;
-                  const detected = detectPriceBucket(val, filterOptions.prices);
-                  if (detected) setFilterPrice(detected);
+                  setIsUsdManual(true);
+                  setPriceEn(e.target.value);
                 }}
-                placeholder="45000000"
+                placeholder="45333"
                 className={inputClassName}
               />
             </div>
           </div>
         </div>
 
-        {/* Loại BĐS 3 ngôn ngữ */}
+        {/* Loại BĐS 2 ngôn ngữ */}
         <div className="space-y-3.5 rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
           <span className="block text-xs font-bold uppercase tracking-wider text-[#134E4A]">
-            Loại BĐS (3 ngôn ngữ) *
+            Loại BĐS (EN & JA) *
           </span>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div>
-              <label
-                htmlFor={`${uid}-propertyTypeVi`}
-                className="mb-1 block text-xs font-bold text-[#0F766E]"
-              >
-                Tiếng Việt (VI)
-              </label>
-              <input
-                id={`${uid}-propertyTypeVi`}
-                type="text"
-                name="propertyTypeVi"
-                defaultValue={getLangText(property?.property_type, "vi")}
-                placeholder="Căn hộ / Nhà riêng / Đất nền"
-                className={inputClassName}
-              />
-            </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label
                 htmlFor={`${uid}-propertyTypeEn`}
@@ -1214,7 +1217,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                 type="text"
                 name="propertyTypeEn"
                 defaultValue={getLangText(property?.property_type, "en")}
-                placeholder="Apartment / House / Land"
+                placeholder="Used Detached House / Apartment / Land"
                 className={inputClassName}
               />
             </div>
@@ -1230,34 +1233,18 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                 type="text"
                 name="propertyTypeJa"
                 defaultValue={getLangText(property?.property_type, "ja")}
-                placeholder="マンション / 一戸建て / 土地"
+                placeholder="中古一戸建て / マンション / 土地"
                 className={inputClassName}
               />
             </div>
           </div>
         </div>
 
-        {/* Địa chỉ 3 ngôn ngữ & Ghim Google Maps */}
+        {/* Địa chỉ 2 ngôn ngữ & Ghim Google Maps */}
         <div className="space-y-3.5 rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
           <span className="block text-xs font-bold uppercase tracking-wider text-[#134E4A]">
-            Địa chỉ / Vị trí (3 ngôn ngữ) *
+            Địa chỉ / Vị trí (EN & JA) *
           </span>
-          <div>
-            <label
-              htmlFor={`${uid}-addressVi`}
-              className="mb-1 block text-xs font-bold text-[#0F766E]"
-            >
-              Tiếng Việt (VI)
-            </label>
-            <input
-              id={`${uid}-addressVi`}
-              type="text"
-              name="addressVi"
-              defaultValue={getLangText(property?.location, "vi")}
-              placeholder="Quận Shinjuku, Tokyo, Nhật Bản"
-              className={inputClassName}
-            />
-          </div>
           <div>
             <label
               htmlFor={`${uid}-addressEn`}
@@ -1270,7 +1257,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               type="text"
               name="addressEn"
               defaultValue={getLangText(property?.location, "en")}
-              placeholder="Shinjuku-ku, Tokyo, Japan"
+              placeholder="Daimon, Nagawa-machi, Chiisagata-gun, Nagano"
               className={inputClassName}
             />
           </div>
@@ -1286,7 +1273,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               type="text"
               name="addressJa"
               defaultValue={getLangText(property?.location, "ja")}
-              placeholder="東京都新宿区"
+              placeholder="長野県小県郡長和町大門"
               className={inputClassName}
             />
           </div>
@@ -1304,7 +1291,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               type="text"
               name="mapAddress"
               defaultValue={getSavedMapAddress(property)}
-              placeholder="Ví dụ: 1-1-1 Nishi-Shinjuku, Shinjuku-ku, Tokyo hoặc 35.6895, 139.6917 hoặc dán link Google Maps"
+              placeholder="Ví dụ: 長野県小県郡長和町大門 hoặc 35.6895, 139.6917 hoặc dán link Google Maps"
               className={inputClassName}
             />
             <p className="mt-1.5 text-xs text-[#475569]">
@@ -1379,15 +1366,20 @@ export default function PropertyForm({ property }: PropertyFormProps) {
         </div>
       </div>
 
-      {/* 2. Thông số kỹ thuật BĐS Nhật Bản */}
+      {/* 2. Thông số kỹ thuật BĐS Nhật Bản (Bỏ trống sẽ tự ẩn trên trang chi tiết) */}
       <div className="relative space-y-5 pt-2">
-        <div className="flex items-center gap-3 border-b border-[#E8F0F3] pb-3">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#0F766E] text-xs font-bold text-white">
-            2
+        <div className="flex flex-col justify-between gap-1 border-b border-[#E8F0F3] pb-3 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-3">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#0F766E] text-xs font-bold text-white">
+              2
+            </span>
+            <h2 className="font-serif text-lg font-bold text-[#134E4A] sm:text-xl">
+              Thông số kỹ thuật BĐS Nhật Bản
+            </h2>
+          </div>
+          <span className="text-xs font-medium text-[#475569]">
+            Trường nào không nhập sẽ tự động ẩn ngoài website
           </span>
-          <h2 className="font-serif text-lg font-bold text-[#134E4A] sm:text-xl">
-            Thông số kỹ thuật BĐS Nhật Bản
-          </h2>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -1396,16 +1388,15 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               htmlFor={`${uid}-areaSqm`}
               className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#134E4A]"
             >
-              Diện tích sử dụng (m²) *
+              Diện tích sử dụng (m²)
             </label>
             <input
               id={`${uid}-areaSqm`}
               type="number"
-              step="0.1"
+              step="0.01"
               name="areaSqm"
-              required
-              defaultValue={property?.area_sqm || ""}
-              placeholder="65.5"
+              defaultValue={property?.area_sqm ?? ""}
+              placeholder="79.4"
               className={inputClassName}
             />
           </div>
@@ -1420,8 +1411,8 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               id={`${uid}-buildingSize`}
               type="text"
               name="buildingSize"
-              defaultValue={property?.building_size || ""}
-              placeholder="65.5 m² / 19.8 tsubo"
+              defaultValue={property?.building_size ?? ""}
+              placeholder="79.40 m²"
               className={inputClassName}
             />
           </div>
@@ -1436,8 +1427,8 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               id={`${uid}-landSize`}
               type="text"
               name="landSize"
-              defaultValue={property?.land_size || ""}
-              placeholder="80.0 m² / 24.2 tsubo"
+              defaultValue={property?.land_size ?? ""}
+              placeholder="785.00 m²"
               className={inputClassName}
             />
           </div>
@@ -1455,8 +1446,8 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               id={`${uid}-layout`}
               type="text"
               name="layout"
-              defaultValue={property?.layout || "2LDK"}
-              placeholder="2LDK / 3DK / 1K"
+              defaultValue={property?.layout ?? ""}
+              placeholder="2LDK / 5LDK / 1SLDK"
               className={inputClassName}
             />
           </div>
@@ -1471,8 +1462,8 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               id={`${uid}-structure`}
               type="text"
               name="structure"
-              defaultValue={property?.structure || "RC (Bê tông cốt thép)"}
-              placeholder="RC (Bê tông cốt thép) / Gỗ"
+              defaultValue={property?.structure ?? ""}
+              placeholder="2-story wooden structure / 木造2階建"
               className={inputClassName}
             />
           </div>
@@ -1487,8 +1478,8 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               id={`${uid}-yearBuilt`}
               type="number"
               name="yearBuilt"
-              defaultValue={property?.year_built || 2026}
-              placeholder="2020"
+              defaultValue={property?.year_built ?? ""}
+              placeholder="2003"
               className={inputClassName}
             />
           </div>
@@ -1506,8 +1497,8 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               id={`${uid}-landRights`}
               type="text"
               name="landRights"
-              defaultValue={property?.land_rights || "Sở hữu vĩnh viễn (Ownership)"}
-              placeholder="Sở hữu vĩnh viễn (Ownership)"
+              defaultValue={property?.land_rights ?? ""}
+              placeholder="Freehold (Ownership) / 所有権"
               className={inputClassName}
             />
           </div>
@@ -1522,8 +1513,8 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               id={`${uid}-access`}
               type="text"
               name="access"
-              defaultValue={property?.access || ""}
-              placeholder="Đi bộ 5 phút ra ga Shinjuku"
+              defaultValue={property?.access ?? ""}
+              placeholder="15 min walk from Kita-Arai Station"
               className={inputClassName}
             />
           </div>
@@ -1538,8 +1529,8 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               id={`${uid}-parking`}
               type="text"
               name="parking"
-              defaultValue={property?.parking || "Có"}
-              placeholder="Có (1 chỗ) / Không"
+              defaultValue={property?.parking ?? ""}
+              placeholder="Free parking for 2 cars / 駐車場有"
               className={inputClassName}
             />
           </div>
@@ -1557,8 +1548,8 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               id={`${uid}-zoning`}
               type="text"
               name="zoning"
-              defaultValue={property?.zoning || "Khu dân cư"}
-              placeholder="Khu dân cư thương mại"
+              defaultValue={property?.zoning ?? ""}
+              placeholder="Category 1 Residential Zone / 第1種住居地域"
               className={inputClassName}
             />
           </div>
@@ -1573,7 +1564,8 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               id={`${uid}-bedrooms`}
               type="number"
               name="bedrooms"
-              defaultValue={property?.bedrooms ?? 2}
+              defaultValue={property?.bedrooms ?? ""}
+              placeholder="2"
               className={inputClassName}
             />
           </div>
@@ -1588,14 +1580,15 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               id={`${uid}-bathrooms`}
               type="number"
               name="bathrooms"
-              defaultValue={property?.bathrooms ?? 1}
+              defaultValue={property?.bathrooms ?? ""}
+              placeholder="1"
               className={inputClassName}
             />
           </div>
         </div>
       </div>
 
-      {/* 3. Mô tả 3 ngôn ngữ, Tiện ích xung quanh (Nearby) & Hình ảnh */}
+      {/* 3. Mô tả 2 ngôn ngữ, Tiện ích xung quanh (Nearby) & Hình ảnh */}
       <div className="relative space-y-5 pt-2">
         <div className="flex items-center gap-3 border-b border-[#E8F0F3] pb-3">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#0F766E] text-xs font-bold text-white">
@@ -1609,22 +1602,6 @@ export default function PropertyForm({ property }: PropertyFormProps) {
         <div className="space-y-3.5 rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
           <div>
             <label
-              htmlFor={`${uid}-descriptionVi`}
-              className="mb-1 block text-xs font-bold text-[#0F766E]"
-            >
-              Mô tả chi tiết — Tiếng Việt (VI)
-            </label>
-            <textarea
-              id={`${uid}-descriptionVi`}
-              name="descriptionVi"
-              rows={3}
-              defaultValue={getLangText(property?.description, "vi")}
-              placeholder="Mô tả tiện ích xung quanh, tình trạng pháp lý, ban công..."
-              className={inputClassName}
-            />
-          </div>
-          <div>
-            <label
               htmlFor={`${uid}-descriptionEn`}
               className="mb-1 block text-xs font-bold text-[#0F766E]"
             >
@@ -1635,7 +1612,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               name="descriptionEn"
               rows={3}
               defaultValue={getLangText(property?.description, "en")}
-              placeholder="Describe surrounding amenities, legal status, balcony..."
+              placeholder="Describe surrounding amenities, legal status, views..."
               className={inputClassName}
             />
           </div>
@@ -1679,7 +1656,6 @@ export default function PropertyForm({ property }: PropertyFormProps) {
             </button>
           </div>
 
-          {/* Nút thêm nhanh các loại tiện ích phổ biến */}
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="mr-1 text-[11px] font-semibold text-[#475569]">
               Thêm nhanh:
@@ -1734,7 +1710,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                       >
                         <GlobeIcon className="h-3 w-3" />
                         <span>
-                          {item.isMultilingual ? "Đang nhập 3 ngôn ngữ" : "Dịch 3 ngôn ngữ"}
+                          {item.isMultilingual ? "Đang nhập 2 ngôn ngữ" : "Dịch EN / JA"}
                         </span>
                       </button>
 
@@ -1777,19 +1753,18 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                       <>
                         <div className="md:col-span-5">
                           <label className="mb-1 block text-[11px] font-bold text-[#475569]">
-                            Tên địa điểm (VD: JR Awa-Kamogawa Station)
+                            Tên địa điểm (VD: JR Chino Station)
                           </label>
                           <input
                             type="text"
-                            value={item.nameEn || item.nameVi}
+                            value={item.nameEn || item.nameJa}
                             onChange={(e) =>
                               handleUpdateNearbyField(item.id, {
-                                nameVi: e.target.value,
                                 nameEn: e.target.value,
                                 nameJa: e.target.value,
                               })
                             }
-                            placeholder="JR Awa-Kamogawa Station"
+                            placeholder="JR Chino Station"
                             className={inputClassName}
                           />
                         </div>
@@ -1800,10 +1775,9 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                           </label>
                           <input
                             type="text"
-                            value={item.distanceEn || item.distanceVi}
+                            value={item.distanceEn || item.distanceJa}
                             onChange={(e) =>
                               handleUpdateNearbyField(item.id, {
-                                distanceVi: e.target.value,
                                 distanceEn: e.target.value,
                                 distanceJa: e.target.value,
                               })
@@ -1814,31 +1788,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                         </div>
                       </>
                     ) : (
-                      <div className="grid grid-cols-1 gap-2.5 md:col-span-8 sm:grid-cols-3">
-                        <div className="space-y-1.5 rounded-lg border border-[#E8F0F3] bg-[#F8FAFC] p-2.5">
-                          <span className="block text-[10px] font-bold uppercase text-[#0F766E]">
-                            Tiếng Việt (VI)
-                          </span>
-                          <input
-                            type="text"
-                            value={item.nameVi}
-                            onChange={(e) =>
-                              handleUpdateNearbyField(item.id, { nameVi: e.target.value })
-                            }
-                            placeholder="Ga JR Awa-Kamogawa"
-                            className={inputClassName}
-                          />
-                          <input
-                            type="text"
-                            value={item.distanceVi}
-                            onChange={(e) =>
-                              handleUpdateNearbyField(item.id, { distanceVi: e.target.value })
-                            }
-                            placeholder="15 phút đi ô tô"
-                            className={inputClassName}
-                          />
-                        </div>
-
+                      <div className="grid grid-cols-1 gap-2.5 md:col-span-8 sm:grid-cols-2">
                         <div className="space-y-1.5 rounded-lg border border-[#E8F0F3] bg-[#F8FAFC] p-2.5">
                           <span className="block text-[10px] font-bold uppercase text-[#0F766E]">
                             English (EN)
@@ -1849,7 +1799,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                             onChange={(e) =>
                               handleUpdateNearbyField(item.id, { nameEn: e.target.value })
                             }
-                            placeholder="JR Awa-Kamogawa Station"
+                            placeholder="JR Chino Station"
                             className={inputClassName}
                           />
                           <input
@@ -1858,7 +1808,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                             onChange={(e) =>
                               handleUpdateNearbyField(item.id, { distanceEn: e.target.value })
                             }
-                            placeholder="15 min by car"
+                            placeholder="23.6 km by car"
                             className={inputClassName}
                           />
                         </div>
@@ -1873,7 +1823,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                             onChange={(e) =>
                               handleUpdateNearbyField(item.id, { nameJa: e.target.value })
                             }
-                            placeholder="JR安房鴨川駅"
+                            placeholder="JR茅野駅"
                             className={inputClassName}
                           />
                           <input
@@ -1882,7 +1832,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
                             onChange={(e) =>
                               handleUpdateNearbyField(item.id, { distanceJa: e.target.value })
                             }
-                            placeholder="車で15分"
+                            placeholder="車23.6km"
                             className={inputClassName}
                           />
                         </div>
@@ -1902,15 +1852,16 @@ export default function PropertyForm({ property }: PropertyFormProps) {
         {/* Hình ảnh BĐS chính */}
         <div className="rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
           <ImageUploader
-            label="Hình ảnh BĐS *"
+            label="Hình ảnh BĐS"
             hint="Ảnh đầu tiên sẽ làm ảnh bìa. Tự động nén tối ưu tốc độ tải và hỗ trợ đổi thứ tự."
             value={images}
             onChange={(next) => {
               setImages(next);
               if (next.length > 0) setImageError(undefined);
             }}
-            max={15}
             error={imageError}
+            captions={imageCaptions}
+            onCaptionChange={handleImageCaptionChange}
             onBusyChange={setUploading}
           />
         </div>
@@ -1919,10 +1870,11 @@ export default function PropertyForm({ property }: PropertyFormProps) {
         <div className="rounded-xl border border-[#99F6E4]/80 bg-[#F0FDFA]/55 p-4 sm:p-5">
           <ImageUploader
             label="Sơ đồ nhà ở (Floor Plan / 間取り図)"
-            hint="Tải ảnh bản vẽ mặt bằng căn hộ/nhà ở (hỗ trợ tối đa 5 sơ đồ)."
+            hint="Tải ảnh bản vẽ mặt bằng căn hộ/nhà ở (nếu không tải ảnh, mục sơ đồ sẽ tự ẩn)."
             value={floorPlanImages}
             onChange={setFloorPlanImages}
-            max={5}
+            captions={imageCaptions}
+            onCaptionChange={handleImageCaptionChange}
             onBusyChange={setUploadingFloorPlan}
           />
         </div>

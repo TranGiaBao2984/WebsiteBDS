@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
-import type { NearbyCategory, NearbyItem } from "@/lib/types";
+import type { ImageCaptions, NearbyCategory, NearbyItem } from "@/lib/types";
 
 const VALID_NEARBY_CATEGORIES: NearbyCategory[] = [
   "station",
@@ -17,6 +17,8 @@ const VALID_NEARBY_CATEGORIES: NearbyCategory[] = [
   "airport",
   "other",
 ];
+
+const JPY_TO_USD = 1 / 150;
 
 // Hàm làm sạch chuỗi trước khi lưu vào Database, tránh lồng JSON nhiều lần
 function cleanText(val: unknown): string {
@@ -41,7 +43,7 @@ function cleanText(val: unknown): string {
       }
     } else if (typeof current === "object" && current !== null) {
       const record = current as Record<string, unknown>;
-      current = record.vi ?? record.en ?? record.ja ?? Object.values(record)[0] ?? "";
+      current = record.en ?? record.ja ?? Object.values(record)[0] ?? "";
     } else {
       break;
     }
@@ -57,18 +59,35 @@ function cleanLocalizedField(val: unknown): string | Record<string, string> {
   }
   if (typeof val === "object" && val !== null && !Array.isArray(val)) {
     const rec = val as Record<string, unknown>;
-    const vi = typeof rec.vi === "string" ? rec.vi.trim() : "";
     const en = typeof rec.en === "string" ? rec.en.trim() : "";
     const ja = typeof rec.ja === "string" ? rec.ja.trim() : "";
-    if (!vi && !en && !ja) return "";
-    return { vi, en, ja };
+    if (!en && !ja) return "";
+    return { en, ja };
   }
   return cleanText(val);
 }
 
 function hasFieldContent(val: string | Record<string, string>): boolean {
   if (typeof val === "string") return val.trim().length > 0;
-  return Boolean(val.vi?.trim() || val.en?.trim() || val.ja?.trim());
+  return Boolean(val.en?.trim() || val.ja?.trim());
+}
+
+function toNullableString(val?: string | null): string | null {
+  if (typeof val !== "string") return null;
+  const trimmed = val.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function toNullablePositiveNumber(val?: number | null): number | null {
+  if (val === null || val === undefined) return null;
+  const num = Number(val);
+  return Number.isFinite(num) && num > 0 ? num : null;
+}
+
+function toNullableNonNegativeInt(val?: number | null): number | null {
+  if (val === null || val === undefined) return null;
+  const num = Number(val);
+  return Number.isFinite(num) && num >= 0 ? Math.floor(num) : null;
 }
 
 function sanitizeNearbyList(items?: NearbyItem[]): NearbyItem[] {
@@ -91,6 +110,23 @@ function sanitizeNearbyList(items?: NearbyItem[]): NearbyItem[] {
       name,
       distance,
     });
+  }
+
+  return result;
+}
+
+// Chỉ giữ ghi chú của những ảnh còn tồn tại trong bài, bỏ ghi chú trống
+function sanitizeImageCaptions(captions: ImageCaptions | undefined, urls: string[]): ImageCaptions {
+  if (!captions || typeof captions !== "object") return {};
+  const result: ImageCaptions = {};
+
+  for (const url of urls) {
+    const raw = captions[url];
+    if (!raw || typeof raw !== "object") continue;
+    const en = typeof raw.en === "string" ? raw.en.trim() : "";
+    const ja = typeof raw.ja === "string" ? raw.ja.trim() : "";
+    if (!en && !ja) continue;
+    result[url] = { en, ja };
   }
 
   return result;
@@ -162,42 +198,38 @@ export async function deleteProperty(id: string) {
   }
 }
 
-// --- Interface Đầy đủ 3 ngôn ngữ & Bộ lọc ---
+// --- Interface 2 ngôn ngữ (EN & JA) & Bộ lọc ---
 export interface CreatePropertyInput {
   id?: string;
-  titleVi: string;
   titleEn: string;
   titleJa: string;
-  descriptionVi: string;
-  descriptionEn: string;
-  descriptionJa: string;
-  locationVi: string;
+  descriptionEn?: string;
+  descriptionJa?: string;
   locationEn: string;
   locationJa: string;
   mapAddress?: string;
   filterLocation?: string;
   filterPrice?: string;
   filterLayout?: string;
-  propertyTypeVi: string;
   propertyTypeEn: string;
   propertyTypeJa: string;
-  priceVi: number;
-  priceEn: number;
+  priceEn?: number;
   priceJa: number;
-  areaSqm: number;
-  buildingSize?: string;
-  landSize?: string;
-  layout?: string;
-  structure?: string;
-  yearBuilt?: number;
-  parking?: string;
-  landRights?: string;
-  zoning?: string;
-  access?: string;
-  bedrooms: number;
-  bathrooms: number;
+  areaSqm?: number | null;
+  buildingSize?: string | null;
+  landSize?: string | null;
+  layout?: string | null;
+  structure?: string | null;
+  yearBuilt?: number | null;
+  parking?: string | null;
+  landRights?: string | null;
+  zoning?: string | null;
+  access?: string | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
   images: string[];
   floorPlanImages?: string[];
+  imageCaptions?: ImageCaptions;
   nearby?: NearbyItem[];
 }
 
@@ -206,21 +238,30 @@ function buildPropertyPayload(input: CreatePropertyInput) {
     ? input.floorPlanImages.filter(Boolean)
     : [];
   const cleanNearby = sanitizeNearbyList(input.nearby);
+  const cleanImageCaptions = sanitizeImageCaptions(input.imageCaptions, [
+    ...(Array.isArray(input.images) ? input.images : []),
+    ...cleanFloorPlans,
+  ]);
 
   const title = {
-    vi: cleanText(input.titleVi),
     en: cleanText(input.titleEn),
     ja: cleanText(input.titleJa),
   };
 
+  const rawJa = Number(input.priceJa) || 0;
+  const rawEn = Number(input.priceEn) || 0;
+  const priceJa =
+    rawJa > 0 ? Math.round(rawJa) : rawEn > 0 ? Math.round(rawEn / JPY_TO_USD) : 0;
+  const priceEn =
+    rawEn > 0 ? Math.round(rawEn) : priceJa > 0 ? Math.round(priceJa * JPY_TO_USD) : 0;
+
   const description = {
-    vi: cleanText(input.descriptionVi),
     en: cleanText(input.descriptionEn),
     ja: cleanText(input.descriptionJa),
-    price_vi: Number(input.priceVi) || 0,
-    price_en: Number(input.priceEn) || 0,
-    price_ja: Number(input.priceJa) || 0,
+    price_en: priceEn,
+    price_ja: priceJa,
     floor_plans: cleanFloorPlans,
+    image_captions: cleanImageCaptions,
     map_address: cleanText(input.mapAddress),
     filter_location: cleanText(input.filterLocation),
     filter_price: cleanText(input.filterPrice),
@@ -229,42 +270,38 @@ function buildPropertyPayload(input: CreatePropertyInput) {
   };
 
   const location = {
-    vi: cleanText(input.locationVi),
     en: cleanText(input.locationEn),
     ja: cleanText(input.locationJa),
   };
 
   const propertyType = {
-    vi: cleanText(input.propertyTypeVi),
     en: cleanText(input.propertyTypeEn),
     ja: cleanText(input.propertyTypeJa),
   };
 
-  const priceJa = Number(input.priceJa) || 0;
-  const priceVi = Number(input.priceVi) || 0;
-  const serializedFloorPlans = cleanFloorPlans.length > 0 ? JSON.stringify(cleanFloorPlans) : null;
+  const serializedFloorPlans =
+    cleanFloorPlans.length > 0 ? JSON.stringify(cleanFloorPlans) : null;
 
   return {
     title,
     description,
     location,
     property_type: propertyType,
-    price: priceJa,
+    price: priceEn,
     price_yen: priceJa,
-    price_vnd: priceVi,
-    area_sqm: input.areaSqm,
-    building_size: input.buildingSize || `${input.areaSqm} m²`,
-    land_size: input.landSize || null,
-    layout: input.layout || input.filterLayout || "2LDK",
-    structure: input.structure || "RC (Bê tông cốt thép)",
-    year_built: input.yearBuilt || 2026,
-    parking: input.parking || "Có",
-    land_rights: input.landRights || "Sở hữu vĩnh viễn (Ownership)",
-    zoning: input.zoning || "Khu dân cư",
-    access: input.access || "Cách ga 5 phút đi bộ",
-    bedrooms: input.bedrooms,
-    bathrooms: input.bathrooms,
-    images: input.images,
+    area_sqm: toNullablePositiveNumber(input.areaSqm),
+    building_size: toNullableString(input.buildingSize),
+    land_size: toNullableString(input.landSize),
+    layout: toNullableString(input.layout),
+    structure: toNullableString(input.structure),
+    year_built: toNullablePositiveNumber(input.yearBuilt),
+    parking: toNullableString(input.parking),
+    land_rights: toNullableString(input.landRights),
+    zoning: toNullableString(input.zoning),
+    access: toNullableString(input.access),
+    bedrooms: toNullableNonNegativeInt(input.bedrooms),
+    bathrooms: toNullableNonNegativeInt(input.bathrooms),
+    images: Array.isArray(input.images) && input.images.length > 0 ? input.images : null,
     floor_plan: serializedFloorPlans,
     floor_plan_url: serializedFloorPlans,
   };

@@ -1,7 +1,7 @@
 export const AGENT_INFO = {
   brand: "RE AGENT",
   subBrand: "by Re iDea",
-  slogan: "People. Homes. A Brighter Tomorrow.",
+  slogan: "Happy to find your dream home in Japan.",
   companyJa: "株式会社 Re iDea",
   companyEn: "Re iDea Co., Ltd.",
   nameEn: "Mii Shintani",

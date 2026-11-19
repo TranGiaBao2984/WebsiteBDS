@@ -17,6 +17,14 @@ export interface NearbyItem {
   distance: string | Record<string, string>;
 }
 
+/** Ghi chú song ngữ cho từng ảnh (key = URL ảnh). */
+export interface ImageCaption {
+  en: string;
+  ja: string;
+}
+
+export type ImageCaptions = Record<string, ImageCaption>;
+
 export interface Property {
   id: string;
   title: string | Record<string, string>;

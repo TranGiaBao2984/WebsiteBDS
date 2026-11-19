@@ -2,7 +2,7 @@ export const SITE = {
   name: 'Mii Shintani — RE AGENT by Re iDea',
   brand: 'RE AGENT',
   subBrand: 'by Re iDea',
-  slogan: 'People. Homes. A Brighter Tomorrow.',
+  slogan: 'Happy to find your dream home in Japan.',
   company: '株式会社 Re iDea',
   advisorName: 'Mii Shintani (新谷 美依)',
   role: 'Global Property Advisor',

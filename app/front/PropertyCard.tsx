@@ -113,8 +113,11 @@ function toPositiveNumber(val: unknown): number {
 
 function getFormattedPrice(property: Property, currentLang: 'en' | 'ja'): string {
   const descObj = unwrapJson(property.description);
-  let priceEn = 0;
-  let priceJa = toPositiveNumber(property.price_yen) || toPositiveNumber(property.price);
+  const colYen = toPositiveNumber(property.price_yen);
+  const colUsd = toPositiveNumber(property.price);
+
+  let priceJa = colYen;
+  let priceEn = colUsd > 0 && colUsd !== colYen ? colUsd : 0;
 
   if (typeof descObj === 'object' && descObj !== null && !Array.isArray(descObj)) {
     const record = descObj as Record<string, unknown>;
@@ -258,7 +261,10 @@ function PropertyCardComponent({ property, priority = false }: PropertyCardProps
   const [failedImage, setFailedImage] = useState<string | null>(null);
   const imgSrc = failedImage === initialImage ? FALLBACK_IMAGE : initialImage;
 
-  const { label: statusLabel, badgeClass } = getLocalizedStatus(property.status, labels);
+  const { label: statusLabel, badgeClass } = getLocalizedStatus(
+    property.status || property.current_status,
+    labels
+  );
 
   return (
     <Link

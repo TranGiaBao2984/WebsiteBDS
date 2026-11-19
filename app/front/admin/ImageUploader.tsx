@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { createSupabaseBrowser } from '@/lib/supabase-browser';
 import { IMAGE_BUCKET } from '@/lib/storage';
 import type { ImageCaption } from '@/lib/types';
@@ -188,6 +188,26 @@ function AlertCircleIcon({ className }: { className?: string }) {
   );
 }
 
+function ReplaceIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+      <path d="M21 3v5h-5" />
+      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+      <path d="M8 16H3v5" />
+    </svg>
+  );
+}
+
 function StarIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -236,6 +256,8 @@ export default function ImageUploader({
   const [progress, setProgress] = useState('');
   const [problems, setProblems] = useState<string[]>([]);
   const [urlText, setUrlText] = useState('');
+  const replaceInputRef = useRef<HTMLInputElement>(null);
+  const replaceIndexRef = useRef<number | null>(null);
 
   // max không truyền (hoặc Infinity) = không giới hạn số ảnh
   const limit = typeof max === 'number' && Number.isFinite(max) ? max : null;
@@ -295,6 +317,41 @@ export default function ImageUploader({
   const updateCaption = (url: string, lang: 'en' | 'ja', text: string) => {
     const current = captions?.[url] ?? { en: '', ja: '' };
     onCaptionChange?.(url, { ...current, [lang]: text });
+  };
+
+  // Thay ảnh ở vị trí `index` bằng file mới, giữ nguyên vị trí và ghi chú EN/JA
+  const startReplace = (index: number) => {
+    if (busy) return;
+    replaceIndexRef.current = index;
+    replaceInputRef.current?.click();
+  };
+
+  const handleReplace = async (fileList: FileList | null) => {
+    const file = fileList?.[0];
+    const index = replaceIndexRef.current;
+    replaceIndexRef.current = null;
+    if (!file || index === null || busy) return;
+
+    const oldUrl = value[index];
+    if (oldUrl === undefined) return;
+
+    setProblems([]);
+    setBusyBoth(true);
+    setProgress('Đang tối ưu & thay ảnh...');
+    try {
+      const newUrl = await uploadImage(file);
+      const next = [...value];
+      next[index] = newUrl;
+      onChange(next);
+
+      // Ghi chú đang gắn theo link ảnh nên chuyển sang link mới
+      const oldCaption = captions?.[oldUrl];
+      if (oldCaption) onCaptionChange?.(newUrl, oldCaption);
+    } catch (e) {
+      setProblems([`${file.name}: ${e instanceof Error ? e.message : 'lỗi không xác định'}`]);
+    }
+    setProgress('');
+    setBusyBoth(false);
   };
 
   const addUrl = () => {
@@ -370,6 +427,17 @@ export default function ImageUploader({
                       <span>Đặt làm bìa</span>
                     </button>
                   )}
+
+                  <button
+                    type="button"
+                    aria-label="Thay ảnh này"
+                    title="Thay ảnh này (giữ nguyên ghi chú)"
+                    disabled={busy}
+                    onClick={() => startReplace(i)}
+                    className={`${SMALL_BTN} absolute top-2 right-2`}
+                  >
+                    <ReplaceIcon className="h-4 w-4" />
+                  </button>
 
                   <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-1.5">
                     {!single ? (
@@ -479,6 +547,20 @@ export default function ImageUploader({
           }}
         />
       </div>
+
+      <input
+        ref={replaceInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        disabled={busy}
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+        onChange={(e) => {
+          void handleReplace(e.target.files);
+          e.target.value = '';
+        }}
+      />
 
       <div className="flex gap-2">
         <input

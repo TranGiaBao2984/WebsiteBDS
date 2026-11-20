@@ -280,7 +280,9 @@ function PropertyCardComponent({ property, priority = false }: PropertyCardProps
           loading={priority ? 'eager' : 'lazy'}
           quality={75}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
+          className="object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none [-webkit-touch-callout:none]"
+          draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
           onError={() => {
             if (imgSrc !== FALLBACK_IMAGE) {
               setFailedImage(initialImage);

@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '@/app/context/LanguageContext';
 import type { ImageCaptions, NearbyCategory, Property } from '@/lib/types';
@@ -564,6 +564,11 @@ function parseFloorPlanImages(property: Property): string[] {
   return parseImages(property.floor_plan);
 }
 
+// Chặn menu chuột phải và kéo-thả trên ảnh để hạn chế lưu/copy ảnh thủ công
+function blockImageAction(e: SyntheticEvent) {
+  if (e.target instanceof HTMLImageElement) e.preventDefault();
+}
+
 // Đọc ghi chú ảnh (description.image_captions, key = URL ảnh)
 function parseImageCaptions(property: Property): ImageCaptions {
   const descObj = unwrapJson(property.description);
@@ -968,7 +973,11 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
   };
 
   return (
-    <div className="space-y-10 pb-24 lg:pb-0">
+    <div
+      className="space-y-10 pb-24 lg:pb-0 [-webkit-touch-callout:none]"
+      onContextMenu={blockImageAction}
+      onDragStart={blockImageAction}
+    >
       {/* Property Header */}
       <div className="relative overflow-hidden rounded-2xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.05)] sm:p-8">
         <div className="relative space-y-4">
@@ -1253,7 +1262,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
               <h2 className="font-serif border-b border-[#E5DFD6] pb-3 text-lg font-bold text-[#26221F]">
                 {labels.descTitle}
               </h2>
-              <p className="max-w-prose whitespace-pre-line text-[15px] leading-7 text-[#66605A] sm:text-base">
+              <p className="w-full wrap-break-word whitespace-pre-line text-justify text-[15px] leading-7 text-[#66605A] sm:text-base">
                 {description}
               </p>
             </div>

@@ -14,15 +14,17 @@ const ABOUT_CONTENT = {
     companyLabel: 'Company',
     companyValue: 'Re iDea Co., Ltd. (株式会社 Re iDea)',
     specialtyLabel: 'Core Services',
-    specialtyValue: 'Rental / Sales / Relocation Support',
+    specialtyValue: 'Rental / Sales / Relocation Support / Home Inspection, Renovation & After-Settlement Management',
     servicesTitle: 'International Real Estate Services',
-    servicesSubtitle: 'End-to-end bilingual and international support for renting, buying, and relocating in Japan',
+    servicesSubtitle: 'End-to-end bilingual and international support for renting, buying, relocating, and caring for your home in Japan',
     service1Title: 'Rental Support',
     service1Desc: 'Curated apartment and home searches tailored for overseas residents, including contract guidance and screening support.',
     service2Title: 'Property Sales',
     service2Desc: 'Transparent advisory for residential homes, condominiums, traditional Kominka, and investment properties across Japan.',
     service3Title: 'Relocation Support',
     service3Desc: 'Comprehensive move-in coordination, utility setup assistance, and local guidance for settling into life in Japan.',
+    service4Title: 'Inspection, Renovation & Management',
+    service4Desc: 'Home inspection, renovations, and property management after settlement, so your home stays in good hands even while you are overseas.',
     connectTitle: 'Connect with Mii Shintani',
     connectSubtitle: 'Instagram / WhatsApp / International Support',
     mobileLabel: 'Mobile',
@@ -42,15 +44,17 @@ const ABOUT_CONTENT = {
     companyLabel: '所属会社',
     companyValue: '株式会社 Re iDea（RE AGENT）',
     specialtyLabel: '取扱業務',
-    specialtyValue: 'Rental / Sales / Relocation Support',
+    specialtyValue: 'Rental / Sales / Relocation Support / ホームインスペクション・リノベーション・お引渡し後の管理',
     servicesTitle: 'サービス内容',
-    servicesSubtitle: '賃貸・売買から日本での新生活立ち上げまで一貫してサポートいたします',
+    servicesSubtitle: '賃貸・売買から日本での新生活の立ち上げ、お引渡し後の住まいのケアまで一貫してサポートいたします',
     service1Title: '賃貸仲介（Rental）',
     service1Desc: '海外からのお客様向けに、ご希望条件に合ったお部屋探しから契約手続き・入居まで丁寧にサポートいたします。',
     service2Title: '不動産売買（Sales）',
     service2Desc: 'マンション・戸建て・古民家・投資用物件など、日本国内の不動産購入・売却を安心の体制でご案内いたします。',
     service3Title: 'リロケーション支援（Relocation Support）',
     service3Desc: '日本への移住・転居に伴う各種手続きや生活立ち上げをトータルで支援いたします。',
+    service4Title: '住宅診断・リノベーション・管理（Inspection & Renovation）',
+    service4Desc: 'ホームインスペクション（住宅診断）、リノベーション、お引渡し後の物件管理まで、海外にお住まいの方も安心してお任せいただけるようサポートいたします。',
     connectTitle: 'Connect with Mii Shintani',
     connectSubtitle: 'Instagram / WhatsApp / International Support',
     mobileLabel: '携帯電話（Mobile）',
@@ -115,6 +119,23 @@ function GlobeIcon({ className }: { className?: string }) {
       <circle cx="12" cy="12" r="10" />
       <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
       <path d="M2 12h20" />
+    </svg>
+  );
+}
+
+function WrenchIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z" />
     </svg>
   );
 }
@@ -310,7 +331,7 @@ export default function VeToiSection() {
           <p className="mt-1 text-xs text-[#66605A] sm:text-sm">{content.servicesSubtitle}</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div className="space-y-3 rounded-xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#B8D200] motion-reduce:transform-none motion-reduce:transition-none">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#E5DFD6] bg-[#FAF8F5] text-[#B8D200]">
               <KeyRoundIcon className="h-5 w-5" />
@@ -338,6 +359,16 @@ export default function VeToiSection() {
             <h3 className="font-serif text-base font-bold text-[#26221F]">{content.service3Title}</h3>
             <p className="text-xs leading-relaxed text-[#66605A] sm:text-[13px]">
               {content.service3Desc}
+            </p>
+          </div>
+
+          <div className="space-y-3 rounded-xl border border-[#E5DFD6] bg-white p-6 shadow-[0_4px_12px_rgba(38,34,31,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#B8D200] motion-reduce:transform-none motion-reduce:transition-none">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#E5DFD6] bg-[#FAF8F5] text-[#B8D200]">
+              <WrenchIcon className="h-5 w-5" />
+            </span>
+            <h3 className="font-serif text-base font-bold text-[#26221F]">{content.service4Title}</h3>
+            <p className="text-xs leading-relaxed text-[#66605A] sm:text-[13px]">
+              {content.service4Desc}
             </p>
           </div>
         </div>

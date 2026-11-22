@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { signOut } from '@/app/back/admin';
@@ -125,6 +126,21 @@ function LogOutIcon({ className }: { className?: string }) {
   );
 }
 
+function isAuthorizedAdminEmail(email?: string | null): boolean {
+  if (!email) return false;
+  const allowedEmails = (
+    process.env.ADMIN_EMAILS ||
+    process.env.ADMIN_EMAIL ||
+    ''
+  )
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (allowedEmails.length === 0) return true;
+  return allowedEmails.includes(email.toLowerCase());
+}
+
 async function UserBox() {
   // Khai báo cho Next.js 16 Cache Components biết Component này xử lý ở Request Time
   await connection();
@@ -134,7 +150,10 @@ async function UserBox() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return null;
+  // Lớp bảo vệ thứ 2 ở tầng Server Component (song song với middleware.ts)
+  if (!user || !isAuthorizedAdminEmail(user.email)) {
+    redirect('/admin/login');
+  }
 
   return (
     <div className="flex items-center gap-3 text-sm">

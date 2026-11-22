@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { submitInquiryAction } from "@/app/back/inquiries";
 import { useLanguage } from "@/app/context/LanguageContext";
 
@@ -9,6 +10,11 @@ interface InquiryFormProps {
   propertyId?: string;
   propertyTitle?: string;
 }
+
+// Đường dẫn file GIF trong thư mục /public (public/fun.gif -> "/fun.gif")
+const SUCCESS_GIF_SRC = "/fun.gif";
+// Thời gian GIF tự đóng (ms). Chỉnh số này nếu muốn hiển thị lâu / ngắn hơn.
+const SUCCESS_GIF_DURATION_MS = 6000;
 
 const INQUIRY_LABELS = {
   en: {
@@ -34,6 +40,8 @@ const INQUIRY_LABELS = {
     successMsg:
       "Thank you! Mii Shintani has received your inquiry and sent a confirmation email. We will respond within 24 hours.",
     errorMsg: "Failed to send request. Please try again.",
+    gifAlt: "Your inquiry has been sent",
+    gifClose: "Close",
   },
   ja: {
     heading: "物件のお問い合わせ・相談",
@@ -57,6 +65,8 @@ const INQUIRY_LABELS = {
     successMsg:
       "ありがとうございます！お問い合わせを受け付け、確認メールをお送りしました。24時間以内にご返信いたします。",
     errorMsg: "送信に失敗しました。もう一度お試しください。",
+    gifAlt: "お問い合わせを送信しました",
+    gifClose: "閉じる",
   },
 };
 
@@ -115,6 +125,24 @@ function AlertCircleIcon({ className }: { className?: string }) {
   );
 }
 
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
 export default function InquiryForm({
   propertyId,
   propertyTitle,
@@ -130,9 +158,37 @@ export default function InquiryForm({
     message?: string;
   } | null>(null);
 
+  // Popup GIF: gifShownAt vừa là cờ hiển thị (khác null) vừa là key để GIF chạy lại từ đầu mỗi lần gửi
+  const [gifShownAt, setGifShownAt] = useState<number | null>(null);
+  const closeGif = useCallback(() => setGifShownAt(null), []);
+
   useEffect(() => {
     formLoadedAtRef.current = Date.now();
+
+    // Tải trước GIF để lúc gửi xong hiện ra ngay, không bị trễ
+    const preload = new window.Image();
+    preload.src = SUCCESS_GIF_SRC;
   }, []);
+
+  // Khi popup mở: tự đóng sau vài giây, bấm Esc để đóng, và khoá cuộn trang phía sau
+  useEffect(() => {
+    if (gifShownAt === null) return;
+
+    const timer = window.setTimeout(closeGif, SUCCESS_GIF_DURATION_MS);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeGif();
+    };
+    window.addEventListener("keydown", onKeyDown);
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [gifShownAt, closeGif]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -159,6 +215,7 @@ export default function InquiryForm({
         success: true,
         message: labels.successMsg,
       });
+      setGifShownAt(Date.now());
       form.reset();
       formLoadedAtRef.current = Date.now();
     } else {
@@ -177,6 +234,39 @@ export default function InquiryForm({
       id="contact"
       className="relative scroll-mt-28 overflow-hidden rounded-2xl border border-[#E5DFD6] bg-white p-6 text-[#26221F] shadow-[0_4px_16px_rgba(38,34,31,0.06)] lg:p-8"
     >
+      {/* Popup GIF hiển thị giữa màn hình khi gửi liên hệ thành công.
+          Dùng portal gắn vào <body> để không bị ảnh hưởng bởi khung cha (overflow/transform). */}
+      {gifShownAt !== null &&
+        createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={labels.gifAlt}
+          onClick={closeGif}
+          className="fixed inset-0 z-100 flex cursor-pointer items-center justify-center bg-[#26221F]/60 p-4 backdrop-blur-sm"
+        >
+          <div className="relative">
+            {/* eslint-disable-next-line @next/next/no-img-element -- dùng <img> thường để giữ nguyên hoạt ảnh GIF */}
+            <img
+              key={gifShownAt}
+              src={SUCCESS_GIF_SRC}
+              alt={labels.gifAlt}
+              draggable={false}
+              className="max-h-[70vh] w-auto max-w-[min(90vw,28rem)] rounded-2xl border border-[#E5DFD6] bg-white shadow-[0_10px_30px_rgba(38,34,31,0.25)]"
+            />
+            <button
+              type="button"
+              onClick={closeGif}
+              aria-label={labels.gifClose}
+              className="absolute -top-3 -right-3 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[#B8D200] text-[#26221F] shadow-sm transition-colors duration-200 hover:bg-[#9FB600] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2"
+            >
+              <CloseIcon className="h-4 w-4" />
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
       <div className="relative">
         <h3 className="font-serif mb-2 text-xl font-bold tracking-tight text-[#26221F] sm:text-2xl">
           {labels.heading}

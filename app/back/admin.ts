@@ -19,9 +19,56 @@ const VALID_NEARBY_CATEGORIES: NearbyCategory[] = [
 ];
 
 const JPY_TO_USD = 1 / 150;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Hàm làm sạch chuỗi trước khi lưu vào Database, tránh lồng JSON nhiều lần
-function cleanText(val: unknown): string {
+// --- Chốt chặn xác thực & phân quyền Admin phía Server ---
+async function requireAdmin() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    throw new Error("Unauthorized: Phiên đăng nhập không hợp lệ hoặc đã hết hạn.");
+  }
+
+  const allowedEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (allowedEmails.length > 0 && (!user.email || !allowedEmails.includes(user.email.toLowerCase()))) {
+    throw new Error("Forbidden: Tài khoản không có quyền quản trị.");
+  }
+
+  return supabase;
+}
+
+// Chỉ chấp nhận URL ảnh hợp lệ từ Supabase Storage của dự án
+function sanitizeImageUrls(urls?: string[]): string[] {
+  if (!Array.isArray(urls)) return [];
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+
+  return urls
+    .filter((url): url is string => typeof url === "string")
+    .map((url) => url.trim())
+    .filter((url) => {
+      if (!url) return false;
+      try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== "https:") return false;
+        if (supabaseUrl && !url.startsWith(supabaseUrl)) return false;
+        return parsed.hostname.endsWith(".supabase.co");
+      } catch {
+        return false;
+      }
+    })
+    .slice(0, 50); // Giới hạn tối đa 50 ảnh/bài
+}
+
+// Hàm làm sạch chuỗi và giới hạn độ dài chống payload quá tải
+function cleanText(val: unknown, maxLength = 5000): string {
   if (!val) return "";
   let current: unknown = val;
 
@@ -49,22 +96,23 @@ function cleanText(val: unknown): string {
     }
   }
 
-  return typeof current === "string" ? current : String(current || "");
+  const result = typeof current === "string" ? current : String(current || "");
+  return result.slice(0, maxLength);
 }
 
 function cleanLocalizedField(val: unknown): string | Record<string, string> {
   if (!val) return "";
   if (typeof val === "string") {
-    return val.trim();
+    return val.trim().slice(0, 500);
   }
   if (typeof val === "object" && val !== null && !Array.isArray(val)) {
     const rec = val as Record<string, unknown>;
-    const en = typeof rec.en === "string" ? rec.en.trim() : "";
-    const ja = typeof rec.ja === "string" ? rec.ja.trim() : "";
+    const en = typeof rec.en === "string" ? rec.en.trim().slice(0, 500) : "";
+    const ja = typeof rec.ja === "string" ? rec.ja.trim().slice(0, 500) : "";
     if (!en && !ja) return "";
     return { en, ja };
   }
-  return cleanText(val);
+  return cleanText(val, 500);
 }
 
 function hasFieldContent(val: string | Record<string, string>): boolean {
@@ -72,9 +120,9 @@ function hasFieldContent(val: string | Record<string, string>): boolean {
   return Boolean(val.en?.trim() || val.ja?.trim());
 }
 
-function toNullableString(val?: string | null): string | null {
+function toNullableString(val?: string | null, maxLength = 500): string | null {
   if (typeof val !== "string") return null;
-  const trimmed = val.trim();
+  const trimmed = val.trim().slice(0, maxLength);
   return trimmed.length > 0 ? trimmed : null;
 }
 
@@ -94,7 +142,7 @@ function sanitizeNearbyList(items?: NearbyItem[]): NearbyItem[] {
   if (!Array.isArray(items)) return [];
   const result: NearbyItem[] = [];
 
-  for (const item of items) {
+  for (const item of items.slice(0, 30)) {
     if (!item || typeof item !== "object") continue;
     const category: NearbyCategory = VALID_NEARBY_CATEGORIES.includes(item.category)
       ? item.category
@@ -105,7 +153,7 @@ function sanitizeNearbyList(items?: NearbyItem[]): NearbyItem[] {
     if (!hasFieldContent(name) && !hasFieldContent(distance)) continue;
 
     result.push({
-      id: typeof item.id === "string" && item.id.trim() ? item.id.trim() : undefined,
+      id: typeof item.id === "string" && item.id.trim() ? item.id.trim().slice(0, 100) : undefined,
       category,
       name,
       distance,
@@ -115,7 +163,6 @@ function sanitizeNearbyList(items?: NearbyItem[]): NearbyItem[] {
   return result;
 }
 
-// Chỉ giữ ghi chú của những ảnh còn tồn tại trong bài, bỏ ghi chú trống
 function sanitizeImageCaptions(captions: ImageCaptions | undefined, urls: string[]): ImageCaptions {
   if (!captions || typeof captions !== "object") return {};
   const result: ImageCaptions = {};
@@ -123,8 +170,8 @@ function sanitizeImageCaptions(captions: ImageCaptions | undefined, urls: string
   for (const url of urls) {
     const raw = captions[url];
     if (!raw || typeof raw !== "object") continue;
-    const en = typeof raw.en === "string" ? raw.en.trim() : "";
-    const ja = typeof raw.ja === "string" ? raw.ja.trim() : "";
+    const en = typeof raw.en === "string" ? raw.en.trim().slice(0, 500) : "";
+    const ja = typeof raw.ja === "string" ? raw.ja.trim().slice(0, 500) : "";
     if (!en && !ja) continue;
     result[url] = { en, ja };
   }
@@ -149,19 +196,33 @@ export async function signIn(prevStateOrFormData: unknown, formDataParam?: FormD
     password = typeof record.password === "string" ? record.password : "";
   }
 
-  if (!email.trim() || !password.trim()) {
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanPassword = password.trim();
+
+  if (!cleanEmail || !cleanPassword) {
     return { error: "Vui lòng nhập đầy đủ Email và Mật khẩu." };
+  }
+
+  // Chặn sớm nếu email không nằm trong danh sách Admin được phép
+  const allowedEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (allowedEmails.length > 0 && !allowedEmails.includes(cleanEmail)) {
+    return { error: "Email hoặc mật khẩu không chính xác." };
   }
 
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({
-    email: email.trim(),
-    password: password.trim(),
+    email: cleanEmail,
+    password: cleanPassword,
   });
 
   if (error) {
-    return { error: error.message };
+    // Trả thông báo chung chung để tránh lộ thông tin tài khoản tồn tại hay chưa
+    return { error: "Email hoặc mật khẩu không chính xác." };
   }
 
   revalidatePath("/admin", "layout");
@@ -179,7 +240,11 @@ export async function signOut() {
 // --- Action Xoá Bài Bất Động Sản ---
 export async function deleteProperty(id: string) {
   try {
-    const supabase = await createClient();
+    if (!id || !UUID_REGEX.test(id)) {
+      return { success: false, error: "ID bài viết không hợp lệ." };
+    }
+
+    const supabase = await requireAdmin();
     const { error } = await supabase.from("properties").delete().eq("id", id);
 
     if (error) {
@@ -234,18 +299,17 @@ export interface CreatePropertyInput {
 }
 
 function buildPropertyPayload(input: CreatePropertyInput) {
-  const cleanFloorPlans = Array.isArray(input.floorPlanImages)
-    ? input.floorPlanImages.filter(Boolean)
-    : [];
+  const cleanImages = sanitizeImageUrls(input.images);
+  const cleanFloorPlans = sanitizeImageUrls(input.floorPlanImages);
   const cleanNearby = sanitizeNearbyList(input.nearby);
   const cleanImageCaptions = sanitizeImageCaptions(input.imageCaptions, [
-    ...(Array.isArray(input.images) ? input.images : []),
+    ...cleanImages,
     ...cleanFloorPlans,
   ]);
 
   const title = {
-    en: cleanText(input.titleEn),
-    ja: cleanText(input.titleJa),
+    en: cleanText(input.titleEn, 300),
+    ja: cleanText(input.titleJa, 300),
   };
 
   const rawJa = Number(input.priceJa) || 0;
@@ -256,27 +320,27 @@ function buildPropertyPayload(input: CreatePropertyInput) {
     rawEn > 0 ? Math.round(rawEn) : priceJa > 0 ? Math.round(priceJa * JPY_TO_USD) : 0;
 
   const description = {
-    en: cleanText(input.descriptionEn),
-    ja: cleanText(input.descriptionJa),
+    en: cleanText(input.descriptionEn, 10000),
+    ja: cleanText(input.descriptionJa, 10000),
     price_en: priceEn,
     price_ja: priceJa,
     floor_plans: cleanFloorPlans,
     image_captions: cleanImageCaptions,
-    map_address: cleanText(input.mapAddress),
-    filter_location: cleanText(input.filterLocation),
-    filter_price: cleanText(input.filterPrice),
-    filter_layout: cleanText(input.filterLayout),
+    map_address: cleanText(input.mapAddress, 500),
+    filter_location: cleanText(input.filterLocation, 200),
+    filter_price: cleanText(input.filterPrice, 200),
+    filter_layout: cleanText(input.filterLayout, 200),
     nearby: cleanNearby,
   };
 
   const location = {
-    en: cleanText(input.locationEn),
-    ja: cleanText(input.locationJa),
+    en: cleanText(input.locationEn, 300),
+    ja: cleanText(input.locationJa, 300),
   };
 
   const propertyType = {
-    en: cleanText(input.propertyTypeEn),
-    ja: cleanText(input.propertyTypeJa),
+    en: cleanText(input.propertyTypeEn, 200),
+    ja: cleanText(input.propertyTypeJa, 200),
   };
 
   const serializedFloorPlans =
@@ -290,18 +354,18 @@ function buildPropertyPayload(input: CreatePropertyInput) {
     price: priceEn,
     price_yen: priceJa,
     area_sqm: toNullablePositiveNumber(input.areaSqm),
-    building_size: toNullableString(input.buildingSize),
-    land_size: toNullableString(input.landSize),
-    layout: toNullableString(input.layout),
-    structure: toNullableString(input.structure),
+    building_size: toNullableString(input.buildingSize, 200),
+    land_size: toNullableString(input.landSize, 200),
+    layout: toNullableString(input.layout, 100),
+    structure: toNullableString(input.structure, 200),
     year_built: toNullablePositiveNumber(input.yearBuilt),
-    parking: toNullableString(input.parking),
-    land_rights: toNullableString(input.landRights),
-    zoning: toNullableString(input.zoning),
-    access: toNullableString(input.access),
+    parking: toNullableString(input.parking, 200),
+    land_rights: toNullableString(input.landRights, 200),
+    zoning: toNullableString(input.zoning, 200),
+    access: toNullableString(input.access, 500),
     bedrooms: toNullableNonNegativeInt(input.bedrooms),
     bathrooms: toNullableNonNegativeInt(input.bathrooms),
-    images: Array.isArray(input.images) && input.images.length > 0 ? input.images : null,
+    images: cleanImages.length > 0 ? cleanImages : null,
     floor_plan: serializedFloorPlans,
     floor_plan_url: serializedFloorPlans,
   };
@@ -310,7 +374,7 @@ function buildPropertyPayload(input: CreatePropertyInput) {
 // --- Action Đăng Bài Bất Động Sản ---
 export async function createPropertyAction(input: CreatePropertyInput) {
   try {
-    const supabase = await createClient();
+    const supabase = await requireAdmin();
 
     const payload = {
       ...buildPropertyPayload(input),
@@ -340,7 +404,11 @@ export async function createPropertyAction(input: CreatePropertyInput) {
 // --- Action Cập Nhật Bài Bất Động Sản ---
 export async function updatePropertyAction(id: string, input: CreatePropertyInput) {
   try {
-    const supabase = await createClient();
+    if (!id || !UUID_REGEX.test(id)) {
+      return { success: false, error: "ID bài viết không hợp lệ." };
+    }
+
+    const supabase = await requireAdmin();
     const payload = buildPropertyPayload(input);
 
     const { data, error } = await supabase

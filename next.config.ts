@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   compress: true,
+  poweredByHeader: false, // Ẩn thông tin X-Powered-By: Next.js
   turbopack: {
     root: process.cwd(),
   },
@@ -16,9 +17,39 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
       },
     ],
+  },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY', // Chống nhúng iframe lừa đảo (Clickjacking)
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff', // Chống giả mạo MIME-type
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload', // Bắt buộc HTTPS
+          },
+        ],
+      },
+    ];
   },
 };
 

@@ -14,6 +14,16 @@ import {
 
 export type InquiryStatus = "pending" | "consulting" | "paid" | "cancelled";
 
+const VALID_INQUIRY_STATUSES: InquiryStatus[] = [
+  "pending",
+  "consulting",
+  "paid",
+  "cancelled",
+];
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export interface SubmitInquiryInput {
   propertyId?: string | null;
   fullName: string;
@@ -29,6 +39,37 @@ export interface SubmitInquiryInput {
 interface PropertySummary {
   titleText: string;
   url: string;
+}
+
+// --- Chốt chặn xác thực & phân quyền Admin phía Server ---
+async function requireAdmin() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    throw new Error("Phiên đăng nhập Admin đã hết hạn.");
+  }
+
+  const allowedEmails = (
+    process.env.ADMIN_EMAILS ||
+    process.env.ADMIN_EMAIL ||
+    ""
+  )
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (
+    allowedEmails.length > 0 &&
+    (!user.email || !allowedEmails.includes(user.email.toLowerCase()))
+  ) {
+    throw new Error("Tài khoản không có quyền quản trị.");
+  }
+
+  return supabase;
 }
 
 // Bộ đếm Rate Limit theo IP trên từng instance (3 lần / 10 phút)
@@ -50,7 +91,6 @@ function isIpRateLimited(ip: string): boolean {
   timestamps.push(now);
   ipHitMap.set(ip, timestamps);
 
-  // Dọn dẹp map tránh phình bộ nhớ nếu có quá nhiều IP
   if (ipHitMap.size > 2000) {
     for (const [key, list] of ipHitMap.entries()) {
       const valid = list.filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
@@ -253,7 +293,7 @@ export async function submitInquiryAction(input: SubmitInquiryInput) {
   const lang = toLang(input.lang);
   const msg = VALIDATION_MESSAGES[lang];
 
-  // 1. Lớp chống bot 1: Honeypot (âm thầm trả về thành công để đánh lừa bot)
+  // 1. Lớp chống bot 1: Honeypot
   if (input.website && input.website.trim().length > 0) {
     return { success: true };
   }
@@ -267,42 +307,51 @@ export async function submitInquiryAction(input: SubmitInquiryInput) {
     return { success: false, error: msg.tooFast };
   }
 
-  // 3. Kiểm tra đồng ý xử lý dữ liệu cá nhân (Nghị định 13/2023/NĐ-CP)
+  // 3. Kiểm tra đồng ý xử lý dữ liệu cá nhân
   if (!input.consent) {
     return { success: false, error: msg.missingConsent };
   }
 
-  // 4. Chuẩn hóa & Validate dữ liệu đầu vào
+  // 4. Chuẩn hóa & Validate dữ liệu đầu vào chặt chẽ
   const fullName = (input.fullName || "").trim().slice(0, 100);
   const email = (input.email || "").trim().toLowerCase().slice(0, 150);
-  const phone = (input.phone || "").trim().slice(0, 30);
+  // Chỉ giữ lại chữ số, dấu +, khoảng trắng, gạch ngang và ngoặc đơn cho SĐT
+  const phone = (input.phone || "")
+    .replace(/[^\d+\s()-]/g, "")
+    .trim()
+    .slice(0, 30);
   const message = (input.message || "").trim().slice(0, 2000);
+
+  // Chỉ chấp nhận propertyId là UUID hợp lệ (nếu có truyền lên)
+  const rawPropertyId = (input.propertyId || "").trim();
   const cleanPropertyId =
-    input.propertyId && input.propertyId.trim() !== ""
-      ? input.propertyId.trim().slice(0, 100)
-      : null;
+    rawPropertyId && UUID_REGEX.test(rawPropertyId) ? rawPropertyId : null;
 
   if (!fullName || !email || !phone) {
     return { success: false, error: msg.missingFields };
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Ngăn chặn ký tự xuống dòng trong email/tên chống Header Injection
+  if (/[\r\n]/.test(email) || /[\r\n]/.test(fullName)) {
+    return { success: false, error: msg.invalidEmail };
+  }
+
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   if (!emailRegex.test(email)) {
     return { success: false, error: msg.invalidEmail };
   }
 
   const digitCount = phone.replace(/\D/g, "").length;
-  if (digitCount < 7) {
+  if (digitCount < 7 || digitCount > 15) {
     return { success: false, error: msg.invalidPhone };
   }
 
-  // 5. Rate Limit tầng IP (trong bộ nhớ Serverless)
+  // 5. Rate Limit tầng IP (ưu tiên header đáng tin cậy từ Vercel / Reverse Proxy)
   const reqHeaders = await headers();
-  const forwardedFor = reqHeaders.get("x-forwarded-for");
-  const clientIp =
-    forwardedFor?.split(",")[0]?.trim() ||
-    reqHeaders.get("x-real-ip")?.trim() ||
-    "unknown";
+  const vercelIp = reqHeaders.get("x-vercel-forwarded-for")?.split(",")[0]?.trim();
+  const realIp = reqHeaders.get("x-real-ip")?.trim();
+  const forwardedIp = reqHeaders.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const clientIp = vercelIp || realIp || forwardedIp || "unknown";
 
   if (clientIp !== "unknown" && isIpRateLimited(clientIp)) {
     return { success: false, error: msg.rateLimited };
@@ -311,15 +360,18 @@ export async function submitInquiryAction(input: SubmitInquiryInput) {
   try {
     const supabase = await createClient();
 
-    // 6. Rate Limit tầng Database (chặn spam xuyên qua nhiều Serverless instance)
-    const tenMinutesAgo = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
-    const { count: recentCount } = await supabase
-      .from("inquiries")
-      .select("id", { count: "exact", head: true })
-      .or(`email.eq.${email},phone.eq.${phone}`)
-      .gte("created_at", tenMinutesAgo);
+    // 6. Rate Limit tầng Database thông qua RPC SECURITY DEFINER (không bị chặn bởi RLS)
+    const { data: isDbLimited, error: rpcError } = await supabase.rpc(
+      "check_inquiry_rate_limit",
+      {
+        p_email: email,
+        p_phone: phone,
+        p_window_minutes: 10,
+        p_max_requests: RATE_LIMIT_MAX_REQUESTS,
+      }
+    );
 
-    if ((recentCount ?? 0) >= RATE_LIMIT_MAX_REQUESTS) {
+    if (!rpcError && isDbLimited === true) {
       return { success: false, error: msg.rateLimited };
     }
 
@@ -351,7 +403,7 @@ export async function submitInquiryAction(input: SubmitInquiryInput) {
       ? await getPropertySummary(supabase, cleanPropertyId, lang)
       : null;
 
-    // 8. Đẩy tác vụ gửi Gmail thông báo + xác nhận chạy ngầm sau khi trả response
+    // 8. Đẩy tác vụ gửi Gmail thông báo + xác nhận chạy ngầm
     after(async () => {
       try {
         await dispatchInquiryEmails({
@@ -382,18 +434,19 @@ export async function updateInquiryProgressAction(
   adminNote?: string
 ) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return { success: false, error: "Phiên đăng nhập Admin đã hết hạn." };
+    if (!id || !UUID_REGEX.test(id)) {
+      return { success: false, error: "ID yêu cầu không hợp lệ." };
     }
+
+    if (!VALID_INQUIRY_STATUSES.includes(status)) {
+      return { success: false, error: "Trạng thái cập nhật không hợp lệ." };
+    }
+
+    const supabase = await requireAdmin();
 
     const updateData: Record<string, unknown> = { status };
     if (typeof adminNote === "string") {
-      updateData.admin_note = adminNote;
+      updateData.admin_note = adminNote.trim().slice(0, 3000);
     }
 
     const { error } = await supabase
@@ -415,8 +468,8 @@ export async function updateInquiryProgressAction(
     return { success: true };
   } catch (err: unknown) {
     const msg =
-      err && typeof err === "object" && "message" in err
-        ? String((err as { message: unknown }).message)
+      err instanceof Error
+        ? err.message
         : "Không thể cập nhật trạng thái khách hàng.";
     return { success: false, error: msg };
   }
@@ -424,14 +477,11 @@ export async function updateInquiryProgressAction(
 
 export async function deleteInquiryAction(id: string) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return { success: false, error: "Phiên đăng nhập Admin đã hết hạn." };
+    if (!id || !UUID_REGEX.test(id)) {
+      return { success: false, error: "ID yêu cầu không hợp lệ." };
     }
+
+    const supabase = await requireAdmin();
 
     const { error } = await supabase.from("inquiries").delete().eq("id", id);
     if (error) throw error;
@@ -440,9 +490,7 @@ export async function deleteInquiryAction(id: string) {
     return { success: true };
   } catch (err: unknown) {
     const msg =
-      err && typeof err === "object" && "message" in err
-        ? String((err as { message: unknown }).message)
-        : "Không thể xóa dữ liệu khách hàng.";
+      err instanceof Error ? err.message : "Không thể xóa dữ liệu khách hàng.";
     return { success: false, error: msg };
   }
 }

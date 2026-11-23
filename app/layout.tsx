@@ -1,5 +1,6 @@
 import './globals.css';
 import { Inter, Noto_Sans_JP, Lora } from 'next/font/google';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const inter = Inter({
   subsets: ['latin', 'vietnamese'],
@@ -39,6 +40,7 @@ export default function RootLayout({
     >
       <body className="font-sans antialiased min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-[#d7c4b7]">
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );

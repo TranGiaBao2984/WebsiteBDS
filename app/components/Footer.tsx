@@ -83,7 +83,7 @@ export default function Footer() {
               <h2 className="font-serif text-2xl font-semibold tracking-tight text-[#26221F] sm:text-3xl">
                 {labels.title}
               </h2>
-              <p className="text-xs font-semibold italic text-[#B8D200] sm:text-sm">
+              <p className="text-xs font-semibold italic text-[#B8D200] sm:text-4xl">
                 “{SITE.slogan}”
               </p>
               <p className="pt-1 text-xs leading-relaxed text-[#66605A] sm:text-sm">

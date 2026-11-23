@@ -1,10 +1,16 @@
 import './globals.css';
-import { Noto_Sans, Lora } from 'next/font/google';
+import { Inter, Noto_Sans_JP, Lora } from 'next/font/google';
 
-const notoSans = Noto_Sans({
+const inter = Inter({
   subsets: ['latin', 'vietnamese'],
   display: 'swap',
-  variable: '--font-noto-sans', // globals.css map biến này sang --font-sans
+  variable: '--font-inter',
+});
+
+const notoSansJP = Noto_Sans_JP({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-noto-sans-jp',
 });
 
 const lora = Lora({
@@ -29,7 +35,7 @@ export default function RootLayout({
     <html
       lang="vi"
       data-scroll-behavior="smooth"
-      className={`scroll-smooth ${notoSans.variable} ${lora.variable}`}
+      className={`scroll-smooth ${inter.variable} ${notoSansJP.variable} ${lora.variable}`}
     >
       <body className="font-sans antialiased min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-[#d7c4b7]">
         {children}

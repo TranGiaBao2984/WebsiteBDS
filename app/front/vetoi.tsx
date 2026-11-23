@@ -10,7 +10,7 @@ const ABOUT_CONTENT = {
     badge: 'RE AGENT BY RE IDEA • GLOBAL PROPERTY ADVISOR',
     name: 'Mii Shintani (新谷 美依)',
     tagline: 'Helping Overseas Clients Find Homes in Japan',
-    bio: 'Global Property Advisor at RE AGENT by Re iDea (株式会社 Re iDea), dedicated to helping overseas clients find homes, invest in real estate, and relocate smoothly to Japan — guided by our philosophy: "People. Homes. A Brighter Tomorrow."',
+    bio: 'Global Property Advisor at RE AGENT by Re iDea (株式会社 Re iDea), dedicated to helping overseas clients find homes, invest in real estate, and relocate smoothly to Japan - guided by our philosophy: "People. Homes. A Brighter Tomorrow."',
     companyLabel: 'Company',
     companyValue: 'Re iDea Co., Ltd. (株式会社 Re iDea)',
     specialtyLabel: 'Core Services',
@@ -292,7 +292,7 @@ export default function VeToiSection() {
             </span>
 
             <div>
-              <h1 className="font-serif text-3xl font-bold tracking-tight text-[#26221F] sm:text-4xl">
+              <h1 className="font-serif text-3xl font-bold tracking-tight text-[#26221F] sm:text-5xl">
                 {content.name}
               </h1>
               <p className="mt-1.5 text-xs font-semibold text-[#B8D200] sm:text-sm">
@@ -300,7 +300,7 @@ export default function VeToiSection() {
               </p>
             </div>
 
-            <p className="text-sm leading-relaxed text-[#66605A] sm:text-[15px]">
+            <p className="text-justify text-sm leading-relaxed text-[#66605A] sm:text-[15px]">
               {content.bio}
             </p>
 
@@ -337,7 +337,7 @@ export default function VeToiSection() {
               <KeyRoundIcon className="h-5 w-5" />
             </span>
             <h3 className="font-serif text-base font-bold text-[#26221F]">{content.service1Title}</h3>
-            <p className="text-xs leading-relaxed text-[#66605A] sm:text-[13px]">
+            <p className="text-justify text-xs leading-relaxed text-[#66605A] sm:text-[13px]">
               {content.service1Desc}
             </p>
           </div>
@@ -347,7 +347,7 @@ export default function VeToiSection() {
               <HomeIcon className="h-5 w-5" />
             </span>
             <h3 className="font-serif text-base font-bold text-[#26221F]">{content.service2Title}</h3>
-            <p className="text-xs leading-relaxed text-[#66605A] sm:text-[13px]">
+            <p className="text-justify text-xs leading-relaxed text-[#66605A] sm:text-[13px]">
               {content.service2Desc}
             </p>
           </div>
@@ -357,7 +357,7 @@ export default function VeToiSection() {
               <GlobeIcon className="h-5 w-5" />
             </span>
             <h3 className="font-serif text-base font-bold text-[#26221F]">{content.service3Title}</h3>
-            <p className="text-xs leading-relaxed text-[#66605A] sm:text-[13px]">
+            <p className="text-justify text-xs leading-relaxed text-[#66605A] sm:text-[13px]">
               {content.service3Desc}
             </p>
           </div>
@@ -367,7 +367,7 @@ export default function VeToiSection() {
               <WrenchIcon className="h-5 w-5" />
             </span>
             <h3 className="font-serif text-base font-bold text-[#26221F]">{content.service4Title}</h3>
-            <p className="text-xs leading-relaxed text-[#66605A] sm:text-[13px]">
+            <p className="text-justify text-xs leading-relaxed text-[#66605A] sm:text-[13px]">
               {content.service4Desc}
             </p>
           </div>

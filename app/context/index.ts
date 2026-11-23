@@ -5,7 +5,7 @@ export const dictionaries = {
     header: {
       home: 'Home',
       properties: 'Properties',
-      aboutMe: 'About Me',
+      aboutMe: 'About Mii',
       buyingInJapan: 'Buying in Japan',
       contact: 'Contact',
       getConsultation: 'Get Free Consultation',

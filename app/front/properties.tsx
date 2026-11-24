@@ -12,6 +12,7 @@ import {
   type FilterOptionsData,
 } from '@/lib/filter-constants';
 import PropertyCard from './PropertyCard';
+import Loader from './loading';
 
 type FilterKey = 'location' | 'layout' | 'price' | 'q' | 'sort';
 type SortOption = 'default' | 'price_asc' | 'price_desc';
@@ -1001,11 +1002,7 @@ export default function SanPhamSection({
 
   return (
     <Suspense
-      fallback={
-        <div className="py-12 text-center text-xs font-medium text-[#66605A]">
-          {getString(catalogObj?.loading) || 'Loading...'}
-        </div>
-      }
+      fallback={<Loader text={getString(catalogObj?.loading) || undefined} />}
     >
       <PropertyCatalogContent
         properties={properties}

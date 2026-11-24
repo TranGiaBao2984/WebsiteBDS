@@ -76,10 +76,12 @@ export default function TrangChuSection({ properties }: { properties: Property[]
 
           <Link
             href="/properties"
-            className="group inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 self-center rounded-lg bg-[#B8D200] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[#26221F] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#9FB600] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2 sm:self-end motion-reduce:transform-none motion-reduce:transition-none"
+            className="btn-wipe-primary group shrink-0 self-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2 sm:self-end"
           >
-            <span>{t.home.viewAll}</span>
-            <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
+            <span className="btn-wipe-content">
+              <span>{t.home.viewAll}</span>
+              <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
+            </span>
           </Link>
         </div>
       </div>
@@ -106,10 +108,12 @@ export default function TrangChuSection({ properties }: { properties: Property[]
       <div className="pt-2 text-center">
         <Link
           href="/properties"
-          className="group inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#E5DFD6] bg-white px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[#26221F] shadow-2xs transition-all duration-200 hover:border-[#B8D200] hover:bg-[#B8D200] hover:text-[#26221F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2"
+          className="btn-wipe-secondary group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2"
         >
-          <span>{t.home.exploreMore}</span>
-          <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
+          <span className="btn-wipe-content">
+            <span>{t.home.exploreMore}</span>
+            <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
+          </span>
         </Link>
       </div>
     </section>

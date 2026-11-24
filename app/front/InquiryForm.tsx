@@ -73,17 +73,16 @@ const INQUIRY_LABELS = {
 function SendIcon({ className }: { className?: string }) {
   return (
     <svg
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
       aria-hidden="true"
       className={className}
     >
-      <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" />
-      <path d="m21.854 2.147-10.94 10.939" />
+      <path fill="none" d="M0 0h24v24H0z" />
+      <path
+        fill="currentColor"
+        d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
+      />
     </svg>
   );
 }
@@ -238,34 +237,34 @@ export default function InquiryForm({
           Dùng portal gắn vào <body> để không bị ảnh hưởng bởi khung cha (overflow/transform). */}
       {gifShownAt !== null &&
         createPortal(
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={labels.gifAlt}
-          onClick={closeGif}
-          className="fixed inset-0 z-100 flex cursor-pointer items-center justify-center bg-[#26221F]/60 p-4 backdrop-blur-sm"
-        >
-          <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element -- dùng <img> thường để giữ nguyên hoạt ảnh GIF */}
-            <img
-              key={gifShownAt}
-              src={SUCCESS_GIF_SRC}
-              alt={labels.gifAlt}
-              draggable={false}
-              className="max-h-[70vh] w-auto max-w-[min(90vw,28rem)] rounded-2xl border border-[#E5DFD6] bg-white shadow-[0_10px_30px_rgba(38,34,31,0.25)]"
-            />
-            <button
-              type="button"
-              onClick={closeGif}
-              aria-label={labels.gifClose}
-              className="absolute -top-3 -right-3 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[#B8D200] text-[#26221F] shadow-sm transition-colors duration-200 hover:bg-[#9FB600] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2"
-            >
-              <CloseIcon className="h-4 w-4" />
-            </button>
-          </div>
-        </div>,
-        document.body
-      )}
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={labels.gifAlt}
+            onClick={closeGif}
+            className="fixed inset-0 z-100 flex cursor-pointer items-center justify-center bg-[#26221F]/60 p-4 backdrop-blur-sm"
+          >
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element -- dùng <img> thường để giữ nguyên hoạt ảnh GIF */}
+              <img
+                key={gifShownAt}
+                src={SUCCESS_GIF_SRC}
+                alt={labels.gifAlt}
+                draggable={false}
+                className="max-h-[70vh] w-auto max-w-[min(90vw,28rem)] rounded-2xl border border-[#E5DFD6] bg-white shadow-[0_10px_30px_rgba(38,34,31,0.25)]"
+              />
+              <button
+                type="button"
+                onClick={closeGif}
+                aria-label={labels.gifClose}
+                className="absolute -top-3 -right-3 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[#B8D200] text-[#26221F] shadow-sm transition-colors duration-200 hover:bg-[#9FB600] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2"
+              >
+                <CloseIcon className="h-4 w-4" />
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
 
       <div className="relative">
         <h3 className="font-serif mb-2 text-xl font-bold tracking-tight text-[#26221F] sm:text-2xl">
@@ -415,7 +414,7 @@ export default function InquiryForm({
           <button
             type="submit"
             disabled={loading}
-            className="group inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#B8D200] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-[#26221F] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#9FB600] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-55 sm:text-sm motion-reduce:transform-none motion-reduce:transition-none"
+            className="submit-fly-btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] focus-visible:ring-offset-2"
           >
             {loading ? (
               <>
@@ -423,12 +422,16 @@ export default function InquiryForm({
                   aria-hidden="true"
                   className="h-4 w-4 animate-spin rounded-full border-2 border-[#26221F]/30 border-t-[#26221F]"
                 />
-                <span>{labels.submitting}</span>
+                <span className="ml-2">{labels.submitting}</span>
               </>
             ) : (
               <>
-                <SendIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
-                <span>{labels.submit}</span>
+                <div className="svg-wrapper-1">
+                  <div className="svg-wrapper">
+                    <SendIcon className="submit-fly-svg h-5 w-5" />
+                  </div>
+                </div>
+                <span className="submit-fly-label">{labels.submit}</span>
               </>
             )}
           </button>

@@ -789,7 +789,7 @@ function PropertyCatalogContent({
                           </div>
 
                           <div className="shrink-0 text-right">
-                            <span className="font-serif block text-sm font-bold text-[#26221F]">
+                            <span className="font-serif block text-base font-bold text-[#26221F]">
                               {yenPrice > 0 ? `¥${yenPrice.toLocaleString('en-US')}` : ''}
                             </span>
                             <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-[#B8D200] group-hover:underline">

@@ -1006,7 +1006,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             </div>
 
             <div className="sm:text-right">
-              <div className="font-serif text-2xl font-bold text-[#B8D200] sm:text-3xl">
+              <div className="font-serif text-3xl font-bold text-[#B8D200] sm:text-4xl">
                 {formattedPrice}
               </div>
             </div>
@@ -1364,7 +1364,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-[11px] font-medium text-[#66605A]">{title}</p>
-            <p className="font-serif truncate text-base font-bold text-[#B8D200] sm:text-lg">
+            <p className="font-serif truncate text-lg font-bold text-[#B8D200] sm:text-xl">
               {formattedPrice}
             </p>
           </div>

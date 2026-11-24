@@ -310,7 +310,7 @@ function PropertyCardComponent({ property, priority = false }: PropertyCardProps
         <div className="flex items-center justify-between gap-3 border-t border-[#E5DFD6] pt-4">
           <div className="min-w-0">
             <span className="block text-xs font-medium text-[#948D86]">{labels.price}</span>
-            <span className="font-serif block truncate text-lg font-bold text-[#B8D200]">
+            <span className="font-serif block truncate text-4xl font-bold text-[#B8D200]">
               {formattedPrice}
             </span>
           </div>

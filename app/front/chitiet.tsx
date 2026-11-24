@@ -485,8 +485,8 @@ function getFormattedPrice(property: Property, currentLang: 'en' | 'ja'): string
       priceEn > 0
         ? priceEn
         : priceJa > 0
-        ? Math.round(priceJa * JPY_TO_USD)
-        : 0;
+          ? Math.round(priceJa * JPY_TO_USD)
+          : 0;
 
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -499,8 +499,8 @@ function getFormattedPrice(property: Property, currentLang: 'en' | 'ja'): string
     priceJa > 0
       ? priceJa
       : priceEn > 0
-      ? Math.round(priceEn / JPY_TO_USD)
-      : 0;
+        ? Math.round(priceEn / JPY_TO_USD)
+        : 0;
 
   return new Intl.NumberFormat('ja-JP', {
     style: 'currency',
@@ -843,9 +843,9 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
         setLightbox((prev) =>
           prev
             ? {
-                ...prev,
-                index: prev.index === 0 ? prev.images.length - 1 : prev.index - 1,
-              }
+              ...prev,
+              index: prev.index === 0 ? prev.images.length - 1 : prev.index - 1,
+            }
             : null
         );
       } else if (e.key === 'ArrowRight' && lightbox.images.length > 1) {
@@ -853,9 +853,9 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
         setLightbox((prev) =>
           prev
             ? {
-                ...prev,
-                index: prev.index === prev.images.length - 1 ? 0 : prev.index + 1,
-              }
+              ...prev,
+              index: prev.index === prev.images.length - 1 ? 0 : prev.index + 1,
+            }
             : null
         );
       }
@@ -1006,7 +1006,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
             </div>
 
             <div className="sm:text-right">
-              <div className="font-serif text-3xl font-bold text-[#B8D200] sm:text-4xl">
+              <div className="font-serif inline-block rounded-lg border border-[#B8D200] bg-[#B8D200] px-3 py-1 text-3xl font-bold text-[#26221F] sm:text-4xl">
                 {formattedPrice}
               </div>
             </div>
@@ -1089,11 +1089,10 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                     onClick={() => setActiveIndex(idx)}
                     aria-label={`${title} ${idx + 1}`}
                     aria-pressed={isSelected}
-                    className={`flex aspect-4/3 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 bg-[#F2EFE9] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] ${
-                      isSelected
-                        ? 'border-[#B8D200] opacity-100 ring-2 ring-[#B8D200]/25'
-                        : 'border-[#E5DFD6] opacity-80 hover:border-[#B8D200]/70 hover:opacity-100'
-                    }`}
+                    className={`flex aspect-4/3 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 bg-[#F2EFE9] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] ${isSelected
+                      ? 'border-[#B8D200] opacity-100 ring-2 ring-[#B8D200]/25'
+                      : 'border-[#E5DFD6] opacity-80 hover:border-[#B8D200]/70 hover:opacity-100'
+                      }`}
                   >
                     <img
                       src={img}
@@ -1128,9 +1127,8 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                 {wideSpecs.map((spec, idx) => (
                   <div
                     key={spec.label}
-                    className={`${
-                      idx === 0 && compactSpecs.length > 0 ? 'mt-1' : ''
-                    } border-t border-[#E5DFD6] pt-3 sm:col-span-2 lg:col-span-3`}
+                    className={`${idx === 0 && compactSpecs.length > 0 ? 'mt-1' : ''
+                      } border-t border-[#E5DFD6] pt-3 sm:col-span-2 lg:col-span-3`}
                   >
                     <span className="mb-1 block text-xs font-medium text-[#948D86]">
                       {spec.label}
@@ -1233,11 +1231,10 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                           onClick={() => setActiveFloorPlanIndex(idx)}
                           aria-label={`${labels.floorPlanTitle} ${idx + 1}`}
                           aria-pressed={isSelected}
-                          className={`flex aspect-4/3 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 bg-[#F2EFE9] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] ${
-                            isSelected
-                              ? 'border-[#B8D200] opacity-100 ring-2 ring-[#B8D200]/25'
-                              : 'border-[#E5DFD6] opacity-80 hover:border-[#B8D200]/70 hover:opacity-100'
-                          }`}
+                          className={`flex aspect-4/3 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 bg-[#F2EFE9] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8D200] ${isSelected
+                            ? 'border-[#B8D200] opacity-100 ring-2 ring-[#B8D200]/25'
+                            : 'border-[#E5DFD6] opacity-80 hover:border-[#B8D200]/70 hover:opacity-100'
+                            }`}
                         >
                           <img
                             src={img}
@@ -1364,7 +1361,7 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-[11px] font-medium text-[#66605A]">{title}</p>
-            <p className="font-serif truncate text-lg font-bold text-[#B8D200] sm:text-xl">
+            <p className="font-serif mt-0.5 inline-block truncate rounded-md bg-[#B8D200] px-2 py-0.5 text-base font-bold text-[#26221F] sm:text-lg">
               {formattedPrice}
             </p>
           </div>
@@ -1430,13 +1427,12 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                     : 'translate3d(0px, 0px, 0) scale(1)',
                   transition: isDragging ? 'none' : 'transform 200ms ease-out',
                 }}
-                className={`max-h-full max-w-full w-auto h-auto select-none rounded-xl border border-white/15 object-contain shadow-2xl ${
-                  isZoomed
-                    ? isDragging
-                      ? 'cursor-grabbing'
-                      : 'cursor-grab'
-                    : 'cursor-zoom-in'
-                }`}
+                className={`max-h-full max-w-full w-auto h-auto select-none rounded-xl border border-white/15 object-contain shadow-2xl ${isZoomed
+                  ? isDragging
+                    ? 'cursor-grabbing'
+                    : 'cursor-grab'
+                  : 'cursor-zoom-in'
+                  }`}
               />
 
               {lightbox.images.length > 1 && !isZoomed && (
@@ -1449,9 +1445,9 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                       setLightbox((prev) =>
                         prev
                           ? {
-                              ...prev,
-                              index: prev.index === 0 ? prev.images.length - 1 : prev.index - 1,
-                            }
+                            ...prev,
+                            index: prev.index === 0 ? prev.images.length - 1 : prev.index - 1,
+                          }
                           : null
                       );
                     }}
@@ -1468,9 +1464,9 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                       setLightbox((prev) =>
                         prev
                           ? {
-                              ...prev,
-                              index: prev.index === prev.images.length - 1 ? 0 : prev.index + 1,
-                            }
+                            ...prev,
+                            index: prev.index === prev.images.length - 1 ? 0 : prev.index + 1,
+                          }
                           : null
                       );
                     }}
@@ -1506,11 +1502,10 @@ export default function ChiTietSection({ property, similarProperties = [] }: Chi
                           setLightbox((prev) => (prev ? { ...prev, index: idx } : null));
                         }}
                         aria-label={`${idx + 1} / ${lightbox.images.length}`}
-                        className={`relative h-12 w-12 shrink-0 cursor-pointer overflow-hidden rounded-lg border-2 transition-all duration-200 ${
-                          isCurrent
-                            ? 'scale-105 border-[#B8D200] opacity-100'
-                            : 'border-transparent opacity-55 hover:opacity-90'
-                        }`}
+                        className={`relative h-12 w-12 shrink-0 cursor-pointer overflow-hidden rounded-lg border-2 transition-all duration-200 ${isCurrent
+                          ? 'scale-105 border-[#B8D200] opacity-100'
+                          : 'border-transparent opacity-55 hover:opacity-90'
+                          }`}
                       >
                         <img src={img} alt="" className="h-full w-full object-cover" />
                       </button>

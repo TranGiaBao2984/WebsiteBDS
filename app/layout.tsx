@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import './globals.css';
 import { Inter, Noto_Sans_JP, Lora } from 'next/font/google';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -20,9 +21,32 @@ const lora = Lora({
   variable: '--font-lora', // globals.css map biến này sang --font-serif
 });
 
-export const metadata = {
-  title: 'MII SHINTANI • Real Estate Agent in Japan',
+export const metadata: Metadata = {
+  metadataBase: new URL('https://myrealestate.estate'),
+  title: {
+    default: 'MII SHINTANI • Real Estate Agent in Japan',
+    template: '%s | MII SHINTANI',
+  },
   description: 'Japanese traditional homes and properties across Japan.',
+  alternates: {
+    canonical: './',
+  },
+  openGraph: {
+    type: 'website',
+    siteName: 'MII SHINTANI',
+    title: 'MII SHINTANI • Real Estate Agent in Japan',
+    description: 'Japanese traditional homes and properties across Japan.',
+    url: 'https://myrealestate.estate',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'MII SHINTANI • Real Estate Agent in Japan',
+    description: 'Japanese traditional homes and properties across Japan.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 // Layout gốc chỉ giữ <html>/<body>. Header + Footer của website nằm ở app/(site)/layout.tsx,

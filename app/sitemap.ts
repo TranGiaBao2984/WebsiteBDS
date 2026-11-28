@@ -1,9 +1,10 @@
 import type { MetadataRoute } from 'next';
+import { connection } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export const dynamic = 'force-dynamic';
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  await connection();
+
   const baseUrl = 'https://myrealestate.estate';
   const now = new Date();
 

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Bắt buộc tắt cache để mỗi lần Cron gọi đều chạy thẳng vào Supabase
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -19,7 +18,6 @@ export async function GET() {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Thực hiện 1 truy vấn nhẹ (đổi 'properties' thành tên bảng có sẵn trong DB của bạn nếu khác)
     const { error } = await supabase
       .from('properties')
       .select('id')

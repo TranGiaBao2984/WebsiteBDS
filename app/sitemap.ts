@@ -1,10 +1,13 @@
 import type { MetadataRoute } from 'next';
+import { createClient } from '@supabase/supabase-js';
+
+export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://myrealestate.estate';
   const now = new Date();
 
-  return [
+  const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: now,
@@ -30,4 +33,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.3,
     },
   ];
+
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      return staticRoutes;
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { data: properties, error } = await supabase
+      .from('properties')
+      .select('id');
+
+    if (error || !properties) {
+      return staticRoutes;
+    }
+
+    const propertyRoutes: MetadataRoute.Sitemap = properties.map((item) => ({
+      url: `${baseUrl}/properties/${item.id}`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    }));
+
+    return [...staticRoutes, ...propertyRoutes];
+  } catch {
+    return staticRoutes;
+  }
 }
